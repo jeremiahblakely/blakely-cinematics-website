@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Test - Blakely Cinematics</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 100px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-form {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h1 {
+            color: #FF6B35;
+            margin-bottom: 30px;
+        }
+        button {
+            background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #ff4444;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 68, 68, 0.1);
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            color: #22c55e;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(34, 197, 94, 0.1);
+            border-radius: 5px;
+            display: none;
+        }
+        .info {
+            background: rgba(255, 107, 53, 0.1);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-form">
+        <h1>Payment System Test</h1>
+        
+        <div class="info">
+            <p><strong>Testing Configuration:</strong></p>
+            <p>Amount: $175.00 USD</p>
+            <p>Type: One-time deposit</p>
+            <p>Mode: Live (be careful!)</p>
+        </div>
+
+        <button id="test-api">Test API Connection</button>
+        <button id="test-payment">Test Payment ($175 Deposit)</button>
+        
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
+    </div>
+
+    <script>
+        const stripe = Stripe("pk_live_51S06CcF2BZHg4Pgy8T3HkQp37cB9dUOA6LnwnMWoLXt8WpdXbAWSc8doZFSmX3iU6wpHBn8SnPhagFkjhmxswaqhVex00mEUIH0Mg");
+        
+        // Test API connection
+        document.getElementById('test-api').addEventListener('click', async () => {
+            const btn = document.getElementById('test-api');
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
+            
+            btn.disabled = true;
+            btn.textContent = 'Testing...';
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('https://qtgzo3psyb.execute-api.us-east-1.amazonaws.com/prod/pay/checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        test: true,
+                        amount: 17500
+                    })
+                });
+                
+                const data = await response.text();
+                
+                if (response.ok) {
+                    successDiv.textContent = 'API Connected! Response: ' + data;
+                    successDiv.style.display = 'block';
+                } else {
+                    errorDiv.textContent = 'API Error (' + response.status + '): ' + data;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network Error: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Test API Connection';
+        });
+        
+        // Test payment
+        document.getElementById('test-payment').addEventListener('click', async () => {
+            const btn = document.getElementById('test-payment');
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
+            
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('https://qtgzo3psyb.execute-api.us-east-1.amazonaws.com/prod/pay/checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        clientData: {
+                            name: 'Test Client',
+                            email: 'test@example.com',
+                            phone: '555-1234',
+                            package: 'signature'
+                        },
+                        amount: 17500,
+                        currency: 'usd',
+                        successUrl: window.location.origin + '/booking-success.html',
+                        cancelUrl: window.location.href
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.sessionId || data.id) {
+                    successDiv.textContent = 'Redirecting to Stripe...';
+                    successDiv.style.display = 'block';
+                    
+                    const result = await stripe.redirectToCheckout({
+                        sessionId: data.sessionId || data.id
+                    });
+                    
+                    if (result.error) {
+                        throw new Error(result.error.message);
+                    }
+                } else {
+                    throw new Error(data.error || 'No session ID returned');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Test Payment ($175 Deposit)';
+        });
+    </script>
+</body>
+</html>
