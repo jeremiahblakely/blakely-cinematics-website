@@ -1028,7 +1028,7 @@
                                 </div>
                                 <button type="button" id="payment-btn" class="nav-btn primary" style="width: 100%; margin-bottom: 1.5rem;">
                                     <i class="fas fa-credit-card" style="margin-right: 0.5rem;"></i>
-                                    Pay $100 Deposit
+                                    Pay $175 Deposit
                                 </button>
                                 <div style="font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); margin-bottom: 1.5rem;">
                                     Secure payment via Stripe<br>
@@ -2092,7 +2092,7 @@
     <script>
         // Initialize Stripe with publishable key placeholder
         // Replace pk_live_xxx with actual publishable key after implementation
-        const stripe = Stripe("pk_live_51S06CcF2BZHg4Pgy8T3HkQp37cB9dUOA6LnwnMWoLXt8WpdXbc8doZFSmX3iU6wpHBn8SnPhagFkjhmxswaqhVex00mEUIH0Mg");
+        const stripe = Stripe("pk_live_51S06CcF2BZHg4Pgy8T3HkQp37cB9dUOA6LnwnMWoLXt8WpdXbAWSc8doZFSmX3iU6wpHBn8SnPhagFkjhmxswaqhVex00mEUIH0Mg");
         
         // Real Stripe checkout function
         async function startCheckout() {
@@ -2115,15 +2115,22 @@
                 };
                 
                 // Call backend to create Stripe checkout session
-                const response = await fetch("https://4l12h6snuh.execute-api.us-east-1.amazonaws.com/pay/checkout-session", {
+                const response = await fetch("https://qtgzo3psyb.execute-api.us-east-1.amazonaws.com/prod/pay/checkout-session", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         clientData: clientData,
-                        amount: 10000, // $100 deposit in cents
+                        amount: 17500, // $175 deposit in cents
                         currency: 'usd',
                         successUrl: window.location.origin + '/booking-success.html',
-                        cancelUrl: window.location.href
+                        cancelUrl: window.location.href,
+                        metadata: {
+                            clientName: clientData.name,
+                            clientEmail: clientData.email,
+                            packageType: selectedPackage,
+                            sessionDate: clientData.date,
+                            sessionTime: clientData.time
+                        }
                     })
                 });
                 
@@ -2133,8 +2140,13 @@
                     throw new Error(session.error);
                 }
                 
-                // Redirect user to Stripe Checkout
-                const result = await stripe.redirectToCheckout({ sessionId: session.id });
+                // Store booking data for success page
+                sessionStorage.setItem('bookingData', JSON.stringify(clientData));
+
+                // Redirect user to Stripe Checkout (support sessionId or id)
+                const result = await stripe.redirectToCheckout({ 
+                    sessionId: session.sessionId || session.id 
+                });
                 
                 if (result.error) {
                     throw new Error(result.error.message);
@@ -2143,7 +2155,7 @@
             } catch (error) {
                 
                 // Reset button
-                paymentBtn.innerHTML = '<i class="fas fa-credit-card" style="margin-right: 0.5rem;"></i>Pay $100 Deposit';
+                paymentBtn.innerHTML = '<i class="fas fa-credit-card" style="margin-right: 0.5rem;"></i>Pay $175 Deposit';
                 paymentBtn.disabled = false;
                 
                 // Show error message
