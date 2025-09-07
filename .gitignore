@@ -1,0 +1,23 @@
+node_modules/
+*.backup
+*.zip
+.DS_Store
+lambda-*.js
+test-*.js
+*-handler.js
+lambda-deploy/.env
+
+# Environment variables
+.env
+.env.*
+*.env
+
+# AWS and sensitive files
+*.pem
+*.key
+*.crt
+
+# Backup files
+*.backup
+*.bak
+

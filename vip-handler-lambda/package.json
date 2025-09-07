@@ -1,0 +1,15 @@
+{
+  "name": "blakely-cinematics-vip-handler",
+  "version": "1.0.0",
+  "description": "VIP Dashboard Lambda Handler",
+  "main": "index.js",
+  "scripts": {
+    "package": "zip -r vip-handler.zip index.js node_modules",
+    "deploy-dev": "./deploy.sh dev",
+    "deploy-prod": "./deploy.sh prod"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1480.0",
+    "uuid": "^11.1.0"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "blakely-cinematics-backend",
+  "version": "1.0.0",
+  "description": "Backend Lambda functions for Blakely Cinematics",
+  "main": "index.js",
+  "scripts": {
+    "test": "node verify-all-systems.js",
+    "test:jwt": "node test-jwt.js",
+    "test:gallery-access": "node test-gallery-access.js",
+    "test:gallery-crud": "node test-gallery-crud.js",
+    "zip:vip-login": "cd lambda/vip-login && zip -r ../../vip-login.zip . && cd ../..",
+    "zip:vip-api": "cd lambda/vip-api && zip -r ../../vip-api.zip . && cd ../..",
+    "zip:refresh-token": "cd lambda/refresh-token && zip -r ../../refresh-token.zip . && cd ../..",
+    "zip:gallery-access": "cd lambda/gallery-access && zip -r ../../gallery-access.zip . && cd ../..",
+    "zip:gallery-crud": "cd lambda/gallery-crud && zip -r ../../gallery-crud.zip . && cd ../..",
+    "deploy:vip-login": "aws lambda update-function-code --function-name vip-login --zip-file fileb://vip-login.zip",
+    "deploy:vip-api": "aws lambda update-function-code --function-name vip-api --zip-file fileb://vip-api.zip",
+    "deploy:refresh-token": "aws lambda update-function-code --function-name refresh-token --zip-file fileb://refresh-token.zip",
+    "deploy:gallery-access": "aws lambda update-function-code --function-name gallery-access --zip-file fileb://gallery-access.zip",
+    "deploy:gallery-crud": "aws lambda update-function-code --function-name gallery-crud --zip-file fileb://gallery-crud.zip"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "aws-sdk": "^2.1546.0"
+  },
+  "devDependencies": {},
+  "author": "Blakely Cinematics",
+  "license": "ISC"
+}

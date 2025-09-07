@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin • Finance</title>
+  <link rel="stylesheet" href="css/styles.css?v=20250828">
+</head>
+<body class="admin-page">
+<header id="adminBar" class="admin-bar">
+  <a class="admin-logo" href="admin.html" title="Dashboard">BLAKELY <span class="admin-accent">ADMIN</span></a>
+  <nav class="admin-nav" aria-label="Admin navigation">
+    <a href="admin-scheduling.html">Scheduling</a>
+    <a href="admin-mail.html">Mail</a>
+    <a href="admin-bookings.html">Bookings</a>
+    <a href="admin-galleries.html">Galleries</a>
+    <a href="admin-crm.html">CRM</a>
+    <a href="admin-finance.html">Finance</a>
+    <a href="admin-tasks.html">Tasks</a>
+    <a href="admin-assets.html">Assets</a>
+    <a href="admin-audit.html">Audit</a>
+  </nav>
+  <div class="admin-actions">
+    <a class="admin-settings" href="admin-settings.html" title="Settings" aria-label="Settings">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M19.4 13.5a7.6 7.6 0 0 0 .05-3l1.86-1.43a.7.7 0 0 0 .16-.89l-1.76-3.05a.7.7 0 0 0-.83-.32l-2.2.73a7.63 7.63 0 0 0-2.6-1.5l-.33-2.3A.7.7 0 0 0 12 1h-3.5a.7.7 0 0 0-.69.59l-.33 2.3a7.63 7.63 0 0 0-2.6 1.5l-2.2-.73a.7.7 0 0 0-.83.32L.09 8.03a.7.7 0 0 0 .16.9L2.1 10.36a7.6 7.6 0 0 0 0 3L.25 14.8a.7.7 0 0 0-.16.9l1.76 3.05c.18.31.54.45.88.33l2.2-.74c.76.62 1.64 1.12 2.6 1.5l.33 2.3c.05.34.34.58.68.59H12c.34 0 .64-.25.69-.59l.33-2.3c.96-.38 1.84-.88 2.6-1.5l2.2.74c.34.12.7-.02.88-.33l1.76-3.05a.7.7 0 0 0-.16-.9L19.4 13.5Z" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+    </a>
+    <a class="admin-signout" href="admin-login.html">Sign out</a>
+  </div>
+  <script>(function(){var p=location.pathname.replace(/\/+$/,'');document.querySelectorAll('#adminBar .admin-nav a').forEach(function(a){var h=a.getAttribute('href');if(h&&h!=='#'&&p===h){a.classList.add('active');}});})();</script>
+</header>
+
+
+  <div class="cursor"></div>
+  <div class="cursor-follower"></div>
+  <main class="admin-dashboard">
+    <section class="admin-section">
+      <div class="section-header"><h2 class="section-title">Finance</h2></div>
+      <p>Stub page for Finance.</p>
+    </section>
+  </main>
+  <script src="js/api-config.js"></script>
+    <script src="js/integrate-api.js"></script>
+    <script src="js/script.js?v=20250828"></script>
+</body>
+</html>

@@ -1,0 +1,371 @@
+openapi: "3.0.1"
+info:
+  title: "VIP Portal API"
+  version: "2025-09-01T21:07:53Z"
+servers:
+- url: "https://kyjf2wp972.execute-api.us-east-1.amazonaws.com/{basePath}"
+  variables:
+    basePath:
+      default: "dev"
+paths:
+  /vip/galleries/{galleryId}/folders:
+    get:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    post:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+  /health:
+    get:
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+  /vip/galleries/{galleryId}:
+    get:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:blakely-cinematics-vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+  /vip/galleries/{galleryId}/trash:
+    post:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+  /vip/galleries/{galleryId}/folders/{folderId}:
+    get:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      - name: "folderId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    delete:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      - name: "folderId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      - name: "folderId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,DELETE,PATCH,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+    patch:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      - name: "folderId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+  /vip/galleries/{galleryId}/assets:
+    get:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:blakely-cinematics-vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+  /vip/galleries/{galleryId}/restore:
+    post:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+  /vip/galleries/{galleryId}/folders/{folderId}/items:
+    post:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      - name: "folderId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    delete:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      - name: "folderId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      - name: "folderId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+  /vip/galleries/{galleryId}/finalize:
+    post:
+      parameters:
+      - name: "galleryId"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:642278445221:function:vip-handler-dev/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+components:
+  schemas:
+    Empty:
+      title: "Empty Schema"
+      type: "object"

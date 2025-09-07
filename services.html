@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services & Pricing - Blakely Cinematics</title>
+    <link rel="stylesheet" href="css/styles.css?v=20250828">
+    <style>
+        /* Custom Cursor Styles for Services Page */
+        body {
+            cursor: none;
+        }
+        
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-follower {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 107, 53, 0.1);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            transition: transform 0.3s ease;
+        }
+
+        .cursor.hover {
+            transform: scale(2);
+            background: var(--primary);
+            mix-blend-mode: normal;
+        }
+        
+        /* Add cursor: none to interactive elements */
+        .cta-button,
+        .service-card,
+        .nav-links a,
+        .mobile-menu-toggle {
+            cursor: none;
+        }
+        
+        /* Services Page Specific Styles */
+        .services-hero {
+            padding: 120px 20px 80px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,1) 100%);
+        }
+
+        .services-hero h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+        }
+
+        .services-hero p {
+            font-size: 1.1rem;
+            color: #888;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .services-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 20px;
+        }
+
+        .service-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            border: 1px solid #222;
+            border-radius: 10px;
+            padding: 50px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .service-card:hover:not(:has(.service-link-btn:hover)) {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(255, 107, 53, 0.25);
+        }
+
+        /* Fallback for browsers that don't support :has() */
+        @supports not (selector(:has(*))) {
+            .service-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 20px 40px rgba(255, 107, 53, 0.25);
+            }
+            
+            .service-card:hover .service-link-btn:hover {
+                transform: translateY(4px); /* Counter the card transform */
+            }
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #FF6B35;
+        }
+
+        .signature-package {
+            border: 2px solid #FF6B35;
+        }
+
+        .package-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #FF6B35;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+
+        .service-title h2 {
+            font-size: 2rem;
+            font-weight: 400;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+
+        .service-duration {
+            color: #888;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .service-price {
+            text-align: right;
+        }
+
+        .price-amount {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: #FF6B35;
+        }
+
+        .price-starting {
+            font-size: 0.9rem;
+            color: #888;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .service-description {
+            color: #bbb;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .service-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .detail-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #FF6B35;
+            margin-bottom: 15px;
+        }
+
+        .detail-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .detail-section li {
+            color: #bbb;
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .detail-section li::before {
+            content: '•';
+            color: #FF6B35;
+            position: absolute;
+            left: 0;
+        }
+
+        .additional-info {
+            background: rgba(255, 107, 53, 0.1);
+            border-left: 3px solid #FF6B35;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .additional-info p {
+            color: #bbb;
+            margin: 0;
+        }
+
+        .booking-section {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            border-radius: 10px;
+            margin-top: 80px;
+        }
+
+        .booking-section h2 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 20px;
+        }
+
+        .booking-section p {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-button {
+            padding: 15px 40px;
+            background: #FF6B35;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+
+        .cta-button:hover {
+            background: #ff8555;
+            transform: translateY(-2px);
+        }
+
+        .cta-button.secondary {
+            background: transparent;
+            border: 2px solid #FF6B35;
+            color: #FF6B35;
+        }
+
+        .cta-button.secondary:hover {
+            background: #FF6B35;
+            color: white;
+        }
+
+        /* Subtle inline button styling for service links */
+        .service-link-btn {
+            padding: 5px 12px;
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            border-radius: 15px;
+            color: #FF6B35;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+            display: inline-block;
+            margin: 0 2px;
+            position: relative;
+            z-index: 5; /* Ensure buttons are above card hover detection */
+        }
+
+        .service-link-btn:hover {
+            background: rgba(255, 107, 53, 0.2);
+            border-color: rgba(255, 107, 53, 0.5);
+            transform: translateY(-1px);
+            position: relative;
+            z-index: 10; /* Ensure button stays above card interactions */
+        }
+
+        @media (max-width: 768px) {
+            .services-hero h1 {
+                font-size: 2rem;
+            }
+
+            .service-card {
+                padding: 30px 20px;
+            }
+
+            .service-header {
+                flex-direction: column;
+            }
+
+            .service-price {
+                text-align: left;
+                margin-top: 20px;
+            }
+
+            .price-amount {
+                font-size: 2rem;
+            }
+
+            .service-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    
+    <!-- AWS CloudWatch RUM Analytics -->
+    <script>
+      (function(n,i,v,r,s,c,x,z){x=window.AwsRumClient={q:[],n:n,i:i,v:v,r:r,c:c};window[n]=function(c,p){x.q.push({c:c,p:p});};z=document.createElement('script');z.async=true;z.src=s;document.head.insertBefore(z,document.head.getElementsByTagName('script')[0]);})(
+        'cwr',
+        '1a163e06-eb6a-4131-bdb1-6e27fbb0799c',
+        '1.0.0',
+        'us-east-1',
+        'https://client.rum.us-east-1.amazonaws.com/1.19.0/cwr.js',
+        {
+          sessionSampleRate: 1 ,
+          endpoint: "https://dataplane.rum.us-east-1.amazonaws.com" ,
+          telemetries: ["performance","errors","http"] ,
+          allowCookies: true ,
+          enableXRay: false ,
+          signing: true
+        }
+      );
+    </script>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+    
+    <!-- Navigation -->
+    <nav class="edge-header">
+        <div class="nav-container">
+            <a href="index.html" class="logo">BLAKELY</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="services.html" class="active">Services</a></li>
+                <li><a href="index.html#portfolio">Portfolio</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+            <a href="vip-login.html" class="vip-link nav-cta">VIP</a>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Services Hero -->
+    <section class="services-hero">
+        <h1>SERVICES & PRICING</h1>
+        <p>Cinematic portraits that capture your authentic self and elevate your professional image</p>
+    </section>
+
+    <!-- Services Section -->
+    <section class="services-container">
+        
+        <!-- Signature Package -->
+        <div class="service-card signature-package">
+            <div class="service-header">
+                <h2>SIGNATURE CINEMATIC PACKAGE</h2>
+                <a href="/booking?package=Signature%20Cinematic#step-2" class="price-button">$450</a>
+            </div>
+            <span class="service-duration">3-Hour Session</span>
+            <p class="service-description">
+                Our signature experience delivers a comprehensive collection of cinematic portraits perfect for actors, models, and creative professionals. This session provides the time and variety needed to capture your full range and create a diverse portfolio.
+            </p>
+            <div class="service-details">
+                <div class="detail-section">
+                    <h3>What's Included</h3>
+                    <ul>
+                        <li>12 professionally edited images</li>
+                        <li>Mix of theatrical & commercial looks</li>
+                        <li>Multiple outfit changes</li>
+                        <li>Professional color grading</li>
+                        <li>High-resolution digital files</li>
+                        <li>Online gallery for 90 days</li>
+                    </ul>
+                </div>
+                <div class="detail-section">
+                    <h3>Perfect For</h3>
+                    <ul>
+                        <li>Actors needing diverse headshots</li>
+                        <li>Complete portfolio refresh</li>
+                        <li>Creative professionals</li>
+                        <li>Personal branding</li>
+                        <li>Social media content</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="additional-info">
+                <p><strong>Additional images:</strong> $25 per image | <strong>Delivery:</strong> 10-14 business days | <a href="preparation.html" class="service-link-btn">Preparation Guide</a> | <a href="vendors.html" class="service-link-btn">Makeup Artists & Stylists</a></p>
+            </div>
+        </div>
+
+        <!-- Essential Headshots -->
+        <div class="service-card">
+            <div class="service-header">
+                <h2>ESSENTIAL HEADSHOTS</h2>
+                <a href="/booking?package=Essential#step-2" class="price-button">$250</a>
+            </div>
+            <span class="service-duration">1.5-Hour Session</span>
+            <p class="service-description">
+                Focused headshot session perfect for professionals who need updated headshots for casting, LinkedIn, or business use. Clean, professional, and impactful.
+            </p>
+            <div class="service-details">
+                <div class="detail-section">
+                    <h3>What's Included</h3>
+                    <ul>
+                        <li>6 professionally edited headshots</li>
+                        <li>3 theatrical, 3 commercial looks</li>
+                        <li>2-3 outfit changes</li>
+                        <li>Professional retouching</li>
+                        <li>Web and print-ready files</li>
+                        <li>Online gallery for 90 days</li>
+                    </ul>
+                </div>
+                <div class="detail-section">
+                    <h3>Perfect For</h3>
+                    <ul>
+                        <li>Headshot updates</li>
+                        <li>Business professionals</li>
+                        <li>LinkedIn profiles</li>
+                        <li>Casting submissions</li>
+                        <li>First-time headshots</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="additional-info">
+                <p><strong>Additional images:</strong> $25 per image | <strong>Delivery:</strong> 10-14 business days | <a href="preparation.html" class="service-link-btn">Preparation Guide</a> | <a href="vendors.html" class="service-link-btn">Makeup Artists & Stylists</a></p>
+            </div>
+        </div>
+
+        <!-- Creative Portrait Experience -->
+        <div class="service-card">
+            <div class="service-header">
+                <h2>CREATIVE PORTRAIT EXPERIENCE</h2>
+                <a href="/booking?package=Creative#step-2" class="price-button">$575</a>
+            </div>
+            <span class="service-duration">2-Hour Session</span>
+            <p class="service-description">
+                Artistic and cinematic portraits that tell your story. Perfect for musicians, artists, and creatives who want images that stand out and capture their unique personality.
+            </p>
+            <div class="service-details">
+                <div class="detail-section">
+                    <h3>What's Included</h3>
+                    <ul>
+                        <li>8 cinematic portraits</li>
+                        <li>Creative direction & styling</li>
+                        <li>Multiple locations/setups</li>
+                        <li>Artistic color grading</li>
+                        <li>Social media optimized versions</li>
+                        <li>Online gallery for 90 days</li>
+                    </ul>
+                </div>
+                <div class="detail-section">
+                    <h3>Perfect For</h3>
+                    <ul>
+                        <li>Musicians & artists</li>
+                        <li>Album/EPK photos</li>
+                        <li>Personal branding</li>
+                        <li>Website imagery</li>
+                        <li>Social media campaigns</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="additional-info">
+                <p><strong>Additional images:</strong> $25 per image | <strong>Delivery:</strong> 10-14 business days | <a href="preparation.html" class="service-link-btn">Preparation Guide</a> | <a href="vendors.html" class="service-link-btn">Makeup Artists & Stylists</a></p>
+            </div>
+        </div>
+
+        <!-- Quick Headshot Update -->
+        <div class="service-card">
+            <div class="service-header">
+                <h2>QUICK HEADSHOT UPDATE</h2>
+                <a href="/booking?package=Express#step-2" class="price-button">$150</a>
+            </div>
+            <span class="service-duration">45-Minute Session</span>
+            <p class="service-description">
+                Need a quick professional headshot? This streamlined session is perfect for busy professionals who need quality headshots on a tight timeline.
+            </p>
+            <div class="service-details">
+                <div class="detail-section">
+                    <h3>What's Included</h3>
+                    <ul>
+                        <li>3 polished headshots</li>
+                        <li>Single look/background</li>
+                        <li>Basic retouching</li>
+                        <li>48-hour turnaround</li>
+                        <li>Web-ready files</li>
+                        <li>Direct download link</li>
+                    </ul>
+                </div>
+                <div class="detail-section">
+                    <h3>Perfect For</h3>
+                    <ul>
+                        <li>Last-minute auditions</li>
+                        <li>Quick updates</li>
+                        <li>Corporate headshots</li>
+                        <li>Speaker bios</li>
+                        <li>Emergency needs</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="additional-info">
+                <p><strong>Additional images:</strong> $30 per image | <strong>Delivery:</strong> 48 hours | <a href="preparation.html" class="service-link-btn">Preparation Guide</a> | <a href="vendors.html" class="service-link-btn">Makeup Artists & Stylists</a></p>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- Booking CTA -->
+    <section class="booking-section">
+        <h2>Ready to Book Your Session?</h2>
+        <p>Let's create cinematic portraits that elevate your image and advance your career</p>
+        <div class="cta-buttons">
+            <a href="index.html#contact" class="cta-button">Book Now</a>
+            <a href="faq.html" class="cta-button secondary">View FAQ</a>
+        </div>
+    </section>
+
+    <script src="js/api-config.js"></script>
+    <script src="js/integrate-api.js"></script>
+    <script src="js/script.js?v=20250828"></script>
+</body>
+</html>

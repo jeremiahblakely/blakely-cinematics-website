@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Analytics - Blakely Cinematics</title>
+    <meta name="description" content="Admin analytics dashboard for Blakely Cinematics">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css?v=20250828">
+    
+    <!-- AWS CloudWatch RUM Analytics -->
+    <script>
+      (function(n,i,v,r,s,c,x,z){x=window.AwsRumClient={q:[],n:i,i:i,v:v,r:r,c:c};window[n]=function(c,p){x.q.push({c:c,p:p});};z=document.createElement('script');z.async=true;z.src=s;document.head.insertBefore(z,document.head.getElementsByTagName('script')[0]);})(
+        'cwr',
+        '1a163e06-eb6a-4131-bdb1-6e27fbb0799c',
+        '1.0.0',
+        'us-east-1',
+        'https://client.rum.us-east-1.amazonaws.com/1.19.0/cwr.js',
+        {
+          sessionSampleRate: 1 ,
+          endpoint: "https://dataplane.rum.us-east-1.amazonaws.com" ,
+          telemetries: ["performance","errors","http"] ,
+          allowCookies: true ,
+          enableXRay: false ,
+          signing: true
+        }
+      );
+    </script>
+</head>
+<body class="admin-page">
+<header id="adminBar" class="admin-bar">
+  <a class="admin-logo" href="admin.html" title="Dashboard">BLAKELY <span class="admin-accent">ADMIN</span></a>
+  <nav class="admin-nav" aria-label="Admin navigation">
+    <a href="admin-scheduling.html">Scheduling</a>
+    <a href="admin-mail.html">Mail</a>
+    <a href="admin-bookings.html">Bookings</a>
+    <a href="admin-galleries.html">Galleries</a>
+    <a href="admin-crm.html">CRM</a>
+    <a href="admin-finance.html">Finance</a>
+    <a href="admin-tasks.html">Tasks</a>
+    <a href="admin-assets.html">Assets</a>
+    <a href="admin-audit.html">Audit</a>
+  </nav>
+  <div class="admin-actions">
+    <a class="admin-settings" href="admin-settings.html" title="Settings" aria-label="Settings">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M19.4 13.5a7.6 7.6 0 0 0 .05-3l1.86-1.43a.7.7 0 0 0 .16-.89l-1.76-3.05a.7.7 0 0 0-.83-.32l-2.2.73a7.63 7.63 0 0 0-2.6-1.5l-.33-2.3A.7.7 0 0 0 12 1h-3.5a.7.7 0 0 0-.69.59l-.33 2.3a7.63 7.63 0 0 0-2.6 1.5l-2.2-.73a.7.7 0 0 0-.83.32L.09 8.03a.7.7 0 0 0 .16.9L2.1 10.36a7.6 7.6 0 0 0 0 3L.25 14.8a.7.7 0 0 0-.16.9l1.76 3.05c.18.31.54.45.88.33l2.2-.74c.76.62 1.64 1.12 2.6 1.5l.33 2.3c.05.34.34.58.68.59H12c.34 0 .64-.25.69-.59l.33-2.3c.96-.38 1.84-.88 2.6-1.5l2.2.74c.34.12.7-.02.88-.33l1.76-3.05a.7.7 0 0 0-.16-.9L19.4 13.5Z" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+    </a>
+    <a class="admin-signout" href="admin-login.html">Sign out</a>
+  </div>
+  <script>(function(){var p=location.pathname.replace(/\/+$/,'');document.querySelectorAll('#adminBar .admin-nav a').forEach(function(a){var h=a.getAttribute('href');if(h&&h!=='#'&&p===h){a.classList.add('active');}});})();</script>
+</header>
+
+
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+    
+    <!-- Admin Header -->
+    <nav class="admin-nav">
+        <div class="nav-container">
+            <a href="admin.html" class="admin-logo">BLAKELY ADMIN</a>
+            <nav id="header-tabs">
+                <a href="../admin/mail.html" data-tab="mail">Mail</a>
+                <a href="admin-galleries.html" data-tab="galleries">Galleries</a>
+                <a href="admin-clients.html" data-tab="clients">Clients</a>
+                <a href="admin-analytics.html" data-tab="analytics">Analytics</a>
+                <a href="admin-settings.html" data-tab="settings">Settings</a>
+            </nav>
+            <a href="index.html" class="admin-sign-out" onclick="adminSignOut(event)">Sign Out</a>
+        </div>
+    </nav>
+    
+    <!-- Admin Dashboard -->
+    <main class="admin-dashboard">
+        <section class="admin-section">
+            <div class="section-header">
+                <h2 class="section-title">Analytics</h2>
+            </div>
+            <p>Analytics dashboard coming soon.</p>
+        </section>
+    </main>
+    
+    <!-- Admin Footer -->
+    <footer class="admin-footer">
+        <div class="footer-container">
+            <p>&copy; 2024 Blakely Cinematics Admin Panel | Secure gallery management system</p>
+        </div>
+    </footer>
+    
+    <!-- JavaScript -->
+    <script>
+        // Admin Authentication Check - Must be at the very top
+        (function() {
+            const isAuthenticated = sessionStorage.getItem('adminAuthenticated');
+            const loginTime = sessionStorage.getItem('adminLoginTime');
+            const currentTime = Date.now();
+            const sessionTimeout = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+            
+            // Check if admin is authenticated and session hasn't expired
+            if (!isAuthenticated || !loginTime || (currentTime - parseInt(loginTime)) > sessionTimeout) {
+                sessionStorage.removeItem('adminAuthenticated');
+                sessionStorage.removeItem('adminLoginTime');
+                window.location.href = 'admin-login.html';
+                return;
+            }
+            
+        })();
+        
+        // Admin Sign Out Function
+        function adminSignOut(event) {
+            event.preventDefault();
+            
+            // Clear admin authentication
+            sessionStorage.removeItem('adminAuthenticated');
+            sessionStorage.removeItem('adminLoginTime');
+            
+            // Redirect to main site
+            window.location.href = 'index.html';
+        }
+    </script>
+    
+    <!-- Load main script for shared functionality -->
+    <script src="js/api-config.js"></script>
+    <script src="js/integrate-api.js"></script>
+    <script src="js/script.js?v=20250828"></script>
+    
+    <script>
+    (function(){
+        var links = document.querySelectorAll('#header-tabs a');
+        if (!links.length) return;
+        var page = location.pathname.split('/').pop() || 'admin.html';
+        links.forEach(function(a){
+            if (a.getAttribute('href') === page) a.classList.add('active');
+        });
+    })();
+    </script>
+</body>
+</html>
