@@ -2139,16 +2139,20 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  amount: 17500,
-                  currency: 'usd',
-                  mode: 'payment',
-                  customerEmail,
-                  clientName,
-                  phone,
-                  sessionDate: selectedDate instanceof Date ? selectedDate.toISOString() : selectedDate,
-                  sessionTime: selectedTime,
-                  package: selectedPackage,
-                  location: sessionLocation,
+                  // Required by Lambda
+                  email: customerEmail,
+                  name: clientName,
+                  packageType: selectedPackage || 'deposit',
+
+                  // Extra info goes into metadata
+                  metadata: {
+                    phone,
+                    sessionDate: selectedDate instanceof Date ? selectedDate.toISOString() : selectedDate,
+                    sessionTime: selectedTime,
+                    location: sessionLocation
+                  },
+
+                  // Tells Lambda which origin to redirect back to
                   successOrigin: window.location.origin
                 })
               }
