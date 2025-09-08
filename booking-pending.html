@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Received - Blakely Cinematics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .pending-container {
+            max-width: 600px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pending-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.5s ease-out 0.2s both;
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+        
+        .pending-icon svg {
+            width: 50px;
+            height: 50px;
+            color: white;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 100;
+            letter-spacing: 0.1rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+        
+        .details {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            color: #888;
+        }
+        
+        .detail-value {
+            color: #fff;
+            font-weight: 600;
+        }
+        
+        .next-steps {
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            border-radius: 10px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+        
+        .next-steps h3 {
+            color: #FF6B35;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .next-steps ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .next-steps li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+        }
+        
+        .next-steps li::before {
+            content: "📧";
+            font-size: 1.2rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #FF6B35;
+            border: 2px solid #FF6B35;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 107, 53, 0.1);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 20px;
+            color: #FFC107;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .pending-container {
+                padding: 0 10px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="pending-container">
+        <div class="pending-icon">
+            <i class="fas fa-clock"></i>
+        </div>
+        
+        <h1>Request received — pending review</h1>
+        
+        <p class="subtitle">
+            We'll email date options or approval shortly.
+        </p>
+        
+        <div class="details" id="booking-details">
+            <div class="detail-row">
+                <span class="detail-label">Payment Status:</span>
+                <span class="detail-value" style="color: #22c55e;">
+                    <i class="fas fa-check-circle"></i> Deposit Paid ($175)
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Booking Status:</span>
+                <span class="detail-value">
+                    <div class="status-badge">
+                        <i class="fas fa-clock"></i>
+                        Pending Review
+                    </div>
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Confirmation Number:</span>
+                <span class="detail-value" id="confirmation-id">Loading...</span>
+            </div>
+        </div>
+        
+        <div class="next-steps">
+            <h3><i class="fas fa-calendar-check" style="margin-right: 8px;"></i>What happens next?</h3>
+            <ul>
+                <li>We'll review your request and available dates within 24 hours</li>
+                <li>You'll receive an email with available time slots for your session</li>
+                <li>Once confirmed, we'll send session details and preparation guide</li>
+                <li>Your VIP gallery will be created and access details provided</li>
+            </ul>
+        </div>
+        
+        <div class="buttons">
+            <a href="/" class="btn btn-primary">Return Home</a>
+            <a href="preparation.html" class="btn btn-secondary">Session Prep Guide</a>
+        </div>
+    </div>
+    
+    <script>
+        // Extract session ID from URL for confirmation number
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+        
+        if (sessionId) {
+            document.getElementById('confirmation-id').textContent = sessionId.substring(0, 20) + '...';
+        } else {
+            document.getElementById('confirmation-id').textContent = 'N/A';
+        }
+        
+        // Clear any sensitive booking data from session storage
+        setTimeout(() => {
+            sessionStorage.removeItem('bookingData');
+            localStorage.removeItem('blakely_booking_progress');
+        }, 1000);
+    </script>
+</body>
+</html>
