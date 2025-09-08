@@ -4,105 +4,96 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking Confirmed - Blakely Cinematics</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .success-container {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--dark);
-            padding: 2rem;
+            padding: 20px;
         }
         
-        .success-card {
-            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 107, 53, 0.05));
-            border: 1px solid rgba(255, 107, 53, 0.3);
-            border-radius: 20px;
-            padding: 3rem;
+        .success-container {
             max-width: 600px;
-            width: 100%;
             text-align: center;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            animation: fadeInScale 0.5s ease;
+            animation: fadeIn 0.5s ease-in;
         }
         
-        @keyframes fadeInScale {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        .success-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 2rem;
-            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
+        .checkmark {
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
+            background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+            margin: 0 auto 30px;
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: checkmark 0.8s ease 0.3s both;
+            animation: scaleIn 0.5s ease-out 0.2s both;
         }
         
-        @keyframes checkmark {
-            0% {
-                transform: scale(0) rotate(-45deg);
-            }
-            50% {
-                transform: scale(1.2) rotate(-45deg);
-            }
-            100% {
-                transform: scale(1) rotate(0deg);
-            }
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
         }
         
-        .success-icon i {
-            font-size: 40px;
-            color: white;
+        .checkmark svg {
+            width: 50px;
+            height: 50px;
+            stroke: white;
+            stroke-width: 3;
+            fill: none;
+            stroke-dasharray: 100;
+            animation: draw 0.5s ease-out 0.5s both;
         }
         
-        .success-title {
+        @keyframes draw {
+            from { stroke-dashoffset: 100; }
+            to { stroke-dashoffset: 0; }
+        }
+        
+        h1 {
             font-size: 2.5rem;
-            color: var(--light);
-            margin-bottom: 1rem;
-            font-weight: 200;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
-        .success-message {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin-bottom: 2rem;
-        }
-        
-        .booking-details {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin: 2rem 0;
-            text-align: left;
-        }
-        
-        .booking-details h3 {
-            color: var(--primary);
+        .message {
             font-size: 1.2rem;
-            margin-bottom: 1rem;
-            font-weight: 300;
+            line-height: 1.6;
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+        
+        .details {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: left;
         }
         
         .detail-row {
             display: flex;
             justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         .detail-row:last-child {
@@ -110,73 +101,53 @@
         }
         
         .detail-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
+            color: #888;
         }
         
         .detail-value {
-            color: var(--light);
-            font-weight: 300;
+            color: #fff;
+            font-weight: 600;
         }
         
-        .next-steps {
-            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin: 2rem 0;
-            text-align: left;
+        .gallery-info {
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 30px 0;
         }
         
-        .next-steps h3 {
-            color: #22c55e;
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-            font-weight: 300;
+        .gallery-info h3 {
+            color: #FF6B35;
+            margin-bottom: 15px;
         }
         
-        .next-steps ul {
-            list-style: none;
-            padding: 0;
+        .credentials {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
         }
         
-        .next-steps li {
-            color: var(--text-secondary);
-            padding: 0.5rem 0;
-            padding-left: 1.5rem;
-            position: relative;
-        }
-        
-        .next-steps li:before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #22c55e;
-        }
-        
-        .action-buttons {
+        .buttons {
             display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
+            gap: 20px;
             justify-content: center;
+            margin-top: 40px;
         }
         
         .btn {
-            padding: 12px 30px;
+            padding: 15px 30px;
             border-radius: 8px;
             text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1rem;
+            font-weight: 600;
             transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
+            display: inline-block;
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
+            background: linear-gradient(135deg, #FF6B35, #FF8C5A);
             color: white;
         }
         
@@ -186,151 +157,147 @@
         }
         
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--light);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: #FF6B35;
+            border: 2px solid #FF6B35;
         }
         
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 107, 53, 0.1);
         }
         
-        .loading-spinner {
+        .loading {
             display: none;
-            color: var(--text-secondary);
-            margin-top: 2rem;
+            color: #888;
+            margin-top: 20px;
         }
         
-        .loading-spinner.active {
-            display: block;
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 107, 53, 0.3);
+            border-top-color: #FF6B35;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="success-container">
-        <div class="success-card">
-            <div class="success-icon">
-                <i class="fas fa-check"></i>
+        <div class="checkmark">
+            <svg viewBox="0 0 52 52">
+                <path d="M14 27l10 10 20-20" />
+            </svg>
+        </div>
+        
+        <h1>Booking Confirmed!</h1>
+        
+        <p class="message">
+            Thank you for your deposit. Your photography session has been successfully booked.
+            You'll receive a confirmation email shortly with all the details.
+        </p>
+        
+        <div class="details" id="booking-details">
+            <div class="detail-row">
+                <span class="detail-label">Confirmation Number:</span>
+                <span class="detail-value" id="confirmation-id">Loading...</span>
             </div>
-            
-            <h1 class="success-title">Booking Confirmed!</h1>
-            
-            <p class="success-message">
-                Thank you for choosing Blakely Cinematics. Your deposit has been processed successfully, 
-                and your session is confirmed. You'll receive a confirmation email shortly with all the details.
+            <div class="detail-row">
+                <span class="detail-label">Deposit Amount:</span>
+                <span class="detail-value">$175.00</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Payment Status:</span>
+                <span class="detail-value" style="color: #22c55e;">✓ Paid</span>
+            </div>
+        </div>
+        
+        <div class="gallery-info" id="gallery-info" style="display: none;">
+            <h3>🎯 Your VIP Gallery Access</h3>
+            <p>Your private gallery will be available after your session. Save these credentials:</p>
+            <div class="credentials">
+                <div>Gallery Code: <strong id="gallery-code">-</strong></div>
+                <div>Password: <strong id="gallery-password">-</strong></div>
+            </div>
+            <p style="font-size: 0.9rem; color: #888; margin-top: 10px;">
+                * You'll also receive these credentials via email
             </p>
-            
-            <div class="booking-details">
-                <h3><i class="fas fa-calendar-check"></i> Booking Details</h3>
-                <div id="booking-info">
-                    <div class="detail-row">
-                        <span class="detail-label">Loading booking details...</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="next-steps">
-                <h3><i class="fas fa-list-check"></i> What's Next?</h3>
-                <ul>
-                    <li>Check your email for confirmation and preparation guide</li>
-                    <li>Review our session preparation tips</li>
-                    <li>Contact us if you need to make any changes</li>
-                    <li>Your gallery will be available 2-3 weeks after the session</li>
-                </ul>
-            </div>
-            
-            <div class="action-buttons">
-                <a href="/" class="btn btn-primary">
-                    <i class="fas fa-home"></i> Return Home
-                </a>
-                <a href="vip-login.html" class="btn btn-secondary">
-                    <i class="fas fa-user-circle"></i> Access VIP Portal
-                </a>
-            </div>
-            
-            <div class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i> Creating your gallery access...
-            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <span class="spinner"></span>
+            Processing your booking details...
+        </div>
+        
+        <div class="buttons">
+            <a href="/" class="btn btn-primary">Return Home</a>
+            <a href="/vip-login.html" class="btn btn-secondary">VIP Login</a>
         </div>
     </div>
     
     <script>
-        // Display booking details from session storage
-        document.addEventListener('DOMContentLoaded', function() {
+        // Extract session ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+        
+        if (sessionId) {
+            document.getElementById('confirmation-id').textContent = sessionId.substring(0, 20) + '...';
+            
+            // Check for stored booking data
             const bookingData = sessionStorage.getItem('bookingData');
-            const bookingInfo = document.getElementById('booking-info');
-            
             if (bookingData) {
-                const data = JSON.parse(bookingData);
-                const packages = {
-                    essential: { name: 'Essential', price: 250 },
-                    signature: { name: 'Signature Cinematic', price: 450 },
-                    creative: { name: 'Creative', price: 575 }
-                };
-                
-                const packageInfo = packages[data.package] || { name: 'Custom', price: 0 };
-                
-                bookingInfo.innerHTML = `
-                    <div class="detail-row">
-                        <span class="detail-label">Client Name</span>
-                        <span class="detail-value">${data.name}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Email</span>
-                        <span class="detail-value">${data.email}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Package</span>
-                        <span class="detail-value">${packageInfo.name}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Session Date</span>
-                        <span class="detail-value">${data.date || 'To be scheduled'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Time</span>
-                        <span class="detail-value">${data.time || 'To be scheduled'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Deposit Paid</span>
-                        <span class="detail-value" style="color: #22c55e;">$175.00</span>
-                    </div>
-                `;
-                
-                // Check for VIP credentials
-                const vipCredentials = sessionStorage.getItem('vipCredentials');
-                if (vipCredentials) {
-                    const creds = JSON.parse(vipCredentials);
-                    // Show gallery creation success
-                    setTimeout(() => {
-                        const spinner = document.querySelector('.loading-spinner');
-                        spinner.innerHTML = `
-                            <div style="color: #22c55e; margin-top: 1rem;">
-                                <i class="fas fa-check-circle"></i> 
-                                Gallery access created! Your gallery code is: <strong>${creds.galleryCode}</strong>
-                            </div>
-                        `;
-                        spinner.classList.add('active');
-                    }, 2000);
+                try {
+                    const data = JSON.parse(bookingData);
+                    
+                    // Display gallery credentials if available
+                    if (data.galleryCode) {
+                        document.getElementById('gallery-info').style.display = 'block';
+                        document.getElementById('gallery-code').textContent = data.galleryCode;
+                        document.getElementById('gallery-password').textContent = data.password || 'Check your email';
+                    }
+                    
+                    // Add more booking details if available
+                    if (data.clientName || data.date) {
+                        const detailsDiv = document.getElementById('booking-details');
+                        
+                        if (data.clientName) {
+                            detailsDiv.innerHTML += `
+                                <div class="detail-row">
+                                    <span class="detail-label">Client Name:</span>
+                                    <span class="detail-value">${data.clientName}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        if (data.date) {
+                            detailsDiv.innerHTML += `
+                                <div class="detail-row">
+                                    <span class="detail-label">Session Date:</span>
+                                    <span class="detail-value">${data.date}</span>
+                                </div>
+                            `;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing booking data:', e);
                 }
-            } else {
-                // Fallback if no data
-                bookingInfo.innerHTML = `
-                    <div class="detail-row">
-                        <span class="detail-label">Your booking has been confirmed.</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Please check your email for details.</span>
-                    </div>
-                `;
             }
-            
-            // Clear sensitive data after displaying
-            setTimeout(() => {
-                sessionStorage.removeItem('bookingData');
-            }, 5000);
-        });
+        } else {
+            document.getElementById('confirmation-id').textContent = 'N/A';
+        }
+        
+        // Clear sensitive data after 5 seconds
+        setTimeout(() => {
+            sessionStorage.removeItem('bookingData');
+        }, 5000);
     </script>
 </body>
 </html>
-
