@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Mail - Theme Customization System</title>
+    <style>
+        /* ================================
+           THEME CUSTOMIZATION SYSTEM
+           ================================ */
+        
+        :root {
+            /* Default theme variables */
+            --header-height: 64px;
+            --brand-font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+        
+        /* Customizable Theme Variables */
+        .theme-custom {
+            /* Core Colors - Easy to change */
+            --neon-primary: #00ffff;        /* Main border color */
+            --neon-secondary: #ff00ff;      /* Secondary accents */
+            --neon-accent: #39ff14;         /* Highlights */
+            --neon-warning: #00e5ff;        /* Changed from yellow */
+            --neon-danger: #ff0066;         /* Alerts */
+            --neon-text: #00ffff;           /* Primary text */
+            --neon-text-dim: rgba(0, 255, 255, 0.6);
+            
+            /* Zone Backgrounds - Adjust contrast */
+            --zone-sidebar: rgba(0, 0, 0, 0.95);
+            --zone-email-list: rgba(0, 10, 20, 0.9);
+            --zone-email-content: rgba(5, 15, 25, 0.85);
+            --zone-widgets: rgba(0, 5, 10, 0.93);
+            --zone-reply: rgba(10, 20, 30, 0.8);
+            
+            /* Unified Border System */
+            --border-color-base: 0, 255, 255; /* RGB values for rgba() */
+            --border-major: rgba(var(--border-color-base), 0.4);
+            --border-minor: rgba(var(--border-color-base), 0.25);
+            --border-subtle: rgba(var(--border-color-base), 0.15);
+            --border-hover: rgba(var(--border-color-base), 0.6);
+            --border-active: rgba(var(--border-color-base), 0.8);
+            
+            /* Glow Effects */
+            --glow-intensity-low: 10px;
+            --glow-intensity-medium: 20px;
+            --glow-intensity-high: 30px;
+            --glow-opacity-low: 0.2;
+            --glow-opacity-medium: 0.3;
+            --glow-opacity-high: 0.5;
+            
+            /* Typography */
+            --font-primary: 'Helvetica Neue', sans-serif;
+            --font-mono: 'SF Mono', Monaco, monospace;
+            --font-size-xs: 11px;
+            --font-size-sm: 13px;
+            --font-size-base: 14px;
+            --font-size-lg: 16px;
+            --font-size-xl: 20px;
+            --font-weight-light: 200;
+            --font-weight-normal: 300;
+            --font-weight-medium: 400;
+            --font-weight-bold: 600;
+            
+            /* Spacing Scale */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-2xl: 48px;
+            
+            /* Animation */
+            --transition-speed-fast: 0.15s;
+            --transition-speed: 0.3s;
+            --transition-speed-slow: 0.5s;
+            --animation-pulse: 2s;
+            --animation-glow: 3s;
+            
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-round: 50%;
+        }
+        
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-primary);
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-normal);
+            background: #000;
+            color: var(--neon-text);
+            overflow-x: hidden;
+        }
+        
+        /* Container */
+        .container {
+            width: 100%;
+            max-width: 2560px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        /* Admin Header */
+        .admin-header {
+            height: var(--header-height);
+            background: #0b0b0b;
+            border-bottom: 1px solid var(--border-major);
+            padding: 0 var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .admin-logo {
+            font-size: 1.4rem;
+            font-weight: var(--font-weight-light);
+            letter-spacing: 0.14em;
+            text-decoration: none;
+            background: linear-gradient(90deg, #e6eef9 0%, #9ec5ff 35%, #6ea8fe 65%, #dbeafe 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .mail-indicator {
+            color: #9b87f5;
+            margin-left: var(--spacing-sm);
+            padding-left: var(--spacing-sm);
+            border-left: 1px solid rgba(155, 135, 245, 0.3);
+        }
+        
+        /* Main Layout */
+        .main-layout {
+            display: flex;
+            height: calc(100vh - var(--header-height));
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: var(--zone-sidebar);
+            border-right: 1px solid var(--border-major);
+            padding: var(--spacing-lg);
+            overflow-y: auto;
+        }
+        
+        .sidebar-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-medium);
+            color: var(--neon-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .sidebar-subtitle {
+            font-size: var(--font-size-sm);
+            color: var(--neon-text-dim);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .sidebar-item {
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-xs);
+            border-radius: var(--radius-md);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(var(--border-color-base), 0.05);
+            border-color: var(--border-hover);
+            box-shadow: inset 0 0 var(--glow-intensity-low) rgba(var(--border-color-base), var(--glow-opacity-low));
+        }
+        
+        .sidebar-item.active {
+            background: rgba(var(--border-color-base), 0.1);
+            border-color: var(--border-active);
+            box-shadow: inset 0 0 var(--glow-intensity-medium) rgba(var(--border-color-base), var(--glow-opacity-medium));
+        }
+        
+        .sidebar-badge {
+            background: var(--neon-accent);
+            color: #000;
+            padding: 2px 8px;
+            border-radius: var(--radius-round);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-bold);
+        }
+        
+        /* Email List */
+        .email-list {
+            width: 400px;
+            background: var(--zone-email-list);
+            border-right: 1px solid var(--border-major);
+            overflow-y: auto;
+        }
+        
+        .search-bar {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-minor);
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            color: var(--neon-text);
+            font-size: var(--font-size-sm);
+            transition: all var(--transition-speed);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--border-hover);
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: inset 0 0 var(--glow-intensity-low) rgba(var(--border-color-base), var(--glow-opacity-low));
+        }
+        
+        .email-cards {
+            padding: var(--spacing-md);
+        }
+        
+        .email-card {
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+        
+        .email-card:hover {
+            border-color: var(--border-hover);
+            box-shadow: inset 0 0 var(--glow-intensity-medium) rgba(var(--border-color-base), var(--glow-opacity-low));
+        }
+        
+        .email-card.selected {
+            background: rgba(var(--border-color-base), 0.05);
+            border-color: var(--border-active);
+            box-shadow: inset 0 0 var(--glow-intensity-high) rgba(var(--border-color-base), var(--glow-opacity-medium));
+        }
+        
+        /* Email View */
+        .email-view {
+            flex: 1;
+            background: var(--zone-email-content);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .email-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-minor);
+        }
+        
+        .email-content {
+            flex: 1;
+            padding: var(--spacing-lg);
+            overflow-y: auto;
+        }
+        
+        .email-reply {
+            padding: var(--spacing-lg);
+            background: var(--zone-reply);
+            border-top: 1px solid var(--border-minor);
+        }
+        
+        .reply-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: var(--spacing-md);
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            color: var(--neon-text);
+            resize: vertical;
+            transition: all var(--transition-speed);
+        }
+        
+        .reply-textarea:focus {
+            outline: none;
+            border-color: var(--border-hover);
+            box-shadow: inset 0 0 var(--glow-intensity-low) rgba(var(--border-color-base), var(--glow-opacity-low));
+        }
+        
+        /* Widgets */
+        .widgets {
+            width: 280px;
+            background: var(--zone-widgets);
+            padding: var(--spacing-lg);
+            overflow-y: auto;
+        }
+        
+        /* Developer Panel */
+        .dev-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            z-index: 9999;
+            display: none;
+            max-width: 320px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+        
+        .dev-panel.active {
+            display: block;
+        }
+        
+        .dev-panel h3 {
+            color: #fff;
+            margin-bottom: var(--spacing-md);
+            font-size: var(--font-size-lg);
+        }
+        
+        .dev-control {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .dev-control label {
+            display: block;
+            color: #aaa;
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .dev-control input[type="color"],
+        .dev-control input[type="range"],
+        .dev-control input[type="number"] {
+            width: 100%;
+            padding: var(--spacing-xs);
+            background: #0a0a0a;
+            border: 1px solid #444;
+            border-radius: var(--radius-sm);
+            color: #fff;
+        }
+        
+        .dev-control input[type="range"] {
+            cursor: pointer;
+        }
+        
+        .dev-control .value-display {
+            display: inline-block;
+            margin-left: var(--spacing-sm);
+            color: var(--neon-primary);
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xs);
+        }
+        
+        .dev-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            z-index: 9998;
+            font-size: var(--font-size-sm);
+            transition: all var(--transition-speed);
+        }
+        
+        .dev-toggle:hover {
+            background: #444;
+            transform: scale(1.05);
+        }
+        
+        .dev-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid #333;
+        }
+        
+        .dev-btn {
+            flex: 1;
+            padding: var(--spacing-sm);
+            background: #0066cc;
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            transition: all var(--transition-speed);
+        }
+        
+        .dev-btn:hover {
+            background: #0052a3;
+        }
+        
+        .dev-btn.secondary {
+            background: #444;
+        }
+        
+        .dev-btn.secondary:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="theme-custom">
+    <div class="container">
+        <!-- Admin Header -->
+        <header class="admin-header">
+            <a href="#" class="admin-logo">
+                BLAKELY ADMIN<span class="mail-indicator">MAIL</span>
+            </a>
+            <div class="header-actions">
+                <span style="color: #9aa0a6; font-size: 13px;">Theme System Active</span>
+            </div>
+        </header>
+        
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-title">Mailbox</div>
+                <div class="sidebar-subtitle">admin@blakelycinematics.com</div>
+                
+                <div class="sidebar-item active">
+                    <span>📥 Inbox</span>
+                    <span class="sidebar-badge">24</span>
+                </div>
+                <div class="sidebar-item">
+                    <span>⭐ Starred</span>
+                    <span class="sidebar-badge">3</span>
+                </div>
+                <div class="sidebar-item">
+                    <span>📤 Sent</span>
+                </div>
+                <div class="sidebar-item">
+                    <span>📝 Drafts</span>
+                    <span class="sidebar-badge">2</span>
+                </div>
+            </aside>
+            
+            <!-- Email List -->
+            <section class="email-list">
+                <div class="search-bar">
+                    <input type="text" class="search-input" placeholder="Search emails...">
+                </div>
+                
+                <div class="email-cards">
+                    <div class="email-card selected">
+                        <div style="font-weight: 500;">John Davidson</div>
+                        <div style="font-size: 12px; opacity: 0.7;">Re: Wedding Video Edit</div>
+                        <div style="font-size: 11px; opacity: 0.5; margin-top: 4px;">2:34 PM</div>
+                    </div>
+                    <div class="email-card">
+                        <div style="font-weight: 500;">Sarah Goldman</div>
+                        <div style="font-size: 12px; opacity: 0.7;">Project Timeline Update</div>
+                        <div style="font-size: 11px; opacity: 0.5; margin-top: 4px;">11:20 AM</div>
+                    </div>
+                    <div class="email-card">
+                        <div style="font-weight: 500;">Marcus Chen</div>
+                        <div style="font-size: 12px; opacity: 0.7;">Equipment Rental</div>
+                        <div style="font-size: 11px; opacity: 0.5; margin-top: 4px;">9:45 AM</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Email View -->
+            <section class="email-view">
+                <div class="email-header">
+                    <h2 style="font-size: 20px; font-weight: 400; margin-bottom: 8px;">Re: Wedding Video Edit</h2>
+                    <div style="font-size: 13px; opacity: 0.6;">From: John Davidson • December 17, 2024</div>
+                </div>
+                
+                <div class="email-content">
+                    <p>Hi Team,</p>
+                    <br>
+                    <p>I've reviewed the final cut of the Thompson wedding video, and I'm really impressed with the work!</p>
+                    <br>
+                    <p>The color grading looks fantastic, and the music timing is perfect.</p>
+                </div>
+                
+                <div class="email-reply">
+                    <textarea class="reply-textarea" placeholder="Type your reply..."></textarea>
+                </div>
+            </section>
+            
+            <!-- Widgets -->
+            <aside class="widgets">
+                <div style="padding: 16px; background: rgba(0, 0, 0, 0.5); border-radius: 8px; border: 1px solid var(--border-minor);">
+                    <h3 style="font-size: 14px; margin-bottom: 12px; color: var(--neon-accent);">Quick Actions</h3>
+                    <div style="font-size: 12px; opacity: 0.7;">• New Email</div>
+                    <div style="font-size: 12px; opacity: 0.7;">• Schedule</div>
+                    <div style="font-size: 12px; opacity: 0.7;">• Settings</div>
+                </div>
+            </aside>
+        </div>
+    </div>
+    
+    <!-- Developer Toggle Button -->
+    <button class="dev-toggle" onclick="toggleDevPanel()">🎨 Theme Controls</button>
+    
+    <!-- Developer Panel -->
+    <div class="dev-panel" id="devPanel">
+        <h3>Theme Customization</h3>
+        
+        <!-- Primary Color -->
+        <div class="dev-control">
+            <label>Primary Color (Borders/Text)</label>
+            <input type="color" id="primaryColor" value="#00ffff" onchange="updatePrimaryColor(this.value)">
+        </div>
+        
+        <!-- Accent Color -->
+        <div class="dev-control">
+            <label>Accent Color (Badges/Highlights)</label>
+            <input type="color" id="accentColor" value="#39ff14" onchange="updateAccentColor(this.value)">
+        </div>
+        
+        <!-- Border Opacity -->
+        <div class="dev-control">
+            <label>Border Strength <span class="value-display" id="borderValue">40%</span></label>
+            <input type="range" id="borderOpacity" min="10" max="80" value="40" 
+                   oninput="updateBorderOpacity(this.value)">
+        </div>
+        
+        <!-- Glow Intensity -->
+        <div class="dev-control">
+            <label>Glow Intensity <span class="value-display" id="glowValue">20px</span></label>
+            <input type="range" id="glowIntensity" min="5" max="50" value="20" 
+                   oninput="updateGlowIntensity(this.value)">
+        </div>
+        
+        <!-- Zone Darkness -->
+        <div class="dev-control">
+            <label>Sidebar Darkness <span class="value-display" id="sidebarValue">95%</span></label>
+            <input type="range" id="sidebarDarkness" min="70" max="100" value="95" 
+                   oninput="updateZoneDarkness('sidebar', this.value)">
+        </div>
+        
+        <div class="dev-control">
+            <label>Email List Darkness <span class="value-display" id="listValue">90%</span></label>
+            <input type="range" id="listDarkness" min="70" max="100" value="90" 
+                   oninput="updateZoneDarkness('list', this.value)">
+        </div>
+        
+        <div class="dev-control">
+            <label>Content Darkness <span class="value-display" id="contentValue">85%</span></label>
+            <input type="range" id="contentDarkness" min="70" max="100" value="85" 
+                   oninput="updateZoneDarkness('content', this.value)">
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="dev-actions">
+            <button class="dev-btn" onclick="exportSettings()">Export</button>
+            <button class="dev-btn secondary" onclick="resetSettings()">Reset</button>
+        </div>
+    </div>
+    
+    <script>
+        // Toggle Developer Panel
+        function toggleDevPanel() {
+            const panel = document.getElementById('devPanel');
+            panel.classList.toggle('active');
+        }
+        
+        // Convert hex to RGB
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? 
+                `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+                '0, 255, 255';
+        }
+        
+        // Update Primary Color
+        function updatePrimaryColor(color) {
+            const rgb = hexToRgb(color);
+            document.documentElement.style.setProperty('--neon-primary', color);
+            document.documentElement.style.setProperty('--neon-text', color);
+            document.documentElement.style.setProperty('--border-color-base', rgb);
+            
+            // Update all border variables
+            const opacity = document.getElementById('borderOpacity').value / 100;
+            document.documentElement.style.setProperty('--border-major', `rgba(${rgb}, ${opacity})`);
+            document.documentElement.style.setProperty('--border-minor', `rgba(${rgb}, ${opacity * 0.6})`);
+            document.documentElement.style.setProperty('--border-subtle', `rgba(${rgb}, ${opacity * 0.3})`);
+        }
+        
+        // Update Accent Color
+        function updateAccentColor(color) {
+            document.documentElement.style.setProperty('--neon-accent', color);
+        }
+        
+        // Update Border Opacity
+        function updateBorderOpacity(value) {
+            document.getElementById('borderValue').textContent = value + '%';
+            const rgb = document.documentElement.style.getPropertyValue('--border-color-base') || '0, 255, 255';
+            const opacity = value / 100;
+            
+            document.documentElement.style.setProperty('--border-major', `rgba(${rgb}, ${opacity})`);
+            document.documentElement.style.setProperty('--border-minor', `rgba(${rgb}, ${opacity * 0.6})`);
+            document.documentElement.style.setProperty('--border-subtle', `rgba(${rgb}, ${opacity * 0.3})`);
+            document.documentElement.style.setProperty('--border-hover', `rgba(${rgb}, ${opacity * 1.5})`);
+            document.documentElement.style.setProperty('--border-active', `rgba(${rgb}, ${opacity * 2})`);
+        }
+        
+        // Update Glow Intensity
+        function updateGlowIntensity(value) {
+            document.getElementById('glowValue').textContent = value + 'px';
+            document.documentElement.style.setProperty('--glow-intensity-low', `${value * 0.5}px`);
+            document.documentElement.style.setProperty('--glow-intensity-medium', `${value}px`);
+            document.documentElement.style.setProperty('--glow-intensity-high', `${value * 1.5}px`);
+        }
+        
+        // Update Zone Darkness
+        function updateZoneDarkness(zone, value) {
+            const opacity = value / 100;
+            const displayId = zone + 'Value';
+            document.getElementById(displayId).textContent = value + '%';
+            
+            switch(zone) {
+                case 'sidebar':
+                    document.documentElement.style.setProperty('--zone-sidebar', `rgba(0, 0, 0, ${opacity})`);
+                    break;
+                case 'list':
+                    document.documentElement.style.setProperty('--zone-email-list', `rgba(0, 10, 20, ${opacity})`);
+                    break;
+                case 'content':
+                    document.documentElement.style.setProperty('--zone-email-content', `rgba(5, 15, 25, ${opacity * 0.9})`);
+                    break;
+            }
+        }
+        
+        // Export Settings
+        function exportSettings() {
+            const settings = {
+                primaryColor: document.getElementById('primaryColor').value,
+                accentColor: document.getElementById('accentColor').value,
+                borderOpacity: document.getElementById('borderOpacity').value,
+                glowIntensity: document.getElementById('glowIntensity').value,
+                sidebarDarkness: document.getElementById('sidebarDarkness').value,
+                listDarkness: document.getElementById('listDarkness').value,
+                contentDarkness: document.getElementById('contentDarkness').value,
+                timestamp: new Date().toISOString()
+            };
+            
+            const settingsText = JSON.stringify(settings, null, 2);
+            navigator.clipboard.writeText(settingsText);
+            
+            // Visual feedback
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            btn.style.background = '#22c55e';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '#0066cc';
+            }, 2000);
+            
+            console.log('Theme Settings:', settings);
+        }
+        
+        // Reset Settings
+        function resetSettings() {
+            document.getElementById('primaryColor').value = '#00ffff';
+            document.getElementById('accentColor').value = '#39ff14';
+            document.getElementById('borderOpacity').value = 40;
+            document.getElementById('glowIntensity').value = 20;
+            document.getElementById('sidebarDarkness').value = 95;
+            document.getElementById('listDarkness').value = 90;
+            document.getElementById('contentDarkness').value = 85;
+            
+            // Apply reset values
+            updatePrimaryColor('#00ffff');
+            updateAccentColor('#39ff14');
+            updateBorderOpacity(40);
+            updateGlowIntensity(20);
+            updateZoneDarkness('sidebar', 95);
+            updateZoneDarkness('list', 90);
+            updateZoneDarkness('content', 85);
+        }
+        
+        // Load saved settings if they exist
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('themeSettings');
+            if (saved) {
+                try {
+                    const settings = JSON.parse(saved);
+                    // Apply saved settings
+                    if (settings.primaryColor) {
+                        document.getElementById('primaryColor').value = settings.primaryColor;
+                        updatePrimaryColor(settings.primaryColor);
+                    }
+                    // ... apply other saved settings
+                } catch (e) {
+                    console.log('No saved settings found');
+                }
+            }
+        });
+        
+        // Auto-save settings on change
+        document.querySelectorAll('.dev-control input').forEach(input => {
+            input.addEventListener('change', () => {
+                const settings = {
+                    primaryColor: document.getElementById('primaryColor').value,
+                    accentColor: document.getElementById('accentColor').value,
+                    borderOpacity: document.getElementById('borderOpacity').value,
+                    glowIntensity: document.getElementById('glowIntensity').value,
+                    sidebarDarkness: document.getElementById('sidebarDarkness').value,
+                    listDarkness: document.getElementById('listDarkness').value,
+                    contentDarkness: document.getElementById('contentDarkness').value
+                };
+                localStorage.setItem('themeSettings', JSON.stringify(settings));
+            });
+        });
+    </script>
+</body>
+</html>
