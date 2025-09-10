@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail - Blakely Admin</title>
+    <meta name="description" content="Admin mail management for Blakely Cinematics">
+    
+    <!-- Date Created: December 9, 2024 8:30 AM -->
+    <!-- Last Updated: December 9, 2024 8:30 AM -->
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500&family=Inter:wght@300;400;500;600&display=swap');
+        
+        :root {
+            /* Cyberpunk Theme */
+            --bg-primary: #0A0014;
+            --bg-secondary: #13001F;
+            --bg-tertiary: #1D0029;
+            --surface: #2A0038;
+            --surface-hover: #350045;
+            
+            --accent-primary: #00FFFF;
+            --accent-secondary: #FF00FF;
+            --accent-glow: rgba(0, 255, 255, 0.5);
+            --accent-pulse: rgba(255, 0, 255, 0.5);
+            
+            --text-primary: #E0F2FE;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            
+            --border-default: rgba(0, 255, 255, 0.2);
+            --border-hover: rgba(255, 0, 255, 0.4);
+            
+            --success: #00FF88;
+            --warning: #FFAA00;
+            --error: #FF0055;
+            --info: #00AAFF;
+            
+            /* Layout */
+            --header-height: 64px;
+            --sidebar-width: 260px;
+            --email-list-width: 555px; /* Increased by 100px from 455px */
+            --widget-width: 340px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Animated Grid Background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 1;
+            animation: grid-move 10s linear infinite;
+        }
+        
+        @keyframes grid-move {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        /* Morphing Blobs */
+        .morphing-blob {
+            position: fixed;
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+            filter: blur(60px);
+            opacity: 0.2;
+            animation: morph 20s ease-in-out infinite, float 15s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .blob-1 {
+            width: 500px;
+            height: 500px;
+            top: -150px;
+            right: -150px;
+        }
+        
+        .blob-2 {
+            width: 400px;
+            height: 400px;
+            bottom: -100px;
+            left: -100px;
+            animation-delay: 10s;
+        }
+        
+        @keyframes morph {
+            0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+            33% { border-radius: 70% 40% 50% 60% / 30% 60% 70% 40%; }
+            66% { border-radius: 50% 60% 30% 70% / 50% 40% 60% 30%; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        /* Layout Grid */
+        .mail-container {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) var(--email-list-width) 1fr var(--widget-width);
+            grid-template-rows: var(--header-height) 1fr;
+            height: 100vh;
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Header */
+        .mail-header {
+            grid-column: 1 / -1;
+            background: linear-gradient(180deg, rgba(10, 0, 20, 0.98) 0%, rgba(19, 0, 31, 0.95) 100%);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid transparent;
+            border-image: linear-gradient(90deg, transparent, var(--accent-primary), var(--accent-secondary), transparent) 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: relative;
+        }
+        
+        .mail-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), var(--accent-secondary), transparent);
+            background-size: 200% 100%;
+            animation: border-flow 3s linear infinite;
+        }
+        
+        @keyframes border-flow {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        .mail-header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 100;
+            letter-spacing: 0.35rem;
+            text-transform: uppercase;
+        }
+        
+        .admin-accent {
+            background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 200;
+        }
+        
+        .divider {
+            opacity: 0.3;
+            color: var(--accent-primary);
+        }
+        
+        .mail-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .compose-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            border-radius: 8px;
+            color: var(--bg-primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .compose-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .compose-btn:hover::before {
+            width: 300%;
+            height: 300%;
+        }
+        
+        .compose-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px var(--accent-glow);
+        }
+        
+        /* Sidebar */
+        .mail-sidebar {
+            background: rgba(19, 0, 31, 0.6);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border-default);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .mail-folders {
+            list-style: none;
+        }
+        
+        .mail-folder-item {
+            padding: 12px 14px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mail-folder-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--accent-primary), transparent);
+            opacity: 0.1;
+            transition: width 0.3s;
+        }
+        
+        .mail-folder-item:hover {
+            background: rgba(0, 255, 255, 0.05);
+            color: var(--accent-primary);
+            transform: translateX(4px);
+        }
+        
+        .mail-folder-item:hover::before {
+            width: 100%;
+        }
+        
+        .mail-folder-item.active {
+            background: linear-gradient(135deg, 
+                rgba(0, 255, 255, 0.25) 0%, 
+                rgba(0, 255, 255, 0.1) 50%,
+                rgba(255, 0, 255, 0.05) 100%);
+            color: var(--accent-primary);
+            border-left: 4px solid var(--accent-primary);
+            border-right: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 
+                inset 0 0 50px rgba(0, 255, 255, 0.15),
+                0 0 60px rgba(0, 255, 255, 0.2);
+            transform: translateX(2px);
+        }
+        
+        .mail-folder-name {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+        }
+        
+        .mail-folder-count {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .folder-separator {
+            height: 1px;
+            background: var(--border-default);
+            margin: 16px 0;
+        }
+        
+        /* Email List */
+        .mail-list {
+            background: rgba(29, 0, 41, 0.6);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border-default);
+            overflow-y: auto;
+        }
+        
+        .mail-list-search {
+            padding: 16px;
+            background: rgba(42, 0, 56, 0.4);
+            border-bottom: 1px solid var(--border-default);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .mail-search-input {
+            width: 100%;
+            padding: 10px 16px;
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid var(--border-default);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .mail-search-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background: rgba(0, 255, 255, 0.08);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        
+        .account-selector {
+            width: 100%;
+            padding: 10px;
+            margin-top: 12px;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.05));
+            border: 1px solid var(--accent-primary);
+            border-radius: 6px;
+            color: var(--accent-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .account-selector option {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        
+        .mail-actions-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .mail-action-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-mark-read {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: var(--success);
+            color: var(--success);
+        }
+        
+        .btn-mark-read:hover {
+            background: rgba(0, 255, 136, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        .btn-mark-unread {
+            background: rgba(255, 0, 255, 0.1);
+            border-color: var(--accent-secondary);
+            color: var(--accent-secondary);
+        }
+        
+        .btn-mark-unread:hover {
+            background: rgba(255, 0, 255, 0.2);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+        }
+        
+        /* Email Items */
+        .mail-item {
+            padding: 20px 16px;
+            min-height: 120px;
+            border-bottom: 1px solid var(--border-default);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .mail-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .mail-item:hover {
+            background: rgba(0, 255, 255, 0.03);
+            transform: translateX(2px);
+        }
+        
+        .mail-item:hover::before {
+            opacity: 1;
+        }
+        
+        .mail-item.active {
+            background: rgba(0, 255, 255, 0.08);
+            border-left: 3px solid var(--accent-primary);
+        }
+        
+        .mail-item.unread {
+            background: rgba(255, 0, 255, 0.02);
+        }
+        
+        .mail-item.unread .mail-item-sender {
+            color: var(--accent-secondary);
+            font-weight: 600;
+        }
+        
+        .mail-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .mail-item-sender {
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+        
+        .mail-item-time {
+            font-size: 0.75rem;
+            color: var(--accent-primary);
+            opacity: 0.7;
+        }
+        
+        .mail-item-subject {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            font-weight: 400;
+        }
+        
+        .mail-item-preview {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .mail-item-tags {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        
+        .mail-tag {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .mail-tag.booking {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .mail-tag.client {
+            background: rgba(0, 170, 255, 0.2);
+            color: var(--info);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+        }
+        
+        .mail-tag.urgent {
+            background: rgba(255, 0, 85, 0.2);
+            color: var(--error);
+            border: 1px solid rgba(255, 0, 85, 0.3);
+            animation: pulse-urgent 2s infinite;
+        }
+        
+        @keyframes pulse-urgent {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        /* Email Content */
+        .mail-content {
+            background: rgba(10, 0, 20, 0.4);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .mail-content-pinned {
+            background: rgba(42, 0, 56, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-default);
+            padding: 20px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .mail-content-subject {
+            font-size: 1.4rem;
+            font-weight: 300;
+            margin-bottom: 16px;
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(45deg, var(--text-primary), var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .mail-content-meta {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+            margin-bottom: 16px;
+        }
+        
+        .mail-content-sender {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .mail-sender-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bg-primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        
+        .mail-content-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .action-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+        
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+        
+        .mail-content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        
+        .mail-content-body {
+            background: linear-gradient(135deg, 
+                rgba(42, 0, 56, 0.8) 0%, 
+                rgba(29, 0, 41, 0.6) 50%,
+                rgba(42, 0, 56, 0.8) 100%);
+            backdrop-filter: blur(20px);
+            border: 2px solid transparent;
+            border-image: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) 1;
+            border-radius: 16px;
+            padding: 32px;
+            line-height: 1.7;
+            color: var(--text-primary);
+            position: relative;
+            box-shadow: 
+                inset 0 2px 20px rgba(0, 255, 255, 0.1),
+                inset 0 -2px 20px rgba(255, 0, 255, 0.1),
+                0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Reply Box - Hidden by default */
+        #replyBox {
+            background: rgba(42, 0, 56, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin: 20px 24px;
+            display: none;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .reply-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .reply-title {
+            font-weight: 500;
+            color: var(--accent-primary);
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: color 0.2s;
+        }
+        
+        .close-btn:hover {
+            color: var(--error);
+        }
+        
+        .reply-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            background: rgba(0, 255, 255, 0.03);
+            border: 1px solid var(--border-default);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            transition: all 0.3s;
+        }
+        
+        .reply-textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background: rgba(0, 255, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+        
+        /* Widgets Sidebar */
+        .mail-widgets {
+            background: rgba(19, 0, 31, 0.6);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid var(--border-default);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .widget {
+            background: rgba(42, 0, 56, 0.4);
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--border-default);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .calendar-widget {
+            background: rgba(42, 0, 56, 0.6);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 4px 20px rgba(0, 255, 255, 0.1);
+        }
+        
+        .widget-title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .calendar-mini {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            font-size: 0.75rem;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        
+        .calendar-day:hover {
+            background: rgba(0, 255, 255, 0.1);
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+        
+        .calendar-day.today {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            font-weight: 600;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+        
+        .calendar-day.has-event {
+            position: relative;
+            border-color: var(--warning);
+        }
+        
+        .calendar-day.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            width: 4px;
+            height: 4px;
+            background: var(--warning);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--warning);
+        }
+        
+        /* Events Widget */
+        #eventsWidget {
+            display: none;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        .event-item {
+            padding: 10px;
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .event-item:hover {
+            background: rgba(0, 255, 255, 0.1);
+            border-color: var(--accent-primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Morphing Blobs -->
+    <div class="morphing-blob blob-1"></div>
+    <div class="morphing-blob blob-2"></div>
+    
+    <div class="mail-container">
+        <!-- Header -->
+        <header class="mail-header">
+            <div class="mail-header-brand">
+                <span>BLAKELY</span>
+                <span class="admin-accent">ADMIN</span>
+                <span class="divider">|</span>
+                <span>MAIL</span>
+            </div>
+            
+            <div class="mail-header-actions">
+                <button class="compose-btn" onclick="openCompose()">
+                    <span>✉️</span> Compose New
+                </button>
+                
+                <button class="action-btn" onclick="openSettings()">
+                    <span>⚙️</span> Settings
+                </button>
+                
+                <button class="action-btn" onclick="location.href='admin.html'">
+                    <span>↩️</span> Dashboard
+                </button>
+            </div>
+        </header>
+        
+        <!-- Sidebar -->
+        <aside class="mail-sidebar">
+            <ul class="mail-folders">
+                <li class="mail-folder-item active" data-folder="inbox">
+                    <div class="mail-folder-name">
+                        <span>📥</span>
+                        <span>Inbox</span>
+                    </div>
+                    <span class="mail-folder-count">12</span>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="starred">
+                    <div class="mail-folder-name">
+                        <span>⭐</span>
+                        <span>Starred</span>
+                    </div>
+                    <span class="mail-folder-count">3</span>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="sent">
+                    <div class="mail-folder-name">
+                        <span>📤</span>
+                        <span>Sent</span>
+                    </div>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="drafts">
+                    <div class="mail-folder-name">
+                        <span>📝</span>
+                        <span>Drafts</span>
+                    </div>
+                    <span class="mail-folder-count">2</span>
+                </li>
+                
+                <div class="folder-separator"></div>
+                
+                <li class="mail-folder-item" data-folder="bookings">
+                    <div class="mail-folder-name">
+                        <span>📅</span>
+                        <span>Bookings</span>
+                    </div>
+                    <span class="mail-folder-count">8</span>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="clients">
+                    <div class="mail-folder-name">
+                        <span>👤</span>
+                        <span>Clients</span>
+                    </div>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="finance">
+                    <div class="mail-folder-name">
+                        <span>💰</span>
+                        <span>Finance</span>
+                    </div>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="galleries">
+                    <div class="mail-folder-name">
+                        <span>🎨</span>
+                        <span>Galleries</span>
+                    </div>
+                </li>
+                
+                <div class="folder-separator"></div>
+                
+                <li class="mail-folder-item" data-folder="trash">
+                    <div class="mail-folder-name">
+                        <span>🗑️</span>
+                        <span>Trash</span>
+                    </div>
+                </li>
+            </ul>
+        </aside>
+        
+        <!-- Email List -->
+        <div class="mail-list">
+            <div class="mail-list-search">
+                <input type="text" class="mail-search-input" placeholder="Search emails..." id="searchInput">
+                
+                <select class="account-selector" id="accountSelector">
+                    <option value="all">All Accounts</option>
+                    <option value="jd@jeremiahblakely.com">jd@jeremiahblakely.com</option>
+                    <option value="jd@blakelycinematics.com">jd@blakelycinematics.com</option>
+                </select>
+                
+                <div class="mail-actions-row">
+                    <button class="mail-action-btn btn-mark-read" onclick="markAsRead()">
+                        ✓ Mark Read
+                    </button>
+                    <button class="mail-action-btn btn-mark-unread" onclick="markAsUnread()">
+                        ○ Mark Unread
+                    </button>
+                </div>
+            </div>
+            
+            <div id="emailList">
+                <!-- Email items will be populated here -->
+            </div>
+        </div>
+        
+        <!-- Email Content -->
+        <main class="mail-content">
+            <div class="mail-content-pinned">
+                <h1 class="mail-content-subject" id="emailSubject">Select an email to read</h1>
+                
+                <div class="mail-content-meta" id="emailMeta" style="display: none;">
+                    <div class="mail-content-sender">
+                        <div class="mail-sender-avatar" id="senderAvatar">--</div>
+                        <div>
+                            <div id="senderName">--</div>
+                            <div style="font-size: 0.85rem; opacity: 0.7;" id="senderEmail">--</div>
+                        </div>
+                    </div>
+                    
+                    <span style="margin-left: auto; color: var(--text-secondary);" id="emailDate">--</span>
+                </div>
+                
+                <div class="mail-content-actions" id="emailActions" style="display: none;">
+                    <button class="action-btn primary" onclick="showReply()">
+                        <span>↩️</span> Reply
+                    </button>
+                    <button class="action-btn">
+                        <span>↪️</span> Forward
+                    </button>
+                    <button class="action-btn" onclick="toggleStar()">
+                        <span>⭐</span> Star
+                    </button>
+                    <button class="action-btn">
+                        <span>📁</span> Move to
+                    </button>
+                    <button class="action-btn" onclick="deleteEmail()">
+                        <span>🗑️</span> Delete
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mail-content-scroll">
+                <div class="mail-content-body" id="emailBody">
+                    <p style="text-align: center; color: var(--text-secondary);">No email selected</p>
+                </div>
+            </div>
+            
+            <!-- Reply Box -->
+            <div id="replyBox">
+                <div class="reply-header">
+                    <span class="reply-title">Reply to <span id="replyTo">--</span></span>
+                    <button class="close-btn" onclick="closeReply()">×</button>
+                </div>
+                
+                <textarea class="reply-textarea" placeholder="Type your reply here..." id="replyText"></textarea>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+                    <div style="display: flex; gap: 8px;">
+                        <button class="action-btn">📎</button>
+                        <button class="action-btn">🖼️</button>
+                        <button class="action-btn">📄</button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <button class="action-btn" onclick="saveDraft()">Save Draft</button>
+                        <button class="action-btn primary" onclick="sendReply()">Send Reply</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Widgets -->
+        <aside class="mail-widgets">
+            <!-- Calendar Widget -->
+            <div class="widget calendar-widget">
+                <div class="widget-title">
+                    <span id="calendarMonth">December 2024</span>
+                    <span style="font-size: 0.75rem; color: var(--accent-secondary); cursor: pointer;">Full Calendar</span>
+                </div>
+                
+                <div class="calendar-mini" id="calendar">
+                    <!-- Calendar will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Events Widget -->
+            <div class="widget" id="eventsWidget">
+                <div class="widget-title">
+                    <span>Events for <span id="selectedDate">--</span></span>
+                    <span style="font-size: 0.75rem; color: var(--accent-secondary); cursor: pointer;" onclick="hideEvents()">Close</span>
+                </div>
+                
+                <div id="eventsList"></div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="widget">
+                <div class="widget-title">
+                    <span>Quick Actions</span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button class="action-btn" style="justify-content: flex-start;">
+                        <span>📅</span> Create Booking
+                    </button>
+                    <button class="action-btn" style="justify-content: flex-start;">
+                        <span>💎</span> Generate Quote
+                    </button>
+                    <button class="action-btn" style="justify-content: flex-start;">
+                        <span>🖼️</span> Share Gallery
+                    </button>
+                    <button class="action-btn" style="justify-content: flex-start;">
+                        <span>📄</span> Send Contract
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Templates -->
+            <div class="widget">
+                <div class="widget-title">
+                    <span>Email Templates</span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button class="action-btn" style="justify-content: flex-start; font-size: 0.85rem;">
+                        Booking Inquiry Response
+                    </button>
+                    <button class="action-btn" style="justify-content: flex-start; font-size: 0.85rem;">
+                        Gallery Access Instructions
+                    </button>
+                    <button class="action-btn" style="justify-content: flex-start; font-size: 0.85rem;">
+                        Payment Reminder
+                    </button>
+                    <button class="action-btn" style="justify-content: flex-start; font-size: 0.85rem;">
+                        Contract & Invoice
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+    
+    <script>
+        // Sample email data
+        const emails = [
+            {
+                id: 1,
+                sender: 'Sarah Johnson',
+                email: 'sarah.johnson@email.com',
+                subject: 'Wedding Photography Inquiry - June 2025',
+                preview: 'Hi, I came across your portfolio and absolutely loved your work! We\'re planning our wedding for June...',
+                time: '10:30 AM',
+                unread: true,
+                tags: ['booking', 'urgent'],
+                body: `<p>Hi Jeremiah,</p>
+                <p>I came across your portfolio and absolutely loved your work! The way you capture emotions and moments is exactly what we're looking for in our wedding photographer.</p>
+                <p>We're planning our wedding for June 15th, 2025, at the Ritz Carlton in Half Moon Bay. The ceremony will start at 4 PM with the reception following immediately after. We expect around 150 guests.</p>
+                <p>We're particularly interested in your "Premium Wedding Package" that includes:</p>
+                <ul>
+                    <li>8 hours of coverage</li>
+                    <li>Second shooter</li>
+                    <li>Engagement session</li>
+                    <li>Online gallery with downloads</li>
+                    <li>Premium album</li>
+                </ul>
+                <p>Could you please let us know if you're available for that date? We'd also love to schedule a consultation to discuss our vision.</p>
+                <p>Looking forward to hearing from you!</p>
+                <p>Best regards,<br>Sarah Johnson<br>(415) 555-0123</p>`
+            },
+            {
+                id: 2,
+                sender: 'Michael Chen',
+                email: 'mchen@techstartup.com',
+                subject: 'Re: Gallery Access Code Request',
+                preview: 'Thank you for sending the access code. I was able to view the photos and they look amazing...',
+                time: '9:15 AM',
+                unread: true,
+                tags: ['client'],
+                body: `<p>Thank you for sending the access code!</p>
+                <p>I was able to view the photos and they look amazing. My team especially loved the candid shots from the product launch event.</p>
+                <p>We'd like to download the high-resolution versions for our marketing materials. Also, would it be possible to get a few additional edits on photos #47 and #92?</p>
+                <p>Thanks,<br>Michael</p>`
+            },
+            {
+                id: 3,
+                sender: 'Stripe',
+                email: 'notifications@stripe.com',
+                subject: 'Payment Received - Invoice #2024-1847',
+                preview: 'You\'ve received a payment of $2,500.00 from Emily Roberts...',
+                time: 'Yesterday',
+                unread: false,
+                tags: ['finance'],
+                body: `<p>Payment Received Successfully</p>
+                <p>Amount: $2,500.00<br>
+                Client: Emily Roberts<br>
+                Invoice: #2024-1847<br>
+                Service: Portrait Session Package</p>
+                <p>The funds will be available in your account within 2 business days.</p>`
+            }
+        ];
+        
+        // Calendar events
+        const events = {
+            '11': [
+                { time: '10:00 AM', title: 'Portfolio Review', type: 'meeting' },
+                { time: '2:00 PM', title: 'Client Consultation', type: 'booking' }
+            ],
+            '14': [
+                { time: '9:00 AM', title: 'Wedding Shoot - Johnson', type: 'shoot' },
+                { time: '3:00 PM', title: 'Edit Session', type: 'work' }
+            ],
+            '21': [
+                { time: '11:00 AM', title: 'Gallery Delivery', type: 'delivery' },
+                { time: '4:00 PM', title: 'Team Meeting', type: 'meeting' }
+            ]
+        };
+        
+        // Initialize email list
+        function initEmailList() {
+            const emailList = document.getElementById('emailList');
+            emailList.innerHTML = '';
+            
+            emails.forEach(email => {
+                const emailItem = document.createElement('div');
+                emailItem.className = `mail-item ${email.unread ? 'unread' : ''}`;
+                emailItem.onclick = () => selectEmail(email);
+                
+                emailItem.innerHTML = `
+                    <div class="mail-item-header">
+                        <span class="mail-item-sender">${email.sender}</span>
+                        <span class="mail-item-time">${email.time}</span>
+                    </div>
+                    <div class="mail-item-subject">${email.subject}</div>
+                    <div class="mail-item-preview">${email.preview}</div>
+                    <div class="mail-item-tags">
+                        ${email.tags.map(tag => `<span class="mail-tag ${tag}">${tag}</span>`).join('')}
+                    </div>
+                `;
+                
+                emailList.appendChild(emailItem);
+            });
+        }
+        
+        // Select email
+        function selectEmail(email) {
+            // Update active state
+            document.querySelectorAll('.mail-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            event.currentTarget.classList.remove('unread');
+            
+            // Update content
+            document.getElementById('emailSubject').textContent = email.subject;
+            document.getElementById('senderAvatar').textContent = email.sender.split(' ').map(n => n[0]).join('');
+            document.getElementById('senderName').textContent = email.sender;
+            document.getElementById('senderEmail').textContent = email.email;
+            document.getElementById('emailDate').textContent = email.time;
+            document.getElementById('emailBody').innerHTML = email.body;
+            document.getElementById('replyTo').textContent = email.sender;
+            
+            // Show meta and actions
+            document.getElementById('emailMeta').style.display = 'flex';
+            document.getElementById('emailActions').style.display = 'flex';
+        }
+        
+        // Reply functions
+        function showReply() {
+            document.getElementById('replyBox').style.display = 'block';
+            document.getElementById('replyBox').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function closeReply() {
+            document.getElementById('replyBox').style.display = 'none';
+        }
+        
+        // Initialize calendar
+        function initCalendar() {
+            const calendar = document.getElementById('calendar');
+            const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            
+            // Add day headers
+            days.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'calendar-day';
+                dayHeader.style.fontWeight = '600';
+                dayHeader.style.color = 'var(--accent-primary)';
+                dayHeader.textContent = day;
+                calendar.appendChild(dayHeader);
+            });
+            
+            // Add days
+            for (let i = 1; i <= 31; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                if (i === 9) dayEl.classList.add('today');
+                if (events[i.toString()]) dayEl.classList.add('has-event');
+                dayEl.textContent = i;
+                dayEl.onclick = () => showEvents(i);
+                calendar.appendChild(dayEl);
+            }
+        }
+        
+        // Show events for selected date
+        function showEvents(day) {
+            const dayEvents = events[day.toString()];
+            const eventsWidget = document.getElementById('eventsWidget');
+            const eventsList = document.getElementById('eventsList');
+            const selectedDate = document.getElementById('selectedDate');
+            
+            selectedDate.textContent = `December ${day}`;
+            eventsList.innerHTML = '';
+            
+            if (dayEvents) {
+                dayEvents.forEach(event => {
+                    const eventItem = document.createElement('div');
+                    eventItem.className = 'event-item';
+                    eventItem.innerHTML = `
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>
+                                <div style="font-size: 0.9rem;">${event.title}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">${event.time}</div>
+                            </div>
+                            <div style="width: 8px; height: 8px; background: var(--accent-primary); border-radius: 50%; align-self: center;"></div>
+                        </div>
+                    `;
+                    eventsList.appendChild(eventItem);
+                });
+            } else {
+                eventsList.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-secondary);">No events scheduled</div>';
+            }
+            
+            eventsWidget.style.display = 'block';
+        }
+        
+        function hideEvents() {
+            document.getElementById('eventsWidget').style.display = 'none';
+        }
+        
+        // Folder navigation
+        document.querySelectorAll('.mail-folder-item').forEach(folder => {
+            folder.addEventListener('click', function() {
+                document.querySelectorAll('.mail-folder-item').forEach(f => f.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Initialize
+        initEmailList();
+        initCalendar();
+    </script>
+</body>
+</html>
