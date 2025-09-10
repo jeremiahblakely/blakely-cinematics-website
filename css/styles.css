@@ -3585,5 +3585,145 @@ nav {
         height: 150px;
     }
 }
+/* ============================================
+   ADAPTIVE REPLY COMPOSER STYLES
+   Added: December 17, 2024
+   ============================================ */
+
+/* Base reply box - enhanced version */
+.reply-box {
+    background: linear-gradient(135deg, 
+        rgba(20, 10, 30, 0.98) 0%, 
+        rgba(30, 15, 45, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    
+    /* Adaptive height properties */
+    min-height: 200px;
+    max-height: 65vh;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Expanded state when focused */
+.reply-box.expanded {
+    min-height: 50vh;
+    max-height: 65vh;
+}
+
+/* Reply textarea enhanced */
+.reply-text {
+    width: 100%;
+    min-height: 150px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    resize: vertical;
+    transition: all 0.3s ease;
+}
+
+/* Auto-expand textarea as user types */
+.reply-text.auto-expand {
+    min-height: 150px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.reply-text:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    background: rgba(0, 255, 255, 0.02);
+    min-height: 300px;
+}
+
+/* Reply header enhanced */
+.reply-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.reply-title {
+    color: var(--accent-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Formatting toolbar */
+.reply-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.reply-box.expanded .reply-toolbar {
+    opacity: 1;
+}
+
+.format-btn {
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.format-btn:hover {
+    background: rgba(0, 255, 255, 0.1);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+/* Reply footer with meta info */
+.reply-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.reply-meta {
+    display: flex;
+    gap: 16px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.word-count {
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.reply-box.expanded .word-count {
+    opacity: 1;
+}
+
+.draft-saved {
+    color: var(--success);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.draft-saved.show {
+    opacity: 1;
+}
 
 /* === End Theme Styles === */
