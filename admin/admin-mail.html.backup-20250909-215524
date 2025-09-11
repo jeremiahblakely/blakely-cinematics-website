@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail - Blakely Admin</title>
+    <meta name="description" content="Admin mail management for Blakely Cinematics">
+    
+    <!-- Date Created: December 9, 2024 8:30 AM -->
+    <!-- Last Updated: December 9, 2024 6:45 PM -->
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500&family=Inter:wght@300;400;500;600&display=swap');
+        
+        :root {
+            /* Cyberpunk Theme */
+            --bg-primary: #0A0014;
+            --bg-secondary: #13001F;
+            --bg-tertiary: #1D0029;
+            --surface: #2A0038;
+            --surface-hover: #350045;
+            
+            --accent-primary: #00FFFF;
+            --accent-secondary: #FF00FF;
+            --accent-glow: rgba(0, 255, 255, 0.5);
+            --accent-pulse: rgba(255, 0, 255, 0.5);
+            
+            --text-primary: #E0F2FE;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            
+            --border-default: rgba(0, 255, 255, 0.2);
+            --border-hover: rgba(255, 0, 255, 0.4);
+            
+            --success: #00FF88;
+            --warning: #FFAA00;
+            --error: #FF0055;
+            --info: #00AAFF;
+            
+            /* Layout */
+            --header-height: 64px;
+            --sidebar-width: 260px;
+            --email-list-width: 555px;
+            --widget-width: 340px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Morphing Blobs Background */
+        .morphing-blobs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: morph 20s ease-in-out infinite;
+        }
+        
+        .blob1 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-primary);
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .blob2 {
+            width: 350px;
+            height: 350px;
+            background: var(--accent-secondary);
+            top: 60%;
+            right: 10%;
+            animation-delay: 5s;
+        }
+        
+        .blob3 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+            bottom: 10%;
+            left: 40%;
+            animation-delay: 10s;
+        }
+        
+        @keyframes morph {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -50px) scale(1.1); }
+            50% { transform: translate(-50px, 50px) scale(0.9); }
+            75% { transform: translate(-30px, -30px) scale(1.05); }
+        }
+        
+        /* Header */
+        .header {
+            height: var(--header-height);
+            background: rgba(26, 0, 38, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-default);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: relative;
+            z-index: 100;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+        
+        .brand {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 100;
+            font-size: 18px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--accent-primary);
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+        
+        .mail-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 200;
+            font-size: 24px;
+            letter-spacing: 2px;
+            color: var(--text-primary);
+        }
+        
+        /* View Toggle */
+        .view-toggle {
+            display: flex;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+            border: 1px solid var(--border-default);
+        }
+        
+        .view-toggle button {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .view-toggle button.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        
+        .view-toggle button:hover:not(.active) {
+            background: var(--surface);
+            color: var(--text-primary);
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .compose-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        
+        .compose-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 30px var(--accent-glow);
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .header-btn {
+            padding: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border-default);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .header-btn:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+        
+        /* Layout Container */
+        .layout-container {
+            display: flex;
+            height: calc(100vh - var(--header-height));
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(19, 0, 31, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-default);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            gap: 8px;
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .sidebar-item:hover {
+            background: var(--surface);
+            color: var(--text-primary);
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.1));
+            color: var(--accent-primary);
+            border: 1px solid var(--border-default);
+        }
+        
+        .sidebar-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 24px;
+            background: var(--accent-primary);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+        
+        .sidebar-count {
+            margin-left: auto;
+            padding: 2px 8px;
+            background: var(--surface);
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+        
+        /* Email List */
+        .email-list {
+            width: var(--email-list-width);
+            background: rgba(26, 0, 38, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-default);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .email-list-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-default);
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-default);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+        
+        .email-filters {
+            padding: 12px 20px;
+            display: flex;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-default);
+        }
+        
+        .filter-dropdown {
+            padding: 8px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn.active {
+            background: var(--surface);
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+        
+        .email-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        
+        .email-item {
+            padding: 16px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-tertiary);
+        }
+        
+        .email-item:hover {
+            background: var(--surface);
+            border-color: var(--border-hover);
+            transform: translateX(4px);
+        }
+        
+        .email-item.selected {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.1));
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        
+        .email-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .email-sender {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .email-time {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        .email-subject {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        
+        .email-preview {
+            font-size: 13px;
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .email-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .email-tag {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .tag-booking {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .tag-urgent {
+            background: rgba(255, 0, 85, 0.2);
+            color: var(--error);
+            border: 1px solid rgba(255, 0, 85, 0.3);
+        }
+        
+        .tag-client {
+            background: rgba(0, 170, 255, 0.2);
+            color: var(--info);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+        }
+        
+        .tag-finance {
+            background: rgba(255, 170, 0, 0.2);
+            color: var(--warning);
+            border: 1px solid rgba(255, 170, 0, 0.3);
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            background: rgba(13, 0, 20, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Reading View */
+        .email-content {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .email-content.active {
+            display: block;
+        }
+        
+        .email-content-header {
+            background: var(--surface);
+            border: 1px solid var(--border-default);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(20px);
+        }
+        
+        .email-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .email-action-btn {
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .email-action-btn:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        
+        /* Email Navigation */
+        .email-navigation {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+        
+        .nav-btn {
+            padding: 8px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn:hover:not(:disabled) {
+            background: var(--surface-hover);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .email-counter {
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        
+        /* List View */
+        .list-view {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .list-view.active {
+            display: block;
+        }
+        
+        .list-view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .list-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .bulk-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .select-all-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-primary);
+        }
+        
+        .bulk-action-btn {
+            padding: 8px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .bulk-action-btn:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        
+        .extended-email-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .extended-email-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--surface);
+            border: 1px solid var(--border-default);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .extended-email-item:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+        
+        .email-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-primary);
+        }
+        
+        .extended-email-content {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .extended-email-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+        
+        .extended-email-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .extended-email-sender {
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 150px;
+        }
+        
+        .extended-email-subject {
+            color: var(--text-primary);
+            flex: 1;
+        }
+        
+        .extended-email-preview {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        
+        .extended-email-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .attachment-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        
+        .extended-email-time {
+            color: var(--text-muted);
+            font-size: 13px;
+            min-width: 80px;
+            text-align: right;
+        }
+        
+        .load-more-btn {
+            margin: 24px auto;
+            padding: 12px 32px;
+            background: var(--surface);
+            border: 1px solid var(--border-default);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .load-more-btn:hover {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            border-color: transparent;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        
+        /* Empty State */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: var(--text-muted);
+        }
+        
+        .empty-state-text {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .empty-state-subtext {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        /* Widgets Panel */
+        .widgets-panel {
+            width: var(--widget-width);
+            background: rgba(19, 0, 31, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid var(--border-default);
+            padding: 24px;
+            overflow-y: auto;
+        }
+        
+        /* Calendar Widget */
+        .widget {
+            background: var(--surface);
+            border: 1px solid var(--border-default);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .widget-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .calendar-month {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .calendar-nav-btn {
+            padding: 4px 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-default);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .calendar-nav-btn:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        
+        .calendar-day-header {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 8px 0;
+            font-weight: 600;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+        
+        .calendar-day:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+        
+        .calendar-day.today {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+        
+        .calendar-day.has-event {
+            position: relative;
+        }
+        
+        .calendar-day.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            width: 4px;
+            height: 4px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+        }
+        
+        /* Quick Actions Widget */
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .quick-action {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-default);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-action:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent-primary);
+            transform: translateX(4px);
+        }
+        
+        .quick-action-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface);
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        
+        /* Email Templates Widget */
+        .templates-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .template-item {
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .template-item:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--surface-hover);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Morphing Blobs Background -->
+    <div class="morphing-blobs">
+        <div class="blob blob1"></div>
+        <div class="blob blob2"></div>
+        <div class="blob blob3"></div>
+    </div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="brand">BLAKELY ADMIN</div>
+            <div class="mail-title">MAIL</div>
+            <div class="view-toggle">
+                <button class="active" onclick="switchView('reading')">📖 Reading</button>
+                <button onclick="switchView('list')">📋 List</button>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="compose-btn">
+                ✉️ Compose New
+            </button>
+            <div class="header-actions">
+                <button class="header-btn">⚙️ Settings</button>
+                <button class="header-btn">📊 Dashboard</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Layout Container -->
+    <div class="layout-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-item active">
+                📥 Inbox
+                <span class="sidebar-count">12</span>
+            </div>
+            <div class="sidebar-item">
+                ⭐ Starred
+                <span class="sidebar-count">3</span>
+            </div>
+            <div class="sidebar-item">
+                📤 Sent
+            </div>
+            <div class="sidebar-item">
+                📝 Drafts
+                <span class="sidebar-count">2</span>
+            </div>
+            <div class="sidebar-item">
+                📅 Bookings
+                <span class="sidebar-count">8</span>
+            </div>
+            <div class="sidebar-item">
+                👥 Clients
+            </div>
+            <div class="sidebar-item">
+                💰 Finance
+            </div>
+            <div class="sidebar-item">
+                🏛️ Galleries
+            </div>
+            <div class="sidebar-item">
+                🗑️ Trash
+            </div>
+        </aside>
+        
+        <!-- Email List (Always Visible) -->
+        <div class="email-list">
+            <div class="email-list-header">
+                <input type="text" class="search-box" placeholder="Search emails...">
+            </div>
+            <div class="email-filters">
+                <select class="filter-dropdown">
+                    <option>All Accounts</option>
+                    <option>jd@jeremiahblakely.com</option>
+                    <option>jd@blakelycinematics.com</option>
+                </select>
+                <button class="filter-btn active">✓ Mark Read</button>
+                <button class="filter-btn">○ Mark Unread</button>
+            </div>
+            <div class="email-items">
+                <div class="email-item selected" onclick="openEmail(1)">
+                    <div class="email-header">
+                        <div class="email-sender">Sarah Johnson</div>
+                        <div class="email-time">10:30 AM</div>
+                    </div>
+                    <div class="email-subject">Wedding Photography Inquiry - June 2025</div>
+                    <div class="email-preview">Hi, I came across your portfolio and absolutely loved your work! We're planning our wedding for June...</div>
+                    <div class="email-tags">
+                        <span class="email-tag tag-booking">BOOKING</span>
+                        <span class="email-tag tag-urgent">URGENT</span>
+                    </div>
+                </div>
+                
+                <div class="email-item" onclick="openEmail(2)">
+                    <div class="email-header">
+                        <div class="email-sender">Michael Chen</div>
+                        <div class="email-time">9:15 AM</div>
+                    </div>
+                    <div class="email-subject">Re: Gallery Access Code Request</div>
+                    <div class="email-preview">Thank you for sending the access code. I was able to view the photos and they look amazing...</div>
+                    <div class="email-tags">
+                        <span class="email-tag tag-client">CLIENT</span>
+                    </div>
+                </div>
+                
+                <div class="email-item" onclick="openEmail(3)">
+                    <div class="email-header">
+                        <div class="email-sender">Stripe</div>
+                        <div class="email-time">Yesterday</div>
+                    </div>
+                    <div class="email-subject">Payment Received - Invoice #2024-1847</div>
+                    <div class="email-preview">You've received a payment of $2,500.00 from Emily Roberts...</div>
+                    <div class="email-tags">
+                        <span class="email-tag tag-finance">FINANCE</span>
+                    </div>
+                </div>
+                
+                <div class="email-item" onclick="openEmail(4)">
+                    <div class="email-header">
+                        <div class="email-sender">Amanda Foster</div>
+                        <div class="email-time">Yesterday</div>
+                    </div>
+                    <div class="email-subject">Corporate Event Photography Request</div>
+                    <div class="email-preview">We're hosting our annual conference next month and would love to discuss...</div>
+                    <div class="email-tags">
+                        <span class="email-tag tag-booking">BOOKING</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Reading View (Email Content) -->
+            <div class="email-content active" id="readingView">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📧</div>
+                    <div class="empty-state-text">Select an email to read</div>
+                    <div class="empty-state-subtext">Choose an email from the list to view its content</div>
+                </div>
+            </div>
+            
+            <!-- List View (Extended Email List) -->
+            <div class="list-view" id="listView">
+                <div class="list-view-header">
+                    <h2 class="list-title">All Emails (Continued)</h2>
+                    <div class="bulk-actions">
+                        <input type="checkbox" class="select-all-checkbox" id="selectAll">
+                        <button class="bulk-action-btn">Archive Selected</button>
+                        <button class="bulk-action-btn">Delete Selected</button>
+                        <button class="bulk-action-btn">Mark as Read</button>
+                    </div>
+                </div>
+                
+                <div class="extended-email-list">
+                    <!-- Extended Email Items (5-30) -->
+                    <div class="extended-email-item" onclick="openEmail(5)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">David Martinez</span>
+                                    <span class="extended-email-subject">Interested in your Premium Package</span>
+                                </div>
+                                <div class="extended-email-preview">I saw your work at the Thompson wedding last month and was really impressed with...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="attachment-indicator">📎 2</span>
+                                <span class="extended-email-time">2 days ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(6)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Jessica Wu</span>
+                                    <span class="extended-email-subject">Thank you! The photos are perfect</span>
+                                </div>
+                                <div class="extended-email-preview">Just wanted to reach out and thank you again for the amazing work you did at our event...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="extended-email-time">3 days ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(7)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Robert Chen</span>
+                                    <span class="extended-email-subject">Rescheduling Request - Photo Session</span>
+                                </div>
+                                <div class="extended-email-preview">Due to an unexpected family emergency, we need to reschedule our session planned for...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="extended-email-time">3 days ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(8)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">AWS</span>
+                                    <span class="extended-email-subject">Your monthly bill is available</span>
+                                </div>
+                                <div class="extended-email-preview">Your AWS bill for the month of November 2024 is now available. Total: $47.83...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="attachment-indicator">📎 1</span>
+                                <span class="extended-email-time">4 days ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(9)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Emily Thompson</span>
+                                    <span class="extended-email-subject">Collaboration Opportunity - Fashion Shoot</span>
+                                </div>
+                                <div class="extended-email-preview">I'm a fashion designer launching my new collection and I'd love to discuss a potential...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="attachment-indicator">📎 5</span>
+                                <span class="extended-email-time">5 days ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(10)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Mark Robinson</span>
+                                    <span class="extended-email-subject">Quick question about pricing</span>
+                                </div>
+                                <div class="extended-email-preview">Hi, I'm interested in booking a session for my family. Could you send me your current...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="extended-email-time">5 days ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(11)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">LinkedIn</span>
+                                    <span class="extended-email-subject">Your post is getting noticed</span>
+                                </div>
+                                <div class="extended-email-preview">Your recent post about wedding photography tips has received 234 views and 45 likes...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="extended-email-time">6 days ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(12)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Alex Kumar</span>
+                                    <span class="extended-email-subject">Re: Delivery timeline for wedding photos</span>
+                                </div>
+                                <div class="extended-email-preview">Thanks for the update! We're excited to see the final edits. Just to confirm, we'll receive...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="extended-email-time">1 week ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(13)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Sophie Anderson</span>
+                                    <span class="extended-email-subject">Maternity Session Inquiry</span>
+                                </div>
+                                <div class="extended-email-preview">Hello! I'm expecting my first child in March and would love to schedule a maternity...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="attachment-indicator">📎 3</span>
+                                <span class="extended-email-time">1 week ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(14)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Google Workspace</span>
+                                    <span class="extended-email-subject">Storage limit approaching</span>
+                                </div>
+                                <div class="extended-email-preview">You're using 14.2 GB of your 15 GB storage. Consider upgrading or cleaning up...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="extended-email-time">1 week ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(15)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Nathan Park</span>
+                                    <span class="extended-email-subject">Venue recommendation needed</span>
+                                </div>
+                                <div class="extended-email-preview">Hey! I remember you mentioning some great outdoor locations for shoots. Could you...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="extended-email-time">1 week ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(16)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Rachel Green</span>
+                                    <span class="extended-email-subject">Anniversary Session - Available Dates?</span>
+                                </div>
+                                <div class="extended-email-preview">Hi! My husband and I are celebrating our 10th anniversary and would love to book...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="extended-email-time">2 weeks ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(17)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Canon Professional</span>
+                                    <span class="extended-email-subject">New firmware update available</span>
+                                </div>
+                                <div class="extended-email-preview">A new firmware update (v2.1.0) is now available for your Canon R5. This update includes...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="attachment-indicator">📎 1</span>
+                                <span class="extended-email-time">2 weeks ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(18)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Tom Williams</span>
+                                    <span class="extended-email-subject">Follow-up: Business headshots</span>
+                                </div>
+                                <div class="extended-email-preview">Just wanted to follow up on our conversation last week about corporate headshots...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="extended-email-time">2 weeks ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(19)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Lisa Chang</span>
+                                    <span class="extended-email-subject">Review request - Recent session</span>
+                                </div>
+                                <div class="extended-email-preview">Would you mind leaving a review on Google? We had such a wonderful experience...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="extended-email-time">2 weeks ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="extended-email-item" onclick="openEmail(20)">
+                        <input type="checkbox" class="email-checkbox">
+                        <div class="extended-email-content">
+                            <div class="extended-email-left">
+                                <div class="extended-email-meta">
+                                    <span class="extended-email-sender">Adobe Creative Cloud</span>
+                                    <span class="extended-email-subject">Your subscription renewed</span>
+                                </div>
+                                <div class="extended-email-preview">Your Creative Cloud subscription has been renewed for another month. Total: $54.99...</div>
+                            </div>
+                            <div class="extended-email-right">
+                                <span class="attachment-indicator">📎 1</span>
+                                <span class="extended-email-time">3 weeks ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="load-more-btn" onclick="loadMoreEmails()">Load More Emails</button>
+            </div>
+        </main>
+        
+        <!-- Widgets Panel -->
+        <aside class="widgets-panel">
+            <!-- Calendar Widget -->
+            <div class="widget">
+                <div class="calendar-header">
+                    <span class="calendar-month">December 2024</span>
+                    <div class="calendar-nav">
+                        <button class="calendar-nav-btn">◀</button>
+                        <button class="calendar-nav-btn">▶</button>
+                    </div>
+                </div>
+                <div class="widget-title">Full Calendar</div>
+                <div class="calendar">
+                    <div class="calendar-day-header">S</div>
+                    <div class="calendar-day-header">M</div>
+                    <div class="calendar-day-header">T</div>
+                    <div class="calendar-day-header">W</div>
+                    <div class="calendar-day-header">T</div>
+                    <div class="calendar-day-header">F</div>
+                    <div class="calendar-day-header">S</div>
+                    
+                    <div class="calendar-day">1</div>
+                    <div class="calendar-day">2</div>
+                    <div class="calendar-day">3</div>
+                    <div class="calendar-day">4</div>
+                    <div class="calendar-day">5</div>
+                    <div class="calendar-day has-event">6</div>
+                    <div class="calendar-day">7</div>
+                    <div class="calendar-day">8</div>
+                    <div class="calendar-day today">9</div>
+                    <div class="calendar-day">10</div>
+                    <div class="calendar-day has-event">11</div>
+                    <div class="calendar-day">12</div>
+                    <div class="calendar-day">13</div>
+                    <div class="calendar-day">14</div>
+                    <div class="calendar-day">15</div>
+                    <div class="calendar-day">16</div>
+                    <div class="calendar-day">17</div>
+                    <div class="calendar-day">18</div>
+                    <div class="calendar-day">19</div>
+                    <div class="calendar-day has-event">20</div>
+                    <div class="calendar-day has-event">21</div>
+                    <div class="calendar-day">22</div>
+                    <div class="calendar-day">23</div>
+                    <div class="calendar-day">24</div>
+                    <div class="calendar-day">25</div>
+                    <div class="calendar-day">26</div>
+                    <div class="calendar-day">27</div>
+                    <div class="calendar-day">28</div>
+                    <div class="calendar-day">29</div>
+                    <div class="calendar-day">30</div>
+                    <div class="calendar-day">31</div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions Widget -->
+            <div class="widget">
+                <div class="widget-title">Quick Actions</div>
+                <div class="quick-actions">
+                    <div class="quick-action">
+                        <div class="quick-action-icon">📅</div>
+                        <span>Create Booking</span>
+                    </div>
+                    <div class="quick-action">
+                        <div class="quick-action-icon">💼</div>
+                        <span>Generate Quote</span>
+                    </div>
+                    <div class="quick-action">
+                        <div class="quick-action-icon">🖼️</div>
+                        <span>Share Gallery</span>
+                    </div>
+                    <div class="quick-action">
+                        <div class="quick-action-icon">📧</div>
+                        <span>Send Contract</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Email Templates Widget -->
+            <div class="widget">
+                <div class="widget-title">Email Templates</div>
+                <div class="templates-list">
+                    <div class="template-item">Booking Inquiry Response</div>
+                    <div class="template-item">Gallery Access Instructions</div>
+                    <div class="template-item">Payment Reminder</div>
+                    <div class="template-item">Contract & Invoice</div>
+                </div>
+            </div>
+        </aside>
+    </div>
+    
+    <script>
+        // View switching
+        function switchView(view) {
+            const readingView = document.getElementById('readingView');
+            const listView = document.getElementById('listView');
+            const toggleButtons = document.querySelectorAll('.view-toggle button');
+            
+            toggleButtons.forEach(btn => btn.classList.remove('active'));
+            
+            if (view === 'reading') {
+                readingView.classList.add('active');
+                listView.classList.remove('active');
+                toggleButtons[0].classList.add('active');
+            } else if (view === 'list') {
+                readingView.classList.remove('active');
+                listView.classList.add('active');
+                toggleButtons[1].classList.add('active');
+            }
+        }
+        
+        // Open email (switches to reading view and loads content)
+        function openEmail(emailId) {
+            // Switch to reading view
+            switchView('reading');
+            
+            // Load email content (this would normally fetch from backend)
+            const readingView = document.getElementById('readingView');
+            readingView.innerHTML = `
+                <div class="email-content-header">
+                    <div class="email-actions">
+                        <button class="email-action-btn">↩️ Reply</button>
+                        <button class="email-action-btn">↪️ Forward</button>
+                        <button class="email-action-btn">🗑️ Delete</button>
+                        <button class="email-action-btn">📁 Archive</button>
+                        <button class="email-action-btn">⭐ Star</button>
+                        <div class="email-navigation">
+                            <span class="email-counter">Email ${emailId} of 47</span>
+                            <button class="nav-btn" ${emailId === 1 ? 'disabled' : ''} onclick="openEmail(${emailId - 1})">← Previous</button>
+                            <button class="nav-btn" ${emailId === 20 ? 'disabled' : ''} onclick="openEmail(${emailId + 1})">Next →</button>
+                        </div>
+                    </div>
+                    <h2>Email Subject Here</h2>
+                    <div style="margin-top: 16px; color: var(--text-secondary);">
+                        From: sender@example.com<br>
+                        To: you@blakelycinematics.com<br>
+                        Date: December 9, 2024 at 10:30 AM
+                    </div>
+                </div>
+                <div style="padding: 24px; background: var(--surface); border: 1px solid var(--border-default); border-radius: 12px; margin-top: 24px;">
+                    <p>This is the email content for email #${emailId}. In a real implementation, this would load the actual email content from your backend.</p>
+                    <p style="margin-top: 16px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                </div>
+            `;
+            
+            // Update selected state in inbox
+            document.querySelectorAll('.email-item').forEach(item => item.classList.remove('selected'));
+            if (emailId <= 4) {
+                document.querySelectorAll('.email-item')[emailId - 1].classList.add('selected');
+            }
+        }
+        
+        // Load more emails
+        function loadMoreEmails() {
+            const listContainer = document.querySelector('.extended-email-list');
+            const currentCount = listContainer.children.length;
+            
+            // Add 10 more emails
+            for (let i = currentCount + 1; i <= currentCount + 10; i++) {
+                const emailItem = document.createElement('div');
+                emailItem.className = 'extended-email-item';
+                emailItem.onclick = () => openEmail(i);
+                emailItem.innerHTML = `
+                    <input type="checkbox" class="email-checkbox">
+                    <div class="extended-email-content">
+                        <div class="extended-email-left">
+                            <div class="extended-email-meta">
+                                <span class="extended-email-sender">Sender ${i}</span>
+                                <span class="extended-email-subject">Email subject ${i}</span>
+                            </div>
+                            <div class="extended-email-preview">Preview text for email ${i}...</div>
+                        </div>
+                        <div class="extended-email-right">
+                            <span class="extended-email-time">${i} days ago</span>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(emailItem);
+            }
+        }
+        
+        // Select all checkbox
+        document.getElementById('selectAll').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.extended-email-item .email-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'j' || e.key === 'J') {
+                // Next email
+                console.log('Next email');
+            } else if (e.key === 'k' || e.key === 'K') {
+                // Previous email
+                console.log('Previous email');
+            } else if (e.key === 'Escape') {
+                // Return to list view
+                switchView('list');
+            }
+        });
+    </script>
+</body>
+</html>

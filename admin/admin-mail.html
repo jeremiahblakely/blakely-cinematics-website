@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail - Blakely Admin</title>
+    <meta name="description" content="Admin mail management for Blakely Cinematics">
+    
+    <!-- Date Created: December 9, 2024 8:30 AM -->
+    <!-- Last Updated: December 17, 2024 7:45 PM -->
+    
+    <link rel="stylesheet" href="../css/admin/admin-mail.css">
+</head>
+<body>
+    <!-- Morphing Blobs -->
+    <div class="morphing-blob blob-1"></div>
+    <div class="morphing-blob blob-2"></div>
+    
+    <div class="mail-container">
+        <!-- Header -->
+        <header class="mail-header">
+            <div class="mail-header-brand">
+                <span>BLAKELY</span>
+                <span class="admin-accent">ADMIN</span>
+                <span class="divider">|</span>
+                <span>MAIL</span>
+            </div>
+            
+            <div class="mail-header-actions">
+                <button class="compose-btn" onclick="openCompose()">
+                    <span>✉️</span> Compose New
+                </button>
+                
+                <button class="action-btn" onclick="openSettings()">
+                    <span>⚙️</span> Settings
+                </button>
+                
+                <button class="action-btn" onclick="location.href='admin.html'">
+                    <span>↩️</span> Dashboard
+                </button>
+            </div>
+        </header>
+        
+        <!-- Sidebar -->
+        <aside class="mail-sidebar">
+            <ul class="mail-folders">
+                <li class="mail-folder-item active" data-folder="inbox">
+                    <div class="mail-folder-name">
+                        <span>📥</span>
+                        <span>Inbox</span>
+                    </div>
+                    <span class="mail-folder-count">12</span>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="starred">
+                    <div class="mail-folder-name">
+                        <span>⭐</span>
+                        <span>Starred</span>
+                    </div>
+                    <span class="mail-folder-count">3</span>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="sent">
+                    <div class="mail-folder-name">
+                        <span>📤</span>
+                        <span>Sent</span>
+                    </div>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="drafts">
+                    <div class="mail-folder-name">
+                        <span>📝</span>
+                        <span>Drafts</span>
+                    </div>
+                    <span class="mail-folder-count">2</span>
+                </li>
+                
+                <div class="folder-separator"></div>
+                
+                <li class="mail-folder-item" data-folder="bookings">
+                    <div class="mail-folder-name">
+                        <span>📅</span>
+                        <span>Bookings</span>
+                    </div>
+                    <span class="mail-folder-count">8</span>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="clients">
+                    <div class="mail-folder-name">
+                        <span>👤</span>
+                        <span>Clients</span>
+                    </div>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="finance">
+                    <div class="mail-folder-name">
+                        <span>💰</span>
+                        <span>Finance</span>
+                    </div>
+                </li>
+                
+                <li class="mail-folder-item" data-folder="galleries">
+                    <div class="mail-folder-name">
+                        <span>🎨</span>
+                        <span>Galleries</span>
+                    </div>
+                </li>
+                
+                <div class="folder-separator"></div>
+                
+                <li class="mail-folder-item" data-folder="trash">
+                    <div class="mail-folder-name">
+                        <span>🗑️</span>
+                        <span>Trash</span>
+                    </div>
+                </li>
+            </ul>
+        </aside>
+        
+        <!-- Email List -->
+        <div class="mail-list">
+            <div class="mail-list-search">
+                <input type="text" class="mail-search-input" placeholder="Search emails..." id="searchInput">
+                
+                <select class="account-selector" id="accountSelector">
+                    <option value="all">All Accounts</option>
+                    <option value="jd@jeremiahblakely.com">jd@jeremiahblakely.com</option>
+                    <option value="jd@blakelycinematics.com">jd@blakelycinematics.com</option>
+                </select>
+                
+                <div class="mail-actions-row">
+                    <button class="mail-action-btn btn-mark-read" onclick="markAsRead()">
+                        ✓ Mark Read
+                    </button>
+                    <button class="mail-action-btn btn-mark-unread" onclick="markAsUnread()">
+                        ○ Mark Unread
+                    </button>
+                </div>
+            </div>
+            
+            <div id="emailList">
+                <!-- emails populated by JS -->
+            </div>
+        </div>
+        
+        <!-- Email Content -->
+        <main class="mail-content">
+            <div class="mail-content-pinned">
+                <h1 class="mail-content-subject" id="emailSubject">Select an email to read</h1>
+                
+                <div class="mail-content-meta" id="emailMeta" style="display: none;">
+                    <div class="mail-content-sender">
+                        <div class="mail-sender-avatar" id="senderAvatar">--</div>
+                        <div>
+                            <div id="senderName">--</div>
+                            <div style="font-size: 0.85rem; opacity: 0.7;" id="senderEmail">--</div>
+                        </div>
+                    </div>
+                    
+                    <span style="margin-left: auto; color: var(--text-secondary);" id="emailDate">--</span>
+                </div>
+                
+                <div class="mail-content-actions" id="emailActions" style="display: none;">
+                    <button class="action-btn primary" onclick="showReply()">
+                        <span>↩️</span> Reply
+                    </button>
+                    <button class="action-btn" onclick="showReplyAll()">
+                        <span>👥</span> Reply All
+                    </button>
+                    <button class="action-btn" onclick="showForward()">
+                        <span>↪️</span> Forward
+                    </button>
+                    <button class="action-btn" onclick="toggleStar()">
+                        <span>⭐</span> Star
+                    </button>
+                    <button class="action-btn" onclick="archiveEmail()">
+                        <span>📦</span> Archive
+                    </button>
+                    <button class="action-btn" onclick="moveToFolder()">
+                        <span>📁</span> Move to
+                    </button>
+                    <button class="action-btn" onclick="snoozeEmail()">
+                        <span>⏰</span> Snooze
+                    </button>
+                    <button class="action-btn" onclick="deleteEmail()">
+                        <span>🗑️</span> Delete
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mail-content-scroll">
+                <div class="mail-content-body" id="emailBody">
+                    <p style="text-align: center; color: var(--text-secondary);">No email selected</p>
+                </div>
+            </div>
+            
+            <!-- Enhanced Reply Box with Adaptive Height -->
+            <div id="replyBox" class="reply-box" style="display: none;">
+                <div class="reply-header">
+                    <span class="reply-title">Replying to <span id="replyTo">--</span></span>
+                    <button class="cc-toggle" onclick="toggleCC()">CC/BCC</button>
+                    <button class="close-btn" onclick="closeReply()">×</button>
+                </div>
+                
+                <!-- CC/BCC fields (hidden by default) -->
+                <div class="cc-bcc-fields" id="ccBccFields" style="display: none;">
+                    <input type="text" placeholder="CC:" class="cc-input">
+                    <input type="text" placeholder="BCC:" class="bcc-input">
+                </div>
+                
+                <!-- Single-row writing tools -->
+                <div class="writing-tools">
+                    <!-- Text Styles -->
+                    <div class="tool-group">
+                        <button class="tool-btn" onclick="formatText('bold')" title="Bold (⌘B)"><b>B</b></button>
+                        <button class="tool-btn" onclick="formatText('italic')" title="Italic (⌘I)"><i>I</i></button>
+                        <button class="tool-btn" onclick="formatText('underline')" title="Underline (⌘U)"><u>U</u></button>
+                        <button class="tool-btn" onclick="formatText('strike')" title="Strikethrough"><s>S</s></button>
+                    </div>
+                    
+                    <div class="tool-divider"></div>
+                    
+                    <!-- Alignment -->
+                    <div class="tool-group">
+                        <button class="tool-btn" title="Align Left">
+                            <img src="../assets/icons/svg/Hicon/Linear/Text%20Align%20Left.svg" width="14" height="14" alt="Align Left">
+                        </button>
+                        <button class="tool-btn" title="Center">
+                            <img src="../assets/icons/svg/Hicon/Linear/Text%20Align%20Center.svg" width="14" height="14" alt="Center">
+                        </button>
+                        <button class="tool-btn" title="Align Right">
+                            <img src="../assets/icons/svg/Hicon/Linear/Text%20Align%20Right.svg" width="14" height="14" alt="Align Right">
+                        </button>
+                    </div>
+                    
+                    <div class="tool-divider"></div>
+                    
+                    <!-- Lists -->
+                    <div class="tool-group">
+                        <button class="tool-btn" onclick="insertList('bullet')" title="Bullet List">•</button>
+                        <button class="tool-btn" onclick="insertList('number')" title="Numbered List">1.</button>
+                        <button class="tool-btn" onclick="formatText('quote')" title="Quote">"</button>
+                    </div>
+                    
+                    <div class="tool-divider"></div>
+                    
+                    <!-- AI Assistant -->
+                    <button class="tool-btn ai-btn" onclick="toggleAI()" title="AI Assistant">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Fullscreen button (floated right) -->
+                    <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Focus Mode">⛶</button>
+                </div>
+                
+                <!-- AI Assistant Panel (hidden by default) -->
+                <div class="ai-panel" id="aiPanel" style="display: none;">
+                    <button onclick="aiRewrite()">Rewrite</button>
+                    <button onclick="aiExpand()">Expand</button>
+                    <button onclick="aiSummarize()">Summarize</button>
+                    <button onclick="aiTone('professional')">Professional</button>
+                    <button onclick="aiTone('friendly')">Friendly</button>
+                </div>
+                
+                <div class="textarea-wrapper">
+                    <textarea id="replyText" class="reply-text auto-expand" 
+                              placeholder="Type your reply here..."></textarea>
+                    <span class="word-count" id="wordCount">0 words</span>
+                </div>
+                
+                          <div class="reply-footer">
+                            <div class="reply-meta">
+                                <button class="action-btn icon-btn" onclick="attachFile()">📎</button>
+                                <span class="draft-saved" id="draftIndicator">✓ Draft saved</span>
+                            </div>
+                            <div class="reply-actions">
+                                <button class="action-btn" onclick="saveDraft()">Save Draft</button>
+                                <button class="action-btn primary" onclick="sendReply()">Send Reply</button>
+                            </div>
+                        </div>
+        </main>
+        
+        <!-- Widgets Sidebar -->
+        <aside class="mail-widgets">
+            <div class="widget calendar-widget">
+                <div class="widget-title">
+                    <span>Upcoming</span>
+                    <span id="selectedDate">December 17</span>
+                </div>
+                <div class="calendar-mini" id="calendar"></div>
+            </div>
+            
+            <div class="widget" id="eventsWidget" style="display: none;">
+                <div class="widget-title">Events</div>
+                <div id="eventsList"></div>
+                <button class="close-btn" onclick="hideEvents()">×</button>
+            </div>
+        </aside>
+    </div>
+    
+    <!-- Load MVC Application -->
+    <script type="module" src="../js/admin-app.js"></script>
+</body>
+</html>

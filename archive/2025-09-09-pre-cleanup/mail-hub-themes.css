@@ -1,0 +1,329 @@
+/* Mail Hub Theme System */
+:root {
+  /* Default Theme: Ember & Ash */
+  --primary: #FF6B35;
+  --primary-light: #FF8C42;
+  --primary-dark: #E55100;
+  --surface: #0F0F0F;
+  --surface-light: #1A1A1A;
+  --surface-card: rgba(255, 255, 255, 0.02);
+  --border: rgba(255, 107, 53, 0.15);
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --header-bg: #0a0a0a;
+  --sidebar-bg: rgba(15, 15, 15, 0.95);
+  --main-bg: #0f0f0f;
+  --viewer-bg: #0D0D0D;
+}
+
+/* Theme: Ember & Ash */
+[data-theme='ember'] {
+  --primary: #FF6B35;
+  --primary-light: #FF8C42;
+  --primary-dark: #E55100;
+  --border: rgba(255, 107, 53, 0.15);
+}
+
+/* Theme: Copper & Charcoal */
+[data-theme='copper'] {
+  --primary: #B87333;
+  --primary-light: #DA8A67;
+  --primary-dark: #8B5A00;
+  --border: rgba(184, 115, 51, 0.12);
+}
+
+/* Theme: Teal & Graphite */
+[data-theme='teal'] {
+  --primary: #00D4AA;
+  --primary-light: #00FFD1;
+  --primary-dark: #00A08A;
+  --border: rgba(0, 212, 170, 0.1);
+}
+
+/* Theme: Sunset & Twilight */
+[data-theme='sunset'] {
+  --primary: #FF6B9D;
+  --primary-light: #FFC75F;
+  --primary-dark: #C94277;
+  --border: rgba(255, 107, 157, 0.12);
+}
+
+/* Theme: Classic Blakely */
+[data-theme='blakely'] {
+  --primary: #9b87f5;
+  --primary-light: #b8a9ff;
+  --primary-dark: #7e57c2;
+  --border: rgba(155, 135, 245, 0.15);
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Fixed Layout Structure */
+.mail-hub-container {
+  display: flex;
+  height: calc(100vh - 64px);
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--header-bg);
+}
+
+/* Left Sidebar - Fixed */
+.mail-left-sidebar {
+  width: 240px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  overflow-y: auto;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Email List Column */
+.mail-list-column {
+  width: 400px;
+  background: var(--main-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Email Viewer - Center */
+.mail-viewer {
+  flex: 1;
+  background: var(--viewer-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Right Sidebar - Fixed */
+.mail-right-sidebar {
+  width: 320px;
+  background: var(--sidebar-bg);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+/* Theme Switcher Dropdown */
+.theme-switcher {
+  position: absolute;
+  top: 50px;
+  right: 100px;
+  background: var(--surface-light);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  display: none;
+  z-index: 1000;
+  min-width: 200px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.theme-switcher.active {
+  display: block;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 5px;
+  transition: background 0.2s;
+}
+
+.theme-option:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.theme-option.active {
+  background: var(--primary);
+  color: white;
+}
+
+.theme-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 12px;
+  border: 2px solid transparent;
+}
+
+.theme-option.active .theme-swatch {
+  border-color: white;
+}
+
+/* Email Viewer Styles */
+.email-viewer-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-light);
+}
+
+.email-viewer-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.email-actions {
+  display: flex;
+  gap: 10px;
+  padding: 15px 20px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.email-action-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.email-action-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.email-action-btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+/* Floating Compose Button */
+.fab-compose {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fab-compose:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 30px rgba(0,0,0,0.4);
+}
+
+/* Calendar Widget */
+.calendar-widget {
+  background: var(--surface-light);
+  border-radius: 12px;
+  padding: 15px;
+  border: 1px solid var(--border);
+}
+
+.calendar-header {
+  text-align: center;
+  color: var(--primary);
+  margin-bottom: 15px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.calendar-day:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+}
+
+.calendar-day.today {
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+}
+
+/* Recent Contacts Section */
+.recent-contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.contact-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.contact-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: white;
+  margin-right: 10px;
+}
+
+.contact-info {
+  flex: 1;
+}
+
+.contact-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.contact-last {
+  font-size: 11px;
+  color: var(--text-muted);
+}

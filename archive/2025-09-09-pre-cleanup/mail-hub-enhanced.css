@@ -1,0 +1,258 @@
+/* Enhanced Mail Hub - Sophisticated Layering & Glassmorphism */
+
+/* Base gradient background */
+.mail-hub-container {
+  background: linear-gradient(135deg, #0a0a0a 0%, #0f0f0f 50%, rgba(255, 107, 53, 0.02) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient light effects */
+.mail-hub-container::before,
+.mail-hub-container::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.mail-hub-container::before {
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 20% 30%, var(--primary) 0%, transparent 40%);
+  opacity: 0.03;
+  animation: float 20s ease-in-out infinite;
+}
+
+.mail-hub-container::after {
+  bottom: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 80% 70%, var(--primary-light) 0%, transparent 40%);
+  opacity: 0.02;
+  animation: float 25s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+/* Left Sidebar - Glass Layer 1 */
+.mail-left-sidebar {
+  background: rgba(15, 15, 15, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    inset 0 0 40px rgba(255, 255, 255, 0.02),
+    4px 0 24px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+  position: relative;
+}
+
+/* Email List - Glass Layer 2 */
+.mail-list-column {
+  background: linear-gradient(180deg, rgba(10, 10, 10, 0.8) 0%, rgba(15, 15, 15, 0.8) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 5;
+}
+
+/* Email Viewer - Constrained Width */
+.mail-viewer {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  background: linear-gradient(180deg, #0d0d0d 0%, #0a0a0a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.mail-viewer-inner {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(20, 20, 20, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 0 60px rgba(0, 0, 0, 0.5),
+    inset 0 0 40px rgba(255, 255, 255, 0.01);
+}
+
+/* Right Sidebar - Glass Layer 3 */
+.mail-right-sidebar {
+  background: rgba(15, 15, 15, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    inset 0 0 40px rgba(255, 255, 255, 0.02),
+    -4px 0 24px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+
+/* Enhanced Email Cards */
+.email-card {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px 15px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.email-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.03) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.email-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--primary);
+  transform: translateX(4px) scale(1.01);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(255, 107, 53, 0.1);
+}
+
+.email-card:hover::before {
+  opacity: 1;
+}
+
+.email-card.selected {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: var(--primary);
+  box-shadow: 
+    inset 0 0 20px rgba(255, 107, 53, 0.1),
+    0 0 40px rgba(255, 107, 53, 0.2);
+}
+
+/* Floating Action Button with Glow */
+.fab-compose {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(255, 107, 53, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.fab-compose::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.fab-compose:hover {
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 
+    0 8px 40px rgba(0, 0, 0, 0.4),
+    0 0 60px rgba(255, 107, 53, 0.4);
+}
+
+.fab-compose:hover::before {
+  width: 100px;
+  height: 100px;
+}
+
+/* Calendar Widget Glass */
+.calendar-widget {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    inset 0 0 20px rgba(255, 255, 255, 0.02),
+    0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Action buttons with glass effect */
+.email-action-btn {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.email-action-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: var(--primary);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+  opacity: 0.3;
+}
+
+.email-action-btn:hover {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 107, 53, 0.2);
+}
+
+.email-action-btn:hover::before {
+  width: 100%;
+  height: 100%;
+}

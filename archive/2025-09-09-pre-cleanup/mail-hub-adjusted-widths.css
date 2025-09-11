@@ -1,0 +1,40 @@
+/* Adjusted Zone Widths */
+
+/* Email List - NOW 500px */
+.mail-list-column {
+  width: 500px !important;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(10, 10, 10, 0.8) 0%, rgba(15, 15, 15, 0.8) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 5;
+}
+
+/* Ensure other widths remain correct */
+.mail-left-sidebar {
+  width: 240px !important;
+}
+
+.mail-right-sidebar {
+  width: 320px !important;
+}
+
+/* Email cards need more room for content */
+.email-card {
+  padding: 14px 18px;
+}
+
+.email-subject {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.email-preview {
+  font-size: 13px;
+  line-height: 1.4;
+}

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommended Vendors - Blakely Cinematics</title>
+    <link rel="stylesheet" href="css/styles.css?v=20250828">
+    <style>
+        /* Vendors Page Specific Styles */
+        body {
+            cursor: none;
+        }
+
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-follower {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 107, 53, 0.1);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            transition: transform 0.3s ease;
+        }
+
+        .vendors-hero {
+            padding: 120px 20px 80px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,1) 100%);
+        }
+
+        .vendors-hero h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+        }
+
+        .vendors-hero p {
+            font-size: 1.1rem;
+            color: #888;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .vendors-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 20px;
+        }
+
+        .category-section {
+            margin-bottom: 80px;
+        }
+
+        .category-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .category-header h2 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .category-header h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 2px;
+            background: #FF6B35;
+        }
+
+        .category-description {
+            color: #888;
+            max-width: 600px;
+            margin: 20px auto 0;
+        }
+
+        .vendors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .vendor-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            border: 1px solid #222;
+            border-radius: 10px;
+            padding: 40px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vendor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B35, #ff8555);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .vendor-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .vendor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(255, 107, 53, 0.1);
+            border-color: #333;
+        }
+
+        .vendor-header {
+            margin-bottom: 25px;
+        }
+
+        .vendor-name {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+
+        .vendor-specialty {
+            color: #FF6B35;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .vendor-info {
+            margin-bottom: 25px;
+        }
+
+        .vendor-info p {
+            color: #bbb;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .info-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-list li {
+            color: #bbb;
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-list li strong {
+            color: #888;
+            margin-right: 10px;
+            min-width: 80px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .vendor-contact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding-top: 25px;
+            border-top: 1px solid #333;
+        }
+
+        .contact-link {
+            width: 110px;
+            padding: 10px 12px;
+            background: transparent;
+            border: 1px solid #FF6B35;
+            color: #FF6B35;
+            text-decoration: none;
+            text-align: center;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .contact-link:hover {
+            background: #FF6B35;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .contact-link.primary {
+            background: #FF6B35;
+            color: white;
+        }
+
+        .contact-link.primary:hover {
+            background: #ff8555;
+        }
+
+        .note-section {
+            background: rgba(255, 107, 53, 0.1);
+            border-left: 4px solid #FF6B35;
+            padding: 30px;
+            margin: 60px 0;
+            border-radius: 5px;
+        }
+
+        .note-section h3 {
+            color: #FF6B35;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 1rem;
+        }
+
+        .note-section p {
+            color: #bbb;
+            line-height: 1.8;
+            margin: 0;
+        }
+
+        .note-section ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+        }
+
+        .note-section li {
+            color: #bbb;
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .note-section li::before {
+            content: '•';
+            color: #FF6B35;
+            position: absolute;
+            left: 0;
+        }
+
+        .coming-soon {
+            text-align: center;
+            padding: 60px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            border: 2px dashed #333;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+
+        .coming-soon h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .coming-soon p {
+            color: #555;
+        }
+
+        @media (max-width: 768px) {
+            .vendors-hero h1 {
+                font-size: 2rem;
+            }
+
+            .vendors-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .vendor-card {
+                padding: 30px 20px;
+            }
+
+            .contact-link {
+                width: 100%;
+                max-width: 200px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+    
+    <!-- AWS CloudWatch RUM Analytics -->
+    <script>
+      (function(n,i,v,r,s,c,x,z){x=window.AwsRumClient={q:[],n:n,i:i,v:v,r:r,c:c};window[n]=function(c,p){x.q.push({c:c,p:p});};z=document.createElement('script');z.async=true;z.src=s;document.head.insertBefore(z,document.head.getElementsByTagName('script')[0]);})(
+        'cwr',
+        '1a163e06-eb6a-4131-bdb1-6e27fbb0799c',
+        '1.0.0',
+        'us-east-1',
+        'https://client.rum.us-east-1.amazonaws.com/1.19.0/cwr.js',
+        {
+          sessionSampleRate: 1 ,
+          endpoint: "https://dataplane.rum.us-east-1.amazonaws.com" ,
+          telemetries: ["performance","errors","http"] ,
+          allowCookies: true ,
+          enableXRay: false ,
+          signing: true
+        }
+      );
+    </script>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+
+    <!-- Navigation -->
+    <nav class="edge-header">
+        <div class="nav-container">
+            <a href="index.html" class="logo">BLAKELY<span style="color: #FF6B35;">.</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="services.html">Services</a></li>
+                <li><a href="index.html#portfolio">Portfolio</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+            <a href="vip-login.html" class="vip-link nav-cta">VIP</a>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="vendors-hero">
+        <h1>RECOMMENDED VENDORS</h1>
+        <p>Trusted professionals we recommend to help you look your absolute best for your session</p>
+    </section>
+
+    <!-- Vendors Container -->
+    <div class="vendors-container">
+
+        <!-- Important Note -->
+        <div class="note-section">
+            <h3>Before Booking</h3>
+            <p>These talented professionals are independent vendors we've worked with and recommend. When booking, please:</p>
+            <ul>
+                <li>Book at least 2 weeks in advance for availability</li>
+                <li>Mention you're shooting with Blakely Cinematics</li>
+                <li>Discuss your session goals and look preferences</li>
+                <li>Confirm rates and travel fees if applicable</li>
+                <li>Allow 60-90 minutes for makeup, 30-60 for hair styling</li>
+            </ul>
+        </div>
+
+        <!-- Makeup Artists Section -->
+        <section class="category-section">
+            <div class="category-header">
+                <h2>MAKEUP ARTISTS</h2>
+                <p class="category-description">Professional makeup artists experienced in photography and on-camera makeup</p>
+            </div>
+
+            <div class="vendors-grid">
+                <!-- Vendor 1 -->
+                <div class="vendor-card">
+                    <div class="vendor-header">
+                        <h3 class="vendor-name">Sarah Martinez MUA</h3>
+                        <span class="vendor-specialty">Headshot & Beauty Specialist</span>
+                    </div>
+                    <div class="vendor-info">
+                        <p>Specializing in natural, camera-ready makeup for headshots and commercial looks. 10+ years experience with actors and models.</p>
+                        <ul class="info-list">
+                            <li><strong>Rate:</strong> $200-300</li>
+                            <li><strong>Location:</strong> Mobile - OC/LA Area</li>
+                            <li><strong>Book:</strong> 2 weeks advance</li>
+                        </ul>
+                    </div>
+                    <div class="vendor-contact">
+                        <a href="#" class="contact-link primary">Instagram</a>
+                        <a href="#" class="contact-link">Email</a>
+                    </div>
+                </div>
+
+                <!-- Vendor 2 -->
+                <div class="vendor-card">
+                    <div class="vendor-header">
+                        <h3 class="vendor-name">Jessica Chen Beauty</h3>
+                        <span class="vendor-specialty">Editorial & Creative</span>
+                    </div>
+                    <div class="vendor-info">
+                        <p>Editorial and creative makeup for bold, cinematic portraits. Expert in dramatic looks and special effects.</p>
+                        <ul class="info-list">
+                            <li><strong>Rate:</strong> $250-350</li>
+                            <li><strong>Location:</strong> Studio in Irvine</li>
+                            <li><strong>Book:</strong> 3 weeks advance</li>
+                        </ul>
+                    </div>
+                    <div class="vendor-contact">
+                        <a href="#" class="contact-link primary">Instagram</a>
+                        <a href="#" class="contact-link">Website</a>
+                    </div>
+                </div>
+
+                <!-- Vendor 3 -->
+                <div class="vendor-card">
+                    <div class="vendor-header">
+                        <h3 class="vendor-name">Michelle Park Artistry</h3>
+                        <span class="vendor-specialty">Natural & Commercial</span>
+                    </div>
+                    <div class="vendor-info">
+                        <p>Clean, polished looks perfect for commercial headshots. Specializes in enhancing natural beauty for camera.</p>
+                        <ul class="info-list">
+                            <li><strong>Rate:</strong> $175-250</li>
+                            <li><strong>Location:</strong> Mobile - OC Area</li>
+                            <li><strong>Book:</strong> 1-2 weeks advance</li>
+                        </ul>
+                    </div>
+                    <div class="vendor-contact">
+                        <a href="#" class="contact-link primary">Instagram</a>
+                        <a href="#" class="contact-link">Email</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Hair Stylists Section -->
+        <section class="category-section">
+            <div class="category-header">
+                <h2>HAIR STYLISTS</h2>
+                <p class="category-description">Professional stylists who understand on-camera hair requirements</p>
+            </div>
+
+            <div class="vendors-grid">
+                <!-- Vendor 1 -->
+                <div class="vendor-card">
+                    <div class="vendor-header">
+                        <h3 class="vendor-name">David Kim Hair</h3>
+                        <span class="vendor-specialty">Men's Grooming Expert</span>
+                    </div>
+                    <div class="vendor-info">
+                        <p>Specializing in men's cuts and styling for headshots. Expert in classic and contemporary styles.</p>
+                        <ul class="info-list">
+                            <li><strong>Rate:</strong> $150-200</li>
+                            <li><strong>Location:</strong> Fullerton Studio</li>
+                            <li><strong>Book:</strong> 1 week advance</li>
+                        </ul>
+                    </div>
+                    <div class="vendor-contact">
+                        <a href="#" class="contact-link primary">Instagram</a>
+                        <a href="#" class="contact-link">Book Online</a>
+                    </div>
+                </div>
+
+                <!-- Vendor 2 -->
+                <div class="vendor-card">
+                    <div class="vendor-header">
+                        <h3 class="vendor-name">Lauren Style Studio</h3>
+                        <span class="vendor-specialty">Women's Hair Design</span>
+                    </div>
+                    <div class="vendor-info">
+                        <p>From sleek and professional to textured and creative. Experienced with all hair types and textures.</p>
+                        <ul class="info-list">
+                            <li><strong>Rate:</strong> $175-275</li>
+                            <li><strong>Location:</strong> Mobile Service</li>
+                            <li><strong>Book:</strong> 2 weeks advance</li>
+                        </ul>
+                    </div>
+                    <div class="vendor-contact">
+                        <a href="#" class="contact-link primary">Instagram</a>
+                        <a href="#" class="contact-link">Email</a>
+                    </div>
+                </div>
+
+                <!-- Coming Soon -->
+                <div class="coming-soon">
+                    <h3>More Stylists Coming Soon</h3>
+                    <p>We're always adding trusted professionals to our list</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Wardrobe Stylists Section -->
+        <section class="category-section">
+            <div class="category-header">
+                <h2>WARDROBE STYLISTS</h2>
+                <p class="category-description">Professional stylists to help curate the perfect looks for your session</p>
+            </div>
+
+            <div class="coming-soon">
+                <h3>Coming Soon</h3>
+                <p>We're currently vetting wardrobe stylists to recommend. Check back soon!</p>
+            </div>
+        </section>
+
+        <!-- Final Note -->
+        <div class="note-section">
+            <h3>Not Listed?</h3>
+            <p>If you're a makeup artist, hair stylist, or wardrobe stylist interested in being featured on our recommended vendors list, please reach out to us at <a href="mailto:contact@blakelycinematics.com" style="color: #FF6B35;">contact@blakelycinematics.com</a> with your portfolio and rates.</p>
+        </div>
+
+    </div>
+
+    <script src="js/api-config.js"></script>
+    <script src="js/integrate-api.js"></script>
+    <script src="js/script.js?v=20250828"></script>
+</body>
+</html>

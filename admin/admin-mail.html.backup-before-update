@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail - Blakely Admin</title>
+    <meta name="description" content="Admin mail management for Blakely Cinematics">
+    
+    <!-- Date Created: December 9, 2024 7:15 AM -->
+    <!-- Last Updated: December 9, 2024 7:15 AM -->
+    
+    <style>
+        /* ========================================== */
+        /* CYBERPUNK THEME VARIABLES                  */
+        /* ========================================== */
+        :root {
+            /* Cyberpunk Color Palette */
+            --bg-primary: #0A0014;
+            --bg-secondary: #13001F;
+            --bg-tertiary: #1D0029;
+            --surface: #2A0038;
+            --surface-hover: #350045;
+            
+            --accent-primary: #00FFFF;
+            --accent-secondary: #FF00FF;
+            --accent-glow: rgba(0, 255, 255, 0.5);
+            --accent-pulse: rgba(255, 0, 255, 0.5);
+            
+            --text-primary: #E0F2FE;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            
+            --border-default: rgba(0, 255, 255, 0.2);
+            --border-hover: rgba(255, 0, 255, 0.4);
+            
+            --success: #00FF88;
+            --warning: #FFAA00;
+            --error: #FF0055;
+            --info: #00AAFF;
+            
+            /* Glass Effects */
+            --glass-blur: 20px;
+            --glass-opacity: 0.06;
+            --shadow-glow: 0 0 80px var(--accent-glow), 0 0 120px var(--accent-pulse);
+            
+            /* Layout Dimensions - ADJUSTED */
+            --header-height: 64px;
+            --sidebar-width: 260px;
+            --email-list-width: 455px; /* Increased by 75px */
+            --widget-width: 340px;
+            
+            /* Typography */
+            --font-display: 'Montserrat', -apple-system, sans-serif;
+            --font-body: 'Inter', -apple-system, sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            
+            /* Transitions */
+            --transition: cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        /* ========================================== */
+        /* FONT IMPORTS                              */
+        /* ========================================== */
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
+        
+        /* ========================================== */
+        /* BASE STYLES                               */
+        /* ========================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+        
+        /* Animated Background Pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 35px,
+                    rgba(0, 255, 255, 0.01) 35px,
+                    rgba(0, 255, 255, 0.01) 70px
+                );
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        /* Morphing Blobs */
+        .morphing-blob {
+            position: fixed;
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+            filter: blur(40px);
+            opacity: 0.3;
+            animation: morph 20s ease-in-out infinite, float 15s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .blob-1 {
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            right: -100px;
+        }
+        
+        .blob-2 {
+            width: 300px;
+            height: 300px;
+            bottom: -50px;
+            left: -50px;
+            animation-delay: 10s;
+        }
+        
+        @keyframes morph {
+            0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+            33% { border-radius: 70% 40% 50% 60% / 30% 60% 70% 40%; }
+            66% { border-radius: 50% 60% 30% 70% / 50% 40% 60% 30%; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        /* ========================================== */
+        /* LAYOUT GRID                               */
+        /* ========================================== */
+        .mail-container {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) var(--email-list-width) 1fr var(--widget-width);
+            grid-template-rows: var(--header-height) 1fr;
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* ========================================== */
+        /* GLASSMORPHISM PANELS                      */
+        /* ========================================== */
+        .glass-panel {
+            background: rgba(255, 255, 255, var(--glass-opacity));
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--border-default);
+        }
+        
+        /* ========================================== */
+        /* HEADER BAR                                */
+        /* ========================================== */
+        .mail-header {
+            grid-column: 1 / -1;
+            background: linear-gradient(180deg, rgba(10, 0, 20, 0.95) 0%, rgba(19, 0, 31, 0.95) 100%);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-default);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+            position: relative;
+        }
+        
+        /* Animated Border Bottom */
+        .mail-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                var(--accent-primary), 
+                var(--accent-secondary), 
+                transparent);
+            background-size: 200% 100%;
+            animation: border-flow 3s linear infinite;
+        }
+        
+        @keyframes border-flow {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        .mail-header-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            font-weight: 200;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+        
+        .mail-header-brand .admin-accent {
+            background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 500;
+        }
+        
+        .mail-header-brand .divider {
+            opacity: 0.3;
+            color: var(--accent-primary);
+            margin: 0 12px;
+        }
+        
+        .mail-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        /* Compose Button in Header */
+        .compose-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            border-radius: 8px;
+            color: var(--bg-primary);
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.3s var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .compose-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .compose-btn:hover::before {
+            width: 300%;
+            height: 300%;
+        }
+        
+        .compose-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px var(--accent-glow);
+        }
+        
+        /* ========================================== */
+        /* SIDEBAR - FOLDERS                         */
+        /* ========================================== */
+        .mail-sidebar {
+            background: rgba(19, 0, 31, 0.6);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border-default);
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .mail-folders {
+            list-style: none;
+        }
+        
+        .mail-folder-item {
+            padding: 12px 14px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mail-folder-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--accent-primary), transparent);
+            opacity: 0.1;
+            transition: width 0.3s var(--transition);
+        }
+        
+        .mail-folder-item:hover {
+            background: rgba(0, 255, 255, 0.05);
+            color: var(--accent-primary);
+            transform: translateX(4px);
+        }
+        
+        .mail-folder-item:hover::before {
+            width: 100%;
+        }
+        
+        .mail-folder-item.active {
+            background: rgba(0, 255, 255, 0.1);
+            color: var(--accent-primary);
+            border-left: 3px solid var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        
+        .mail-folder-name {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            font-family: var(--font-display);
+            font-weight: 400;
+        }
+        
+        .mail-folder-count {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        /* ========================================== */
+        /* EMAIL LIST                                */
+        /* ========================================== */
+        .mail-list {
+            background: rgba(29, 0, 41, 0.6);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border-default);
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        /* Search Bar Above Email List */
+        .mail-list-search {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-default);
+            background: rgba(42, 0, 56, 0.4);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .mail-search-input {
+            width: 100%;
+            padding: 10px 16px;
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid var(--border-default);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all 0.3s var(--transition);
+        }
+        
+        .mail-search-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background: rgba(0, 255, 255, 0.08);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        
+        .mail-search-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .mail-list-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-default);
+            background: rgba(42, 0, 56, 0.3);
+        }
+        
+        .mail-list-title {
+            font-size: 1rem;
+            font-weight: 400;
+            font-family: var(--font-display);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--accent-primary);
+        }
+        
+        /* Email Items with increased height */
+        .mail-item {
+            padding: 20px 16px;
+            min-height: 120px; /* Increased height */
+            border-bottom: 1px solid var(--border-default);
+            cursor: pointer;
+            transition: all 0.2s var(--transition);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .mail-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s var(--transition);
+        }
+        
+        .mail-item:hover {
+            background: rgba(0, 255, 255, 0.03);
+            transform: translateX(2px);
+        }
+        
+        .mail-item:hover::before {
+            opacity: 1;
+        }
+        
+        .mail-item.active {
+            background: rgba(0, 255, 255, 0.08);
+            border-left: 3px solid var(--accent-primary);
+        }
+        
+        .mail-item.unread {
+            background: rgba(255, 0, 255, 0.02);
+        }
+        
+        .mail-item.unread .mail-item-sender {
+            color: var(--accent-secondary);
+            font-weight: 600;
+        }
+        
+        .mail-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .mail-item-sender {
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            font-family: var(--font-display);
+        }
+        
+        .mail-item-time {
+            font-size: 0.75rem;
+            color: var(--accent-primary);
+            opacity: 0.7;
+        }
+        
+        .mail-item-subject {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            font-weight: 400;
+        }
+        
+        .mail-item-preview {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .mail-item-tags {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        
+        .mail-tag {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .mail-tag.booking {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .mail-tag.client {
+            background: rgba(0, 170, 255, 0.2);
+            color: var(--info);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+        }
+        
+        .mail-tag.urgent {
+            background: rgba(255, 0, 85, 0.2);
+            color: var(--error);
+            border: 1px solid rgba(255, 0, 85, 0.3);
+            animation: pulse-urgent 2s infinite;
+        }
+        
+        @keyframes pulse-urgent {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        /* ========================================== */
+        /* EMAIL CONTENT                             */
+        /* ========================================== */
+        .mail-content {
+            background: rgba(10, 0, 20, 0.4);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Pinned Header Section */
+        .mail-content-pinned {
+            background: rgba(42, 0, 56, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-default);
+            padding: 20px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .mail-content-subject {
+            font-size: 1.4rem;
+            font-weight: 300;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            font-family: var(--font-display);
+            background: linear-gradient(45deg, var(--text-primary), var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .mail-content-meta {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+            margin-bottom: 16px;
+        }
+        
+        .mail-content-sender {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .mail-sender-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bg-primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        
+        .mail-content-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        /* Electric Border Button */
+        .mail-action-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mail-action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+            transition: left 0.5s;
+        }
+        
+        .mail-action-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+        
+        .mail-action-btn:hover::before {
+            left: 100%;
+        }
+        
+        .mail-action-btn.primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+        
+        /* Scrollable Content Body */
+        .mail-content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        
+        .mail-content-body {
+            background: rgba(42, 0, 56, 0.3);
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--border-default);
+            border-radius: 12px;
+            padding: 24px;
+            line-height: 1.7;
+            color: var(--text-primary);
+        }
+        
+        .mail-content-body p {
+            margin-bottom: 16px;
+        }
+        
+        /* Reply Box */
+        .mail-reply-box {
+            background: rgba(42, 0, 56, 0.4);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-default);
+            padding: 20px 24px;
+            margin-top: auto;
+        }
+        
+        .mail-reply-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            background: rgba(0, 255, 255, 0.03);
+            border: 1px solid var(--border-default);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            transition: all 0.3s var(--transition);
+        }
+        
+        .mail-reply-textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background: rgba(0, 255, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+        
+        /* ========================================== */
+        /* WIDGETS SIDEBAR - PINNED CALENDAR         */
+        /* ========================================== */
+        .mail-widgets {
+            background: rgba(19, 0, 31, 0.6);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid var(--border-default);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pinned Calendar at Top */
+        .widget.calendar-widget {
+            background: rgba(42, 0, 56, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-default);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 4px 20px rgba(0, 255, 255, 0.1);
+        }
+        
+        .widget {
+            background: rgba(42, 0, 56, 0.4);
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--border-default);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .widget-title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: var(--font-display);
+        }
+        
+        /* Calendar Styling */
+        .calendar-mini {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            font-size: 0.75rem;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s var(--transition);
+            border: 1px solid transparent;
+        }
+        
+        .calendar-day:hover {
+            background: rgba(0, 255, 255, 0.1);
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+        
+        .calendar-day.today {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            font-weight: 600;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+        
+        .calendar-day.has-event {
+            position: relative;
+            border-color: var(--warning);
+        }
+        
+        .calendar-day.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            width: 4px;
+            height: 4px;
+            background: var(--warning);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--warning);
+        }
+        
+        /* Holographic Button for Special Actions */
+        .btn-holographic {
+            background: linear-gradient(135deg, 
+                #667eea, #764ba2, #f093fb, #667eea);
+            background-size: 300% 300%;
+            animation: holographic-shift 6s ease infinite;
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        @keyframes holographic-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .btn-holographic:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Glitch Effect for Errors */
+        .glitch-text {
+            position: relative;
+            color: var(--error);
+        }
+        
+        .glitch-text:hover::before,
+        .glitch-text:hover::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        
+        .glitch-text:hover::before {
+            animation: glitch-1 0.3s infinite;
+            color: var(--accent-primary);
+            z-index: -1;
+        }
+        
+        .glitch-text:hover::after {
+            animation: glitch-2 0.3s infinite;
+            color: var(--accent-secondary);
+            z-index: -2;
+        }
+        
+        @keyframes glitch-1 {
+            0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+            20% { clip-path: inset(20% 0 30% 0); transform: translate(-2px, 2px); }
+            40% { clip-path: inset(50% 0 20% 0); transform: translate(2px, -2px); }
+            60% { clip-path: inset(10% 0 60% 0); transform: translate(-2px, 1px); }
+            80% { clip-path: inset(70% 0 10% 0); transform: translate(1px, -1px); }
+        }
+        
+        @keyframes glitch-2 {
+            0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+            20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -1px); }
+            40% { clip-path: inset(20% 0 40% 0); transform: translate(-2px, 2px); }
+            60% { clip-path: inset(30% 0 50% 0); transform: translate(1px, -2px); }
+            80% { clip-path: inset(10% 0 80% 0); transform: translate(-1px, 2px); }
+        }
+        
+        /* Magnetic Hover Effect */
+        .magnetic-btn {
+            transition: transform 0.3s var(--transition);
+        }
+        
+        .magnetic-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Electric Border Animation */
+        .electric-border {
+            position: relative;
+            background: var(--bg-primary);
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        
+        .electric-border::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, 
+                var(--accent-primary), 
+                var(--accent-secondary), 
+                var(--accent-primary));
+            border-radius: inherit;
+            background-size: 300% 300%;
+            animation: electric-flow 3s linear infinite;
+            z-index: -1;
+        }
+        
+        @keyframes electric-flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Morphing Blobs -->
+    <div class="morphing-blob blob-1"></div>
+    <div class="morphing-blob blob-2"></div>
+    
+    <div class="mail-container">
+        <!-- Header Bar with Compose Button -->
+        <header class="mail-header glass-panel">
+            <div class="mail-header-brand">
+                <span>BLAKELY</span>
+                <span class="admin-accent">ADMIN</span>
+                <span class="divider">|</span>
+                <span>MAIL</span>
+            </div>
+            
+            <div class="mail-header-actions">
+                <button class="compose-btn">
+                    <span>✉️</span> Compose New
+                </button>
+                
+                <button class="mail-action-btn magnetic-btn">
+                    <span>⚙️</span> Settings
+                </button>
+                
+                <button class="mail-action-btn">
+                    <span>↩️</span> Dashboard
+                </button>
+            </div>
+        </header>
+        
+        <!-- Sidebar - Folders -->
+        <aside class="mail-sidebar">
+            <ul class="mail-folders">
+                <li class="mail-folder-item active">
+                    <div class="mail-folder-name">
+                        <span>📥</span>
+                        <span>Inbox</span>
+                    </div>
+                    <span class="mail-folder-count">12</span>
+                </li>
+                
+                <li class="mail-folder-item">
+                    <div class="mail-folder-name">
+                        <span>⭐</span>
+                        <span>Starred</span>
+                    </div>
+                    <span class="mail-folder-count">3</span>
+                </li>
+                
+                <li class="mail-folder-item">
+                    <div class="mail-folder-name">
+                        <span>📤</span>
+                        <span>Sent</span>
+                    </div>
+                </li>
+                
+                <li class="mail-folder-item">
+                    <div class="mail-folder-name">
+                        <span>📝</span>
+                        <span>Drafts</span>
+                    </div>
+                    <span class="mail-folder-count">2</span>
+                </li>
+                
+                <div style="height: 1px; background: var(--border-default); margin: 16px 0;"></div>
+                
+                <li class="mail-folder-item">
+                    <div class="mail-folder-name">
+                        <span>📅</span>
+                        <span>Bookings</span>
+                    </div>
+                    <span class="mail-folder-count">8</span>
+                </li>
+                
+                <li class="mail-folder-item">
+                    <div class="mail-folder-name">
+                        <span>👤</span>
+                        <span>Clients</span>
+                    </div>
+                </li>
+                
+                <li class="mail-folder-item">
+                    <div class="mail-folder-name">
+                        <span>💰</span>
+                        <span>Finance</span>
+                    </div>
+                </li>
+                
+                <li class="mail-folder-item">
+                    <div class="mail-folder-name">
+                        <span>🎨</span>
+                        <span>Galleries</span>
+                    </div>
+                </li>
+                
+                <div style="height: 1px; background: var(--border-default); margin: 16px 0;"></div>
+                
+                <li class="mail-folder-item">
+                    <div class="mail-folder-name">
+                        <span>🗑️</span>
+                        <span>Trash</span>
+                    </div>
+                </li>
+            </ul>
+        </aside>
+        
+        <!-- Email List with Search -->
+        <div class="mail-list">
+            <!-- Search Bar at Top -->
+            <div class="mail-list-search">
+                <input type="text" class="mail-search-input" placeholder="Search emails...">
+            </div>
+            
+            <div class="mail-list-header">
+                <div class="mail-list-title">
+                    <span>Inbox - 12 unread</span>
+                </div>
+            </div>
+            
+            <!-- Email Items -->
+            <div class="mail-item unread active">
+                <div class="mail-item-header">
+                    <span class="mail-item-sender">Sarah Johnson</span>
+                    <span class="mail-item-time">10:30 AM</span>
+                </div>
+                <div class="mail-item-subject">Wedding Photography Inquiry - June 2025</div>
+                <div class="mail-item-preview">Hi, I came across your portfolio and absolutely loved your work! We're planning our wedding for June 15th at the Ritz Carlton in Half Moon Bay...</div>
+                <div class="mail-item-tags">
+                    <span class="mail-tag booking">Booking</span>
+                    <span class="mail-tag urgent">Urgent</span>
+                </div>
+            </div>
+            
+            <div class="mail-item unread">
+                <div class="mail-item-header">
+                    <span class="mail-item-sender">Michael Chen</span>
+                    <span class="mail-item-time">9:15 AM</span>
+                </div>
+                <div class="mail-item-subject">Re: Gallery Access Code Request</div>
+                <div class="mail-item-preview">Thank you for sending the access code. I was able to view the photos and they look amazing! My family especially loved the candid shots...</div>
+                <div class="mail-item-tags">
+                    <span class="mail-tag client">Client</span>
+                </div>
+            </div>
+            
+            <div class="mail-item">
+                <div class="mail-item-header">
+                    <span class="mail-item-sender">Stripe</span>
+                    <span class="mail-item-time">Yesterday</span>
+                </div>
+                <div class="mail-item-subject">Payment Received - Invoice #2024-1847</div>
+                <div class="mail-item-preview">You've received a payment of $2,500.00 from Emily Roberts for Invoice #2024-1847. The funds will be available in your account...</div>
+                <div class="mail-item-tags">
+                    <span class="mail-tag booking">Finance</span>
+                </div>
+            </div>
+            
+            <div class="mail-item">
+                <div class="mail-item-header">
+                    <span class="mail-item-sender">James Wilson</span>
+                    <span class="mail-item-time">Yesterday</span>
+                </div>
+                <div class="mail-item-subject">Corporate Headshots - Schedule Confirmation</div>
+                <div class="mail-item-preview">Just confirming our headshot session for next Tuesday at 2 PM. The team is really looking forward to it. Should we prepare anything special?</div>
+                <div class="mail-item-tags">
+                    <span class="mail-tag booking">Booking</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Email Content with Pinned Header -->
+        <main class="mail-content">
+            <!-- Pinned Header Section -->
+            <div class="mail-content-pinned">
+                <h1 class="mail-content-subject">Wedding Photography Inquiry - June 2025</h1>
+                
+                <div class="mail-content-meta">
+                    <div class="mail-content-sender">
+                        <div class="mail-sender-avatar">SJ</div>
+                        <div class="mail-sender-info">
+                            <span class="mail-sender-name">Sarah Johnson</span>
+                            <span class="mail-sender-email">sarah.johnson@email.com</span>
+                        </div>
+                    </div>
+                    
+                    <span class="mail-content-date">Today at 10:30 AM</span>
+                </div>
+                
+                <div class="mail-content-actions">
+                    <button class="mail-action-btn primary magnetic-btn">
+                        <span>↩️</span> Reply
+                    </button>
+                    <button class="mail-action-btn electric-border">
+                        <span>↪️</span> Forward
+                    </button>
+                    <button class="mail-action-btn">
+                        <span>⭐</span> Star
+                    </button>
+                    <button class="mail-action-btn">
+                        <span>📁</span> Move to
+                    </button>
+                    <button class="mail-action-btn glitch-text" data-text="Delete">
+                        <span>🗑️</span> Delete
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Scrollable Content -->
+            <div class="mail-content-scroll">
+                <div class="mail-content-body">
+                    <p>Hi Jeremiah,</p>
+                    
+                    <p>I came across your portfolio and absolutely loved your work! The way you capture emotions and moments is exactly what we're looking for in our wedding photographer.</p>
+                    
+                    <p>We're planning our wedding for June 15th, 2025, at the Ritz Carlton in Half Moon Bay. The ceremony will start at 4 PM with the reception following immediately after. We expect around 150 guests.</p>
+                    
+                    <p>We're particularly interested in your "Premium Wedding Package" that includes:</p>
+                    <ul style="margin: 16px 0; padding-left: 24px; color: var(--text-secondary);">
+                        <li>8 hours of coverage</li>
+                        <li>Second shooter</li>
+                        <li>Engagement session</li>
+                        <li>Online gallery with downloads</li>
+                        <li>Premium album</li>
+                    </ul>
+                    
+                    <p>Could you please let us know if you're available for that date? We'd also love to schedule a consultation to discuss our vision and learn more about your process.</p>
+                    
+                    <p>We've set aside a budget of $4,500-5,500 for photography and would love to understand what options are available within that range.</p>
+                    
+                    <p>Looking forward to hearing from you!</p>
+                    
+                    <p>Best regards,<br>
+                    Sarah Johnson<br>
+                    (415) 555-0123</p>
+                </div>
+            </div>
+            
+            <!-- Reply Box -->
+            <div class="mail-reply-box">
+                <textarea class="mail-reply-textarea" placeholder="Type your reply here..."></textarea>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+                    <div style="display: flex; gap: 8px;">
+                        <button class="mail-action-btn">📎</button>
+                        <button class="mail-action-btn">🖼️</button>
+                        <button class="mail-action-btn">📄</button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <button class="mail-action-btn">Save Draft</button>
+                        <button class="btn-holographic">Send Reply</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Widgets Sidebar with Pinned Calendar -->
+        <aside class="mail-widgets">
+            <!-- Pinned Calendar at Top -->
+            <div class="widget calendar-widget">
+                <div class="widget-title">
+                    <span>December 2024</span>
+                    <span style="font-size: 0.75rem; color: var(--accent-secondary); cursor: pointer;">Full Calendar</span>
+                </div>
+                
+                <div class="calendar-mini">
+                    <div class="calendar-day" style="color: var(--accent-primary); font-weight: 600;">S</div>
+                    <div class="calendar-day" style="color: var(--accent-primary); font-weight: 600;">M</div>
+                    <div class="calendar-day" style="color: var(--accent-primary); font-weight: 600;">T</div>
+                    <div class="calendar-day" style="color: var(--accent-primary); font-weight: 600;">W</div>
+                    <div class="calendar-day" style="color: var(--accent-primary); font-weight: 600;">T</div>
+                    <div class="calendar-day" style="color: var(--accent-primary); font-weight: 600;">F</div>
+                    <div class="calendar-day" style="color: var(--accent-primary); font-weight: 600;">S</div>
+                    
+                    <div class="calendar-day">1</div>
+                    <div class="calendar-day">2</div>
+                    <div class="calendar-day">3</div>
+                    <div class="calendar-day">4</div>
+                    <div class="calendar-day">5</div>
+                    <div class="calendar-day">6</div>
+                    <div class="calendar-day">7</div>
+                    <div class="calendar-day">8</div>
+                    <div class="calendar-day today">9</div>
+                    <div class="calendar-day">10</div>
+                    <div class="calendar-day has-event">11</div>
+                    <div class="calendar-day">12</div>
+                    <div class="calendar-day">13</div>
+                    <div class="calendar-day has-event">14</div>
+                    <div class="calendar-day">15</div>
+                    <div class="calendar-day">16</div>
+                    <div class="calendar-day">17</div>
+                    <div class="calendar-day">18</div>
+                    <div class="calendar-day">19</div>
+                    <div class="calendar-day">20</div>
+                    <div class="calendar-day has-event">21</div>
+                    <div class="calendar-day">22</div>
+                    <div class="calendar-day">23</div>
+                    <div class="calendar-day">24</div>
+                    <div class="calendar-day">25</div>
+                    <div class="calendar-day">26</div>
+                    <div class="calendar-day">27</div>
+                    <div class="calendar-day">28</div>
+                    <div class="calendar-day">29</div>
+                    <div class="calendar-day">30</div>
+                    <div class="calendar-day">31</div>
+                </div>
+            </div>
+            
+            <!-- Linked Items -->
+            <div class="widget">
+                <div class="widget-title">
+                    <span>Linked Items</span>
+                </div>
+                
+                <div style="padding: 12px; background: rgba(0, 255, 255, 0.05); border: 1px solid var(--border-default); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--success), var(--accent-primary)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">📅</div>
+                        <div>
+                            <div style="font-size: 0.9rem; color: var(--text-primary);">Potential Booking</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">June 15, 2025 • Wedding</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="padding: 12px; background: rgba(255, 0, 255, 0.05); border: 1px solid var(--border-default); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent-secondary), var(--info)); border-radius: 8px; display: flex; align-items: center; justify-content: center;">💎</div>
+                        <div>
+                            <div style="font-size: 0.9rem; color: var(--text-primary);">Create Quote</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Premium Package • $4,500</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Templates -->
+            <div class="widget">
+                <div class="widget-title">
+                    <span>Quick Templates</span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button class="mail-action-btn" style="justify-content: flex-start;">Booking Inquiry Response</button>
+                    <button class="mail-action-btn" style="justify-content: flex-start;">Gallery Access Instructions</button>
+                    <button class="mail-action-btn" style="justify-content: flex-start;">Payment Reminder</button>
+                    <button class="mail-action-btn" style="justify-content: flex-start;">Contract & Invoice</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+    
+    <script>
+        // Email item click handling
+        document.querySelectorAll('.mail-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.mail-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                this.classList.remove('unread');
+            });
+        });
+        
+        // Folder navigation
+        document.querySelectorAll('.mail-folder-item').forEach(folder => {
+            folder.addEventListener('click', function() {
+                document.querySelectorAll('.mail-folder-item').forEach(f => f.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Reply box functionality
+        function showReply() {
+            const replyBox = document.getElementById('replyBox');
+            replyBox.style.display = 'block';
+            replyBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+        
+        function closeReply() {
+            document.getElementById('replyBox').style.display = 'none';
+        }
+        
+        // Calendar events
+        const events = {
+            '11': [
+                { time: '10:00 AM', title: 'Portfolio Review', type: 'meeting' },
+                { time: '2:00 PM', title: 'Client Consultation', type: 'booking' }
+            ],
+            '14': [
+                { time: '9:00 AM', title: 'Wedding Shoot - Johnson', type: 'shoot' },
+                { time: '3:00 PM', title: 'Edit Session', type: 'work' }
+            ],
+            '21': [
+                { time: '11:00 AM', title: 'Gallery Delivery', type: 'delivery' },
+                { time: '4:00 PM', title: 'Team Meeting', type: 'meeting' }
+            ]
+        };
+        
+        // Calendar day click handling
+        document.querySelectorAll('.calendar-day').forEach(day => {
+            day.addEventListener('click', function() {
+                const dayNum = this.textContent;
+                if (dayNum && !isNaN(dayNum)) {
+                    showEvents(dayNum);
+                }
+            });
+        });
+        
+        function showEvents(day) {
+            const eventsWidget = document.getElementById('eventsWidget');
+            const eventsList = document.getElementById('eventsList');
+            const selectedDate = document.getElementById('selectedDate');
+            
+            selectedDate.textContent = `December ${day}`;
+            eventsList.innerHTML = '';
+            
+            if (events[day]) {
+                events[day].forEach(event => {
+                    const eventItem = document.createElement('div');
+                    eventItem.style.cssText = `
+                        padding: 10px;
+                        background: rgba(0, 255, 255, 0.05);
+                        border: 1px solid var(--border-default);
+                        border-radius: 6px;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    `;
+                    
+                    const typeColors = {
+                        meeting: 'var(--info)',
+                        booking: 'var(--success)',
+                        shoot: 'var(--accent-primary)',
+                        work: 'var(--accent-secondary)',
+                        delivery: 'var(--warning)'
+                    };
+                    
+                    eventItem.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 4px;">${event.title}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">${event.time}</div>
+                            </div>
+                            <div style="width: 8px; height: 8px; background: ${typeColors[event.type] || 'var(--accent-primary)'}; border-radius: 50%;"></div>
+                        </div>
+                    `;
+                    
+                    eventsList.appendChild(eventItem);
+                });
+            } else {
+                eventsList.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">No events scheduled</div>';
+            }
+            
+            eventsWidget.style.display = 'block';
+        }
+        
+        function hideEvents() {
+            document.getElementById('eventsWidget').style.display = 'none';
+        }
+        
+        // Add magnetic effect to buttons
+        document.querySelectorAll('.magnetic-btn').forEach(btn => {
+            btn.addEventListener('mousemove', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                
+                this.style.transform = `translate(${x * 0.1}px, ${y * 0.1}px) scale(1.05)`;
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                this.style.transform = '';
+            });
+        });
+    </script>
+</body>
+</html>

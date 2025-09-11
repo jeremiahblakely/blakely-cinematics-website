@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Settings - Blakely Cinematics</title>
-    <meta name="description" content="Admin settings for Blakely Cinematics">
+    <title>Admin Analytics - Blakely Cinematics</title>
+    <meta name="description" content="Admin analytics dashboard for Blakely Cinematics">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/styles.css?v=20250828">
+    <link rel="stylesheet" href="../css/styles.css?v=20250828">
     
     <!-- AWS CloudWatch RUM Analytics -->
     <script>
@@ -31,15 +31,17 @@
 <body class="admin-page">
 <header id="adminBar" class="admin-bar">
   <a class="admin-logo" href="admin.html" title="Dashboard">BLAKELY <span class="admin-accent">ADMIN</span></a>
-  <nav class="admin-nav" aria-label="Admin navigation">
+      <nav class="admin-nav" aria-label="Admin navigation">
     <a href="admin-scheduling.html">Scheduling</a>
     <a href="admin-mail.html">Mail</a>
     <a href="admin-bookings.html">Bookings</a>
     <a href="admin-galleries.html">Galleries</a>
+    <a href="admin-clients.html">Clients</a>
     <a href="admin-crm.html">CRM</a>
     <a href="admin-finance.html">Finance</a>
     <a href="admin-tasks.html">Tasks</a>
     <a href="admin-assets.html">Assets</a>
+    <a href="admin-analytics.html" class="active">Analytics</a>
     <a href="admin-audit.html">Audit</a>
   </nav>
   <div class="admin-actions">
@@ -59,15 +61,28 @@
     <div class="cursor"></div>
     <div class="cursor-follower"></div>
     
-    <!-- Admin Header parity: removed duplicate legacy header/nav -->
+    <!-- Admin Header -->
+    <nav class="admin-nav">
+        <div class="nav-container">
+            <a href="admin.html" class="admin-logo">BLAKELY ADMIN</a>
+            <nav id="header-tabs">
+                <a href="../admin/mail.html" data-tab="mail">Mail</a>
+                <a href="admin-galleries.html" data-tab="galleries">Galleries</a>
+                <a href="admin-clients.html" data-tab="clients">Clients</a>
+                <a href="admin-analytics.html" data-tab="analytics">Analytics</a>
+                <a href="admin-settings.html" data-tab="settings">Settings</a>
+            </nav>
+            <a href="index.html" class="admin-sign-out" onclick="adminSignOut(event)">Sign Out</a>
+        </div>
+    </nav>
     
     <!-- Admin Dashboard -->
     <main class="admin-dashboard">
         <section class="admin-section">
             <div class="section-header">
-                <h2 class="section-title">Settings</h2>
+                <h2 class="section-title">Analytics</h2>
             </div>
-            <p>Admin settings interface coming soon.</p>
+            <p>Analytics dashboard coming soon.</p>
         </section>
     </main>
     
@@ -111,10 +126,19 @@
     </script>
     
     <!-- Load main script for shared functionality -->
-    <script src="js/api-config.js"></script>
-    <script src="js/integrate-api.js"></script>
-    <script src="js/script.js?v=20250828"></script>
+    <script src="../js/api-config.js"></script>
+    <script src="../js/integrate-api.js"></script>
+    <script src="../js/script.js?v=20250828"></script>
     
-    <!-- Active state handled by the top header script; no legacy header-tabs here -->
+    <script>
+    (function(){
+        var links = document.querySelectorAll('#header-tabs a');
+        if (!links.length) return;
+        var page = location.pathname.split('/').pop() || 'admin.html';
+        links.forEach(function(a){
+            if (a.getAttribute('href') === page) a.classList.add('active');
+        });
+    })();
+    </script>
 </body>
 </html>

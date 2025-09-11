@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Blakely Cinematics Admin</title>
+    
+    <!-- Theme System CSS -->
+    <link rel="stylesheet" href="../css/theme-system.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: var(--user-font, 'Montserrat'), sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            margin-top: 5rem;
+        }
+        
+        .settings-title {
+            font-size: 2rem;
+            font-weight: 200;
+            letter-spacing: 0.1em;
+            color: var(--text-primary);
+        }
+        
+        .back-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--surface);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 300ms ease;
+        }
+        
+        .back-btn:hover {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+        }
+        
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .settings-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 300;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+        
+        .setting-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .setting-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .theme-selector-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        
+        .theme-option {
+            padding: 1rem;
+            background: var(--surface);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 300ms ease;
+        }
+        
+        .theme-option:hover {
+            border-color: var(--accent-primary);
+        }
+        
+        .theme-option.active {
+            border-color: var(--accent-primary);
+            background: var(--accent-primary);
+        }
+        
+        .theme-option.active .theme-name {
+            color: var(--bg-primary);
+        }
+        
+        .theme-name {
+            display: block;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .theme-colors {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .theme-colors span {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .setting-select {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+        
+        .toggle-setting {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--surface);
+            border-radius: 24px;
+            transition: 400ms;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 400ms;
+        }
+        
+        input:checked + .toggle-slider {
+            background: var(--accent-primary);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        .settings-footer {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .btn-save, .btn-reset {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 300ms ease;
+        }
+        
+        .btn-save {
+            background: var(--accent-primary);
+            color: white;
+        }
+        
+        .btn-save:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn-reset {
+            background: var(--surface);
+            color: var(--text-primary);
+        }
+        
+        .btn-reset:hover {
+            background: var(--bg-tertiary);
+        }
+    </style>
+</head>
+<body data-theme="midnight" class="admin-page">
+    
+    <!-- Existing Admin Bar -->
+    <header id="adminBar" class="admin-bar">
+        <a class="admin-logo" href="../admin.html" title="Dashboard">BLAKELY <span class="admin-accent">SETTINGS</span></a>
+        <nav class="admin-nav" aria-label="Admin navigation">
+            <a href="admin-bookings.html">Bookings</a>
+            <a href="admin-galleries.html">Galleries</a>
+            <a href="admin-clients.html">Clients</a>
+            <a href="admin-analytics.html">Analytics</a>
+        </nav>
+        <div class="admin-actions">
+            <a href="../admin.html" class="back-btn">← Back</a>
+        </div>
+    </header>
+    
+    <div class="admin-container">
+        <div class="settings-header">
+            <h1 class="settings-title">Theme Settings</h1>
+        </div>
+        
+        <div class="settings-content">
+            <div class="settings-grid">
+                <div class="settings-card">
+                    <h2 class="card-title">Appearance</h2>
+                    
+                    <div class="setting-group">
+                        <label class="setting-label">Theme</label>
+                        <div class="theme-selector-grid">
+                            <button class="theme-option active" data-theme="midnight" onclick="applyTheme('midnight')">
+                                <span class="theme-name">Midnight Pro</span>
+                                <div class="theme-colors">
+                                    <span style="background: #4A9EFF;"></span>
+                                    <span style="background: #8B7FF5;"></span>
+                                </div>
+                            </button>
+                            <button class="theme-option" data-theme="carbon" onclick="applyTheme('carbon')">
+                                <span class="theme-name">Carbon Black</span>
+                                <div class="theme-colors">
+                                    <span style="background: #00DC82;"></span>
+                                    <span style="background: #00F090;"></span>
+                                </div>
+                            </button>
+                            <button class="theme-option" data-theme="aurora" onclick="applyTheme('aurora')">
+                                <span class="theme-name">Aurora</span>
+                                <div class="theme-colors">
+                                    <span style="background: #22D3EE;"></span>
+                                    <span style="background: #A78BFA;"></span>
+                                </div>
+                            </button>
+                            <button class="theme-option" data-theme="cyberpunk" onclick="applyTheme('cyberpunk')">
+                                <span class="theme-name">Cyberpunk</span>
+                                <div class="theme-colors">
+                                    <span style="background: #00FFFF;"></span>
+                                    <span style="background: #FF00FF;"></span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label class="setting-label">Font</label>
+                        <select class="setting-select" id="fontSelect" onchange="applyFont(this.value)">
+                            <option value="Montserrat">Montserrat (Elegant)</option>
+                            <option value="Space Grotesk">Space Grotesk (Modern)</option>
+                            <option value="Inter">Inter (Clean)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="settings-card">
+                    <h2 class="card-title">Visual Effects</h2>
+                    
+                    <div class="setting-group">
+                        <div class="toggle-setting">
+                            <span>Morphing Background</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="morphingBlobs" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="toggle-setting">
+                            <span>Animated Gradients</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="gradientAnimations" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="toggle-setting">
+                            <span>Glow Effects</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="glowEffects" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-footer">
+                <button class="btn-save" onclick="saveSettings()">Save Settings</button>
+                <button class="btn-reset" onclick="resetSettings()">Reset to Default</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="../js/theme-manager.js"></script>
+</body>
+</html>

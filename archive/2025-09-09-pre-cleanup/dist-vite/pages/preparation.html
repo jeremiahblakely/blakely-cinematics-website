@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preparation Guide - Blakely Cinematics</title>
+    <link rel="stylesheet" href="css/styles.css?v=20250828">
+    <style>
+        /* Preparation Guide Specific Styles */
+        body {
+            cursor: none;
+        }
+
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-follower {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 107, 53, 0.1);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            transition: transform 0.3s ease;
+        }
+
+        .prep-hero {
+            padding: 120px 20px 80px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,1) 100%);
+        }
+
+        .prep-hero h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+        }
+
+        .prep-hero p {
+            font-size: 1.1rem;
+            color: #888;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .prep-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 80px 20px;
+        }
+
+        .prep-section {
+            margin-bottom: 80px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .section-number {
+            width: 60px;
+            height: 60px;
+            background: #FF6B35;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-right: 30px;
+            flex-shrink: 0;
+        }
+
+        .section-title h2 {
+            font-size: 2rem;
+            font-weight: 400;
+            margin-bottom: 5px;
+        }
+
+        .section-subtitle {
+            color: #888;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .prep-content {
+            padding-left: 90px;
+        }
+
+        .prep-content h3 {
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin: 30px 0 15px;
+            color: #FF6B35;
+        }
+
+        .prep-content p {
+            color: #bbb;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .prep-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .prep-list li {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 15px;
+            color: #bbb;
+            line-height: 1.6;
+        }
+
+        .prep-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #FF6B35;
+            font-weight: 600;
+        }
+
+        .do-dont-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 30px 0;
+        }
+
+        .do-section, .dont-section {
+            padding: 30px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+        }
+
+        .do-section {
+            border-left: 4px solid #4CAF50;
+        }
+
+        .dont-section {
+            border-left: 4px solid #f44336;
+        }
+
+        .do-section h4 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .dont-section h4 {
+            color: #f44336;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .tip-box {
+            background: rgba(255, 107, 53, 0.1);
+            border-left: 4px solid #FF6B35;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+
+        .tip-box h4 {
+            color: #FF6B35;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .tip-box p {
+            color: #bbb;
+            margin: 0;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+            margin: 30px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #333;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -35px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #FF6B35;
+            border: 2px solid #0a0a0a;
+        }
+
+        .timeline-time {
+            font-weight: 600;
+            color: #FF6B35;
+            margin-bottom: 5px;
+        }
+
+        .timeline-description {
+            color: #bbb;
+        }
+
+        .download-section {
+            text-align: center;
+            padding: 60px 30px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            border-radius: 10px;
+            margin-top: 80px;
+        }
+
+        .download-section h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        .download-section p {
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .download-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: #FF6B35;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .download-button:hover {
+            background: #ff8555;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .prep-hero h1 {
+                font-size: 2rem;
+            }
+
+            .prep-content {
+                padding-left: 0;
+            }
+
+            .section-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .section-number {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+
+            .do-dont-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .timeline {
+                padding-left: 30px;
+            }
+        }
+    </style>
+    
+    <!-- AWS CloudWatch RUM Analytics -->
+    <script>
+      (function(n,i,v,r,s,c,x,z){x=window.AwsRumClient={q:[],n:n,i:i,v:v,r:r,c:c};window[n]=function(c,p){x.q.push({c:c,p:p});};z=document.createElement('script');z.async=true;z.src=s;document.head.insertBefore(z,document.head.getElementsByTagName('script')[0]);})(
+        'cwr',
+        '1a163e06-eb6a-4131-bdb1-6e27fbb0799c',
+        '1.0.0',
+        'us-east-1',
+        'https://client.rum.us-east-1.amazonaws.com/1.19.0/cwr.js',
+        {
+          sessionSampleRate: 1 ,
+          endpoint: "https://dataplane.rum.us-east-1.amazonaws.com" ,
+          telemetries: ["performance","errors","http"] ,
+          allowCookies: true ,
+          enableXRay: false ,
+          signing: true
+        }
+      );
+    </script>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+
+    <!-- Navigation -->
+    <nav class="edge-header">
+        <div class="nav-container">
+            <a href="index.html" class="logo">BLAKELY<span style="color: #FF6B35;">.</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="services.html">Services</a></li>
+                <li><a href="index.html#portfolio">Portfolio</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+            <a href="vip-login.html" class="vip-link nav-cta">VIP</a>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="prep-hero">
+        <h1>SESSION PREPARATION GUIDE</h1>
+        <p>Everything you need to know to prepare for your cinematic portrait session and achieve stunning results</p>
+    </section>
+
+    <!-- Preparation Content -->
+    <div class="prep-container">
+
+        <!-- Section 1: Before Your Session -->
+        <section class="prep-section">
+            <div class="section-header">
+                <div class="section-number">1</div>
+                <div class="section-title">
+                    <h2>Before Your Session</h2>
+                    <span class="section-subtitle">1-2 Weeks Prior</span>
+                </div>
+            </div>
+            
+            <div class="prep-content">
+                <h3>Schedule Your Preparation</h3>
+                <p>Great portraits start with great preparation. Here's your pre-session checklist:</p>
+                
+                <ul class="prep-list">
+                    <li>Book your hair appointment 2-3 days before the session (not the day of)</li>
+                    <li>Schedule any grooming appointments (eyebrows, facial hair trim) 2-3 days prior</li>
+                    <li>If hiring a makeup artist, book them at least 2 weeks in advance</li>
+                    <li>Start planning your wardrobe selections</li>
+                    <li>Get plenty of rest the week of your session</li>
+                    <li>Stay hydrated - it shows in your skin!</li>
+                </ul>
+
+                <div class="tip-box">
+                    <h4>Pro Tip</h4>
+                    <p>Avoid trying new skincare products or treatments within a week of your session. Stick with your regular routine to avoid unexpected reactions.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Wardrobe Selection -->
+        <section class="prep-section">
+            <div class="section-header">
+                <div class="section-number">2</div>
+                <div class="section-title">
+                    <h2>Wardrobe Selection</h2>
+                    <span class="section-subtitle">Choosing the Right Outfits</span>
+                </div>
+            </div>
+            
+            <div class="prep-content">
+                <h3>For Theatrical & Commercial Headshots</h3>
+                <p>Your wardrobe should reflect the roles you're targeting while maintaining a clean, professional look.</p>
+                
+                <div class="do-dont-grid">
+                    <div class="do-section">
+                        <h4>✓ DO BRING</h4>
+                        <ul class="prep-list">
+                            <li>Solid colors in jewel tones</li>
+                            <li>Various necklines (V-neck, crew, scoop)</li>
+                            <li>Well-fitted clothing</li>
+                            <li>Layers for versatility</li>
+                            <li>2-3 outfit options per look</li>
+                            <li>Simple, classic pieces</li>
+                        </ul>
+                    </div>
+                    <div class="dont-section">
+                        <h4>✗ DON'T BRING</h4>
+                        <ul class="prep-list">
+                            <li>Busy patterns or stripes</li>
+                            <li>Large logos or graphics</li>
+                            <li>Neon or overly bright colors</li>
+                            <li>Accessories (unless for creative shots)</li>
+                            <li>Wrinkled clothing</li>
+                            <li>All black or all white outfits</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>For Creative/Cinematic Portraits</h3>
+                <p>More freedom to express your personality and brand:</p>
+                <ul class="prep-list">
+                    <li>Textures and layers add visual interest</li>
+                    <li>Accessories can enhance the story</li>
+                    <li>Statement pieces that reflect your brand</li>
+                    <li>Multiple complete outfits for variety</li>
+                </ul>
+
+                <div class="tip-box">
+                    <h4>Important Note</h4>
+                    <p>Bring more options than you think you'll need. It's better to have choices during the session. All clothing should be clean, pressed, and on hangers.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Hair & Makeup -->
+        <section class="prep-section">
+            <div class="section-header">
+                <div class="section-number">3</div>
+                <div class="section-title">
+                    <h2>Hair & Makeup</h2>
+                    <span class="section-subtitle">Camera-Ready Appearance</span>
+                </div>
+            </div>
+            
+            <div class="prep-content">
+                <h3>Professional Makeup (Recommended)</h3>
+                <p>We recommend hiring a professional makeup artist familiar with photography makeup. Camera-ready makeup is different from everyday makeup - it needs to withstand lights and translate well on camera.</p>
+                
+                <ul class="prep-list">
+                    <li>Book your makeup artist through our <a href="#" style="color: #FF6B35;">Recommended Vendors</a> page</li>
+                    <li>Allow 60-90 minutes for professional makeup</li>
+                    <li>Bring reference photos of looks you like</li>
+                    <li>Communicate any skin sensitivities</li>
+                </ul>
+
+                <h3>DIY Makeup Tips</h3>
+                <p>If doing your own makeup, remember these camera-specific tips:</p>
+                
+                <ul class="prep-list">
+                    <li>Apply slightly heavier than daily wear (camera lights wash out makeup)</li>
+                    <li>Use matte products to minimize shine</li>
+                    <li>Define your eyes and brows - they're focal points</li>
+                    <li>Avoid SPF products (they can cause flashback)</li>
+                    <li>Bring powder, lipstick, and concealer for touch-ups</li>
+                    <li>Keep makeup consistent with your usual audition look</li>
+                </ul>
+
+                <h3>Hair Preparation</h3>
+                <ul class="prep-list">
+                    <li>Style your hair as you would for auditions</li>
+                    <li>Avoid drastic cuts or colors right before the session</li>
+                    <li>Bring styling tools for touch-ups between looks</li>
+                    <li>Consider multiple styles if time permits</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 4: Day of Session -->
+        <section class="prep-section">
+            <div class="section-header">
+                <div class="section-number">4</div>
+                <div class="section-title">
+                    <h2>Day of Your Session</h2>
+                    <span class="section-subtitle">Session Day Timeline</span>
+                </div>
+            </div>
+            
+            <div class="prep-content">
+                <h3>Your Session Day Schedule</h3>
+                
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-time">Night Before</div>
+                        <div class="timeline-description">Get 8+ hours of sleep, avoid alcohol, prepare outfits</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">Morning Of</div>
+                        <div class="timeline-description">Light breakfast, hydrate, avoid salty foods</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">2 Hours Before</div>
+                        <div class="timeline-description">Do makeup/hair or meet your makeup artist</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">30 Minutes Before</div>
+                        <div class="timeline-description">Final touch-ups, get into first outfit</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">Arrival</div>
+                        <div class="timeline-description">Arrive on time, relaxed, and ready to create!</div>
+                    </div>
+                </div>
+
+                <h3>What to Bring</h3>
+                <ul class="prep-list">
+                    <li>All wardrobe options (on hangers)</li>
+                    <li>Makeup for touch-ups</li>
+                    <li>Hair styling tools and products</li>
+                    <li>Water and light snacks</li>
+                    <li>Any props relevant to your brand</li>
+                    <li>Positive energy and openness to direction!</li>
+                </ul>
+
+                <div class="tip-box">
+                    <h4>Remember</h4>
+                    <p>The more relaxed and prepared you are, the better your photos will be. Trust the process and enjoy the experience!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: After Your Session -->
+        <section class="prep-section">
+            <div class="section-header">
+                <div class="section-number">5</div>
+                <div class="section-title">
+                    <h2>After Your Session</h2>
+                    <span class="section-subtitle">What Happens Next</span>
+                </div>
+            </div>
+            
+            <div class="prep-content">
+                <h3>Image Delivery</h3>
+                <ul class="prep-list">
+                    <li>Images delivered within 10-14 business days</li>
+                    <li>You'll receive an email with your gallery link</li>
+                    <li>Gallery remains active for 90 days</li>
+                    <li>Download both high-res and web-optimized versions</li>
+                </ul>
+
+                <h3>Using Your Images</h3>
+                <ul class="prep-list">
+                    <li>Update all casting profiles immediately</li>
+                    <li>Refresh your social media profiles</li>
+                    <li>Send updated headshots to your agent/manager</li>
+                    <li>Keep original files backed up safely</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Download Section -->
+        <section class="download-section">
+            <h2>Ready for Your Session?</h2>
+            <p>Download this guide as a PDF to reference while preparing</p>
+            <a href="#" class="download-button">Download PDF Guide</a>
+        </section>
+
+    </div>
+
+    <script src="js/api-config.js"></script>
+    <script src="js/integrate-api.js"></script>
+    <script src="js/script.js?v=20250828"></script>
+</body>
+</html>

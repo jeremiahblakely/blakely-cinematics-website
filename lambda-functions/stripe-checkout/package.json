@@ -1,0 +1,15 @@
+{
+  "name": "blakely-stripe-checkout",
+  "version": "1.0.0",
+  "description": "Stripe checkout handler for Blakely Cinematics",
+  "main": "index.js",
+  "dependencies": {
+    "stripe": "^18.5.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
