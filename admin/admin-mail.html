@@ -12,9 +12,6 @@
     <link rel="stylesheet" href="../css/admin/admin-mail.css">
 </head>
 <body>
-    <!-- Morphing Blobs -->
-    <div class="morphing-blob blob-1"></div>
-    <div class="morphing-blob blob-2"></div>
     
     <div class="mail-container">
         <!-- Header -->
@@ -240,6 +237,9 @@
                         <button class="tool-btn" onclick="insertList('bullet')" title="Bullet List">•</button>
                         <button class="tool-btn" onclick="insertList('number')" title="Numbered List">1.</button>
                         <button class="tool-btn" onclick="formatText('quote')" title="Quote">"</button>
+                        <button class="tool-btn" onclick="showTemplates()" title="Insert Template">
+                            📄
+                        </button>
                     </div>
                     
                     <div class="tool-divider"></div>
@@ -302,5 +302,8 @@
     
     <!-- Load MVC Application -->
     <script type="module" src="../js/admin-app.js"></script>
+    
+    <!-- Portal root for floating elements -->
+    <div id="portal-root"></div>
 </body>
 </html>
