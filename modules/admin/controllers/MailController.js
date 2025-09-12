@@ -4,15 +4,25 @@
 
 import MailModel from '../models/MailModel.js';
 import MailView from '../views/MailView.js';
+import TemplateService from '../services/TemplateService.js';
+import ComposeView from '../components/ComposeView.js';
+import ThemeSwitcher from '../components/ThemeSwitcher.js';
 
 export default class MailController {
     constructor() {
         this.model = new MailModel();
         this.view = new MailView();
         this.undoStack = []; // Store undo functions
+        this.templateService = new TemplateService();
+        this.composeView = new ComposeView(null, null, this.view.signatureService);
         
         this.initializeEventListeners();
         this.initialize();
+        
+        // Initialize theme switcher after DOM is ready
+        setTimeout(() => {
+            this.themeSwitcher = new ThemeSwitcher();
+        }, 100);
     }
     
     initialize() {
@@ -79,34 +89,49 @@ export default class MailController {
             }
         });
         
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            // Cmd/Ctrl + Z for undo
-            if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
-                e.preventDefault();
-                this.undo();
-            }
-            
-            // Delete key
-            if (e.key === 'Delete' && this.model.selectedEmail) {
-                this.deleteSelectedEmail();
-            }
-            
-            // R for reply
-            if (e.key === 'r' && !e.ctrlKey && !e.metaKey && this.model.selectedEmail) {
-                this.showReply();
-            }
-            
-            // A for archive
-            if (e.key === 'a' && !e.ctrlKey && !e.metaKey && this.model.selectedEmail) {
-                this.archiveSelectedEmail();
-            }
-            
-            // S for star
-            if (e.key === 's' && !e.ctrlKey && !e.metaKey && this.model.selectedEmail) {
-                this.toggleStar(this.model.selectedEmail.id);
-            }
-        });
+       // Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    // IMPORTANT: Don't trigger shortcuts if user is typing in any input/textarea/contenteditable
+    const activeElement = document.activeElement;
+    const isTyping = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.contentEditable === 'true' ||
+        activeElement.contentEditable === true ||
+        activeElement.classList.contains('contenteditable-editor') ||
+        activeElement.id === 'replyText' ||
+        activeElement.closest('[contenteditable="true"]')
+    );
+    
+    // If user is typing, don't process shortcuts
+    if (isTyping) {
+        return;
+    }
+    
+    // Delete key for delete email
+    if (e.key === 'Delete' && this.model.selectedEmail) {
+        e.preventDefault();
+        this.deleteSelectedEmail();
+    }
+    
+    // Backspace for archive
+    if (e.key === 'Backspace' && !e.metaKey && !e.ctrlKey && this.model.selectedEmail) {
+        e.preventDefault();
+        this.archiveSelectedEmail();
+    }
+    
+    // A for archive
+    if (e.key === 'a' && !e.metaKey && !e.ctrlKey && this.model.selectedEmail) {
+        e.preventDefault();
+        this.archiveSelectedEmail();
+    }
+    
+    // S for star
+    if (e.key === 's' && !e.ctrlKey && !e.metaKey && this.model.selectedEmail) {
+        e.preventDefault();
+        this.toggleStar(this.model.selectedEmail.id);
+    }
+});
         
         // Global function bindings for inline onclick handlers
         window.showReply = () => this.showReply();
@@ -122,25 +147,114 @@ export default class MailController {
         window.moveToFolder = () => this.showMoveToFolder();
         window.snoozeEmail = () => this.showSnoozeOptions();
         window.saveDraft = () => this.saveDraft();
-        window.openCompose = () => this.openCompose();
+        
+        window.openCompose = () => {
+            if (this.composeView) {
+                this.composeView.open();
+                setTimeout(() => {
+                    if (this.themeSwitcher) {
+                        this.themeSwitcher.loadSavedTheme();
+                    }
+                }, 100);
+            } else {
+                console.error('ComposeView not initialized');
+                // Fallback notification
+                this.view.showNotification('Compose feature loading...', 'info');
+            }
+        };
+        
+        window.closeCompose = () => {
+            if (this.composeView) {
+                this.composeView.close();
+            }
+        };
+        
+        window.sendNewEmail = () => {
+            if (this.composeView) {
+                const data = this.composeView.getData();
+                console.log('Sending email:', data);
+                // TODO: Implement actual send via API
+                this.view.showNotification('Email sent successfully', 'success');
+                this.composeView.close();
+            }
+        };
+        
+        window.saveDraftEmail = () => {
+            if (this.composeView) {
+                const data = this.composeView.getData();
+                console.log('Saving draft:', data);
+                this.view.showNotification('Draft saved', 'success');
+            }
+        };
+        
+        window.formatCompose = (command) => {
+            if (this.composeView && this.composeView.composeEditor) {
+                this.composeView.composeEditor.formatText(command);
+            }
+        };
+        
         window.openSettings = () => this.openSettings();
         window.hideEvents = () => this.view.hideEvents();
         window.undo = () => this.undo();
         window.selectAllEmails = () => this.selectAllEmails();
+        
+        window.showTemplates = () => {
+            if (!this.templateService || !this.view.editorCore) {
+                console.log('Template service not ready');
+                return;
+            }
+            
+            // Simple template menu
+            const templates = this.templateService.getAllTemplates();
+            const selected = prompt('Select template:\n' + 
+                templates.map((t, i) => `${i+1}. ${t.name}`).join('\n') + 
+                '\n\nEnter number:');
+            
+            if (selected && templates[parseInt(selected) - 1]) {
+                const template = templates[parseInt(selected) - 1];
+                const vars = {
+                    clientName: prompt('Client name:') || 'Client',
+                    date: new Date().toLocaleDateString(),
+                    location: 'TBD'
+                };
+                this.templateService.insertIntoEditor(template.id, this.view.editorCore, vars);
+            }
+        };
 
         // Rich text helpers
         window.formatText = (command) => {
             console.log('Format:', command);
+            
+            // First check if we have ContentEditableCore instance
+            if (this.view.editorCore && this.view.editorCore.isActive) {
+                // Use ContentEditableCore for formatting
+                this.view.editorCore.formatText(command);
+                console.log('Formatted with ContentEditableCore:', command);
+                return;
+            }
+            
+            // Fallback to textarea markdown formatting (existing code)
             const textarea = document.getElementById('replyText');
             if (!textarea) return;
+            
+            // Check if it's a contenteditable div without editorCore
+            if (textarea.contentEditable === 'true' || textarea.contentEditable === true) {
+                // Direct execCommand for contenteditable
+                document.execCommand(command, false, null);
+                return;
+            }
+            
+            // Original textarea markdown logic (keep as fallback)
             const start = textarea.selectionStart ?? 0;
             const end = textarea.selectionEnd ?? 0;
             const selection = textarea.value.substring(start, end);
             if (!selection) return;
+            
             let formatted = selection;
             if (command === 'bold') formatted = `**${selection}**`;
             if (command === 'italic') formatted = `*${selection}*`;
             if (command === 'underline') formatted = `__${selection}__`;
+            
             textarea.value = textarea.value.substring(0, start) + formatted + textarea.value.substring(end);
         };
 
@@ -469,7 +583,6 @@ if (typeof window !== 'undefined') {
         window.moveToFolder = () => controller.showMoveToFolder();
         window.snoozeEmail = () => controller.showSnoozeOptions();
         window.saveDraft = () => controller.saveDraft();
-        window.openCompose = () => controller.openCompose();
         window.openSettings = () => controller.openSettings();
         window.hideEvents = () => controller.view.hideEvents();
         window.undo = () => controller.undo();

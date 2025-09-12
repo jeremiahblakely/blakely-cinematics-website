@@ -2,11 +2,16 @@
 // Path: /modules/admin/views/MailView.js
 // Updated: December 17, 2024
 
+import ContentEditableCore from '../composers/ContentEditableCore.js';
+import SignatureService from '../services/SignatureService.js';
+
 export default class MailView {
     constructor() {
         this.elements = this.cacheElements();
         this.bindEvents();
         this.initializeNotificationSystem();
+        this.editorCore = null;  // Will hold ContentEditableCore instance
+        this.signatureService = new SignatureService();
     }
     
     cacheElements() {
@@ -67,23 +72,25 @@ export default class MailView {
     
     // Email List Rendering
     renderEmailList(emails) {
-        if (!this.elements.emailList) return;
+        const emailList = document.getElementById('emailList');
+        if (!emailList) {
+            console.error('Email list element not found');
+            return;
+        }
         
-        this.elements.emailList.innerHTML = '';
+        emailList.innerHTML = '';
         
-        if (emails.length === 0) {
-            this.elements.emailList.innerHTML = `
-                <div style="padding: 40px; text-align: center; color: var(--text-secondary);">
-                    <p>No emails found</p>
-                </div>
-            `;
+        if (!emails || emails.length === 0) {
+            emailList.innerHTML = '<div class="no-emails">No emails in this folder</div>';
             return;
         }
         
         emails.forEach(email => {
             const emailItem = this.createEmailItem(email);
-            this.elements.emailList.appendChild(emailItem);
+            emailList.appendChild(emailItem);
         });
+        
+        console.log(`Rendered ${emails.length} emails`);
     }
     
     createEmailItem(email) {
@@ -288,7 +295,54 @@ export default class MailView {
 showReplyBox(replyData) {
     if (this.elements.replyBox) {
         // Update reply metadata only
-        this.elements.replyTo.textContent = replyData.to.join(', ');
+        if (this.elements.replyTo && replyData && replyData.to) {
+            this.elements.replyTo.textContent = replyData.to.join(', ');
+        }
+        
+        // Initialize ContentEditableCore if not already done
+        if (!this.editorCore) {
+            const replyTextarea = document.getElementById('replyText');
+            if (replyTextarea) {
+                this.editorCore = new ContentEditableCore({
+                    placeholder: 'Compose your message...',
+                    minHeight: '120px',
+                    maxHeight: '50vh'
+                });
+                this.editorCore.init(replyTextarea);
+                console.log('ContentEditableCore initialized in reply box');
+                
+                // Auto-append signature after a short delay
+                setTimeout(() => {
+                    if (this.signatureService && this.editorCore) {
+                        this.signatureService.appendToEditor(this.editorCore);
+                        // Place cursor at the beginning for typing
+                        const editor = this.editorCore.editor;
+                        if (editor && editor.firstChild) {
+                            const range = document.createRange();
+                            const selection = window.getSelection();
+                            range.setStart(editor, 0);
+                            range.collapse(true);
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                        }
+                    }
+                }, 100);
+                // Auto-append signature
+                setTimeout(() => {
+                    this.signatureService.appendToEditor(this.editorCore);
+                    // Place cursor before signature
+                    const editor = this.editorCore.editor;
+                    if (editor && editor.firstChild) {
+                        const range = document.createRange();
+                        const selection = window.getSelection();
+                        range.setStart(editor.firstChild, 0);
+                        range.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+                }, 100);
+            }
+        }
         
         // Initialize adaptive behavior
         this.initializeAdaptiveReply();
@@ -297,10 +351,9 @@ showReplyBox(replyData) {
         this.elements.replyBox.style.display = 'block';
         this.elements.replyBox.scrollIntoView({ behavior: 'smooth' });
         
-        // Focus the textarea
-        const replyText = document.getElementById('replyText');
-        if (replyText) {
-            replyText.focus();
+        // Focus the editor
+        if (this.editorCore) {
+            this.editorCore.focus();
         }
     }
 }
@@ -324,19 +377,52 @@ initializeAdaptiveReply() {
         replyBox.classList.add('expanded');
     });
     
-    // Click outside to minimize
-    document.addEventListener('click', (e) => {
-        if (!replyBox.contains(e.target) && 
-            !e.target.closest('.action-btn') && 
-            replyBox.classList.contains('expanded')) {
-            console.log('Clicked outside - removing expanded class');
+   // Smart click-outside behavior - only minimize if truly empty
+   const checkClickOutside = (e) => {
+    if (!replyBox.contains(e.target) && 
+        !e.target.closest('.action-btn') && 
+        replyBox.classList.contains('expanded')) {
+        
+        // Get the actual contenteditable div (not the old textarea reference)
+        const currentEditor = document.getElementById('replyText');
+        if (!currentEditor) return;
+        
+        // Check if editor has any meaningful content
+        let hasContent = false;
+        if (currentEditor.contentEditable === 'true' || currentEditor.contentEditable === true) {
+            // For contenteditable, check innerHTML after stripping tags
+            const textContent = (currentEditor.textContent || currentEditor.innerText || '').trim();
+            hasContent = textContent.length > 0;
+        } else {
+            // Fallback for textarea
+            hasContent = (currentEditor.value || '').trim().length > 0;
+        }
+        
+        // Only minimize if truly empty
+        if (!hasContent) {
+            console.log('Clicked outside with empty editor - minimizing');
             replyBox.classList.remove('expanded');
         }
-    });
+        // If has content, do nothing - stay expanded
+    }
+};
+
+// Use capturing phase to ensure we check after any other handlers
+document.addEventListener('click', checkClickOutside, true);
     
-    // Update word count (removed auto-resize for fixed heights)
+    // Update word count
     newReplyText.addEventListener('input', () => {
-        const words = newReplyText.value.trim().split(/\s+/).filter(word => word.length > 0).length;
+        // Get text content based on element type
+        let text = '';
+        const isContentEditable = newReplyText.contentEditable === 'true' || newReplyText.contentEditable === true;
+        if (isContentEditable) {
+            text = newReplyText.textContent || newReplyText.innerText || '';
+        } else {
+            text = newReplyText.value || '';
+        }
+        
+        // FIX: Add null check for trim
+        const words = text.trim ? text.trim().split(/\s+/).filter(word => word.length > 0).length : 0;
         if (wordCount) {
             wordCount.textContent = `${words} words`;
         }
@@ -383,8 +469,20 @@ showDraftSaved() {
     hideReplyBox() {
         if (this.elements.replyBox) {
             this.elements.replyBox.style.display = 'none';
-            this.elements.replyText.value = '';
-            delete this.elements.replyText.dataset.quotedBody;
+            
+            // Clear the editor content
+            if (this.editorCore && this.editorCore.isActive) {
+                this.editorCore.clear();
+            } else {
+                const replyText = document.getElementById('replyText');
+                if (replyText) {
+                    if (replyText.contentEditable === 'true' || replyText.contentEditable === true) {
+                        replyText.innerHTML = '';
+                    } else {
+                        replyText.value = '';
+                    }
+                }
+            }
         }
     }
     
@@ -393,15 +491,28 @@ showDraftSaved() {
     }
     
     getReplyData() {
-        if (!this.elements.replyText) return null;
+        const replyText = document.getElementById('replyText');
+        if (!replyText) return null;
         
-        const body = this.elements.replyText.value;
-        const quotedBody = this.elements.replyText.dataset.quotedBody || '';
+        // Check if it's contenteditable or textarea
+        let body = '';
+        if (this.editorCore && this.editorCore.isActive) {
+            body = this.editorCore.getHTML();  // Get rich HTML
+        } else if (replyText.contentEditable === 'true' || replyText.contentEditable === true) {
+            body = replyText.innerHTML;
+        } else {
+            body = replyText.value;  // Fallback for textarea
+        }
+        
+        const to = this.elements.replyTo ? this.elements.replyTo.textContent.split(',').map(e => e.trim()) : [];
         
         return {
-            to: this.elements.replyTo.textContent.split(', '),
-            subject: 'Re: ', // This would be set properly in real implementation
-            body: body + quotedBody
+            to,
+            cc: [],
+            bcc: [],
+            subject: this.model?.selectedEmail?.subject || '',
+            body,
+            threadId: this.model?.selectedEmail?.threadId || null
         };
     }
     
