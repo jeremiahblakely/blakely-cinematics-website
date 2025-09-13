@@ -30,9 +30,6 @@
     --sidebar-width: 260px;
     --email-list-width: 555px; /* Increased by 100px from 455px */
     --widget-width: 340px;
-    /* Spacing */
-    --standard-gap: 8px;
-    --column-gap: calc(var(--standard-gap) / 2);
 }
 
 * {
@@ -60,7 +57,6 @@ body {
     position: relative;
     z-index: 2;
     overflow-x: hidden; /* prevent horizontal scroll of app frame */
-    column-gap: var(--column-gap);
 }
 
 /* Header */
@@ -254,8 +250,7 @@ body {
     border-right: 1px solid var(--border-default);
     overflow-y: auto;
     overflow-x: hidden; /* no sideways scroll in list */
-    padding: 0 var(--standard-gap);
-    padding-left: calc(var(--standard-gap) / 2);
+    padding: 0 8px; /* Inner padding for consistent spacing */
 }
 
 /* Inline loading and empty states */
@@ -304,17 +299,18 @@ body {
 }
 
 .mail-list-search {
-    padding: var(--standard-gap);
-    padding-left: calc(var(--standard-gap) / 2);
-    /* Solid themed background to prevent overlap show-through */
+    /* Full-width, edge-to-edge container to block card glows */
+    padding: 16px 16px; /* Equal top and bottom spacing */
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-default);
     position: sticky;
     top: 0;
-    /* Ensure header stays above list items and popovers */
-    z-index: 200;
-    /* Visual separation from list */
+    z-index: 400;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    /* Extend over the list's inner padding so there are no side gaps */
+    width: calc(100% + 16px);
+    margin-left: -8px;
+    margin-right: -8px;
 }
 
 /* Guard against any fixed header variants by providing optional spacing */
@@ -331,7 +327,7 @@ body {
     color: var(--text-primary);
     font-size: 0.9rem;
     transition: all 0.3s;
-    margin: 0 0 var(--standard-gap) 0;
+    margin: 0 0 12px 0;
 }
 
 .mail-search-input:focus {
@@ -344,7 +340,7 @@ body {
 .account-selector {
     width: 100%;
     padding: 10px;
-    margin: 0 0 var(--standard-gap) 0;
+    margin: 0 0 12px 0;
     background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.05));
     border: 1px solid var(--accent-primary);
     border-radius: 6px;
@@ -361,8 +357,8 @@ body {
 
 .mail-actions-row {
     display: flex;
-    gap: var(--standard-gap);
-    margin: 0 0 var(--standard-gap) 0;
+    gap: 8px;
+    margin: 0; /* Remove bottom margin for balanced spacing */
 }
 
 .mail-action-btn {
@@ -417,8 +413,8 @@ body {
     background: rgba(255, 255, 255, 0.05);
     border: 2px solid transparent;
     border-radius: 12px;
-    padding: 8px;
-    margin: var(--standard-gap) 0; /* 8px vertical gap, align horizontally via list padding */
+    padding: 16px;
+    margin: 6px 0; /* Keep cards within container bounds */
     max-width: 100%;
     box-sizing: border-box;
     transition: all 0.3s ease;
@@ -2440,4 +2436,15 @@ body {
     background: var(--accent-primary, #00FFFF) !important;
     color: var(--bg-primary, #000) !important;
     border-color: var(--accent-primary, #00FFFF) !important;
+}
+/* Mask a strip below the controls so card glow doesn't show at the edges */
+.mail-list-search::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: calc(var(--standard-gap) + 6px);
+    bottom: -1px;
+    background: var(--bg-secondary);
+    pointer-events: none;
 }
