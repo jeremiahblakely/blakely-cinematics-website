@@ -3,15 +3,17 @@
 // Updated: December 17, 2024
 
 import ContentEditableCore from '../composers/ContentEditableCore.js';
+import FormattingToolbar from '../composers/FormattingToolbar.js';
 import SignatureService from '../services/SignatureService.js';
 
 export default class MailView {
     constructor() {
+        this.elements = {};
+    }
+    
+    initialize() {
         this.elements = this.cacheElements();
-        this.bindEvents();
         this.initializeNotificationSystem();
-        this.editorCore = null;  // Will hold ContentEditableCore instance
-        this.signatureService = new SignatureService();
     }
     
     cacheElements() {
@@ -72,14 +74,22 @@ export default class MailView {
     
     // Email List Rendering
     renderEmailList(emails) {
-        const emailList = document.getElementById('emailList');
+        // Ensure elements are cached
+        if (!this.elements || !this.elements.emailList) {
+            this.elements = this.cacheElements();
+        }
+                // Ensure elements are cached if not already done
+        if (!this.elements || !this.elements.emailList) {
+            this.elements = this.cacheElements();
+        }
+        
+        const emailList = this.elements.emailList;
         if (!emailList) {
             console.error('Email list element not found');
             return;
         }
         
-        emailList.innerHTML = '';
-        
+        emailList.innerHTML = '';        
         if (!emails || emails.length === 0) {
             emailList.innerHTML = '<div class="no-emails">No emails in this folder</div>';
             return;
@@ -292,188 +302,204 @@ export default class MailView {
         });
     }
     
-showReplyBox(replyData) {
-    if (this.elements.replyBox) {
-        // Update reply metadata only
-        if (this.elements.replyTo && replyData && replyData.to) {
-            this.elements.replyTo.textContent = replyData.to.join(', ');
+    showReplyBox(replyData) {
+        // Clean up any existing toolbar instances first
+        if (this.formattingToolbar) {
+            const existingToolbars = document.querySelectorAll(".reply-box .formatting-toolbar");
+            existingToolbars.forEach(toolbar => toolbar.remove());
+            this.formattingToolbar = null;
         }
-        
-        // Initialize ContentEditableCore if not already done
-        if (!this.editorCore) {
-            const replyTextarea = document.getElementById('replyText');
-            if (replyTextarea) {
-                this.editorCore = new ContentEditableCore({
-                    placeholder: 'Compose your message...',
-                    minHeight: '120px',
-                    maxHeight: '50vh'
-                });
-                this.editorCore.init(replyTextarea);
-                console.log('ContentEditableCore initialized in reply box');
-                
-                // Auto-append signature after a short delay
-                setTimeout(() => {
-                    if (this.signatureService && this.editorCore) {
-                        this.signatureService.appendToEditor(this.editorCore);
-                        // Place cursor at the beginning for typing
-                        const editor = this.editorCore.editor;
-                        if (editor && editor.firstChild) {
-                            const range = document.createRange();
-                            const selection = window.getSelection();
-                            range.setStart(editor, 0);
-                            range.collapse(true);
-                            selection.removeAllRanges();
-                            selection.addRange(range);
+        if (this.editorCore && this.editorCore.initialized) {
+            this.editorCore.destroy && this.editorCore.destroy();
+            this.editorCore = null;
+        }
+        if (this.elements.replyBox) {
+            // Update reply metadata
+            if (this.elements.replyTo && replyData && replyData.to) {
+                this.elements.replyTo.textContent = replyData.to.join(', ');
+            }
+            
+            // Initialize ContentEditableCore if not already done
+            if (!this.editorCore || !this.editorCore.initialized) {
+                try {
+                    this.editorCore = new ContentEditableCore();
+                    const initialized = this.editorCore.init('replyText');
+                    
+                    if (initialized) {
+                        console.log('[MailView] ContentEditableCore initialized successfully');
+                        
+                        // Initialize FormattingToolbar
+                        this.formattingToolbar = new FormattingToolbar(this.editorCore);
+                        this.formattingToolbar.init();
+                        console.log('[MailView] FormattingToolbar initialized');
+                        
+                        // Auto-append signature after initialization
+                        if (this.signatureService) {
+                            setTimeout(() => {
+                                this.signatureService.appendToEditor(this.editorCore);
+                                // Place cursor at the beginning
+                                const editor = this.editorCore.editor;
+                                if (editor) {
+                                    editor.focus();
+                                    const range = document.createRange();
+                                    const selection = window.getSelection();
+                                    range.selectNodeContents(editor);
+                                    range.collapse(true);
+                                    selection.removeAllRanges();
+                                    selection.addRange(range);
+                                }
+                            }, 100);
                         }
+                    } else {
+                        console.warn('[MailView] Failed to initialize ContentEditableCore');
                     }
-                }, 100);
-                // Auto-append signature
-                setTimeout(() => {
-                    this.signatureService.appendToEditor(this.editorCore);
-                    // Place cursor before signature
-                    const editor = this.editorCore.editor;
-                    if (editor && editor.firstChild) {
-                        const range = document.createRange();
-                        const selection = window.getSelection();
-                        range.setStart(editor.firstChild, 0);
-                        range.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
-                }, 100);
+                } catch (error) {
+                    console.error('[MailView] Error initializing ContentEditableCore:', error);
+                    // Fallback to regular textarea behavior
+                }
+            }
+            
+            // Initialize adaptive behavior for the reply box
+            this.initializeAdaptiveReply();
+            
+            // Show the reply box
+            this.elements.replyBox.style.display = 'block';
+            this.elements.replyBox.scrollIntoView({ behavior: 'smooth' });
+            
+            // Focus the editor
+            if (this.editorCore && this.editorCore.initialized) {
+                this.editorCore.focus();
+            } else {
+                // Fallback to textarea focus
+                const replyText = document.getElementById('replyText');
+                if (replyText) replyText.focus();
             }
         }
-        
-        // Initialize adaptive behavior
-        this.initializeAdaptiveReply();
-        
-        // Show the reply box
-        this.elements.replyBox.style.display = 'block';
-        this.elements.replyBox.scrollIntoView({ behavior: 'smooth' });
-        
-        // Focus the editor
-        if (this.editorCore) {
-            this.editorCore.focus();
-        }
     }
-}
 
-// ADD this new method right after showReplyBox:
-initializeAdaptiveReply() {
-    const replyBox = this.elements.replyBox;
-    const replyText = document.getElementById('replyText');
-    const wordCount = document.getElementById('wordCount');
-    const draftIndicator = document.getElementById('draftIndicator');
-    
-    if (!replyText || !replyBox) return;
-    
-    // Remove any existing event listeners to prevent duplicates
-    const newReplyText = replyText.cloneNode(true);
-    replyText.parentNode.replaceChild(newReplyText, replyText);
-    
-    // Auto-expand on focus
-    newReplyText.addEventListener('focus', () => {
-        console.log('Textarea focused - adding expanded class');
-        replyBox.classList.add('expanded');
-    });
-    
-   // Smart click-outside behavior - only minimize if truly empty
-   const checkClickOutside = (e) => {
-    if (!replyBox.contains(e.target) && 
-        !e.target.closest('.action-btn') && 
-        replyBox.classList.contains('expanded')) {
+    // ADD this new method right after showReplyBox:
+    initializeAdaptiveReply() {
+        const replyBox = this.elements.replyBox;
+        const replyText = document.getElementById('replyText');
+        const wordCount = document.getElementById('wordCount');
+        const draftIndicator = document.getElementById('draftIndicator');
         
-        // Get the actual contenteditable div (not the old textarea reference)
-        const currentEditor = document.getElementById('replyText');
-        if (!currentEditor) return;
+        if (!replyText || !replyBox) return;
         
-        // Check if editor has any meaningful content
-        let hasContent = false;
-        if (currentEditor.contentEditable === 'true' || currentEditor.contentEditable === true) {
-            // For contenteditable, check innerHTML after stripping tags
-            const textContent = (currentEditor.textContent || currentEditor.innerText || '').trim();
-            hasContent = textContent.length > 0;
-        } else {
-            // Fallback for textarea
-            hasContent = (currentEditor.value || '').trim().length > 0;
-        }
+        // Remove any existing event listeners to prevent duplicates
+        const newReplyText = replyText.cloneNode(true);
+        replyText.parentNode.replaceChild(newReplyText, replyText);
         
-        // Only minimize if truly empty
-        if (!hasContent) {
-            console.log('Clicked outside with empty editor - minimizing');
-            replyBox.classList.remove('expanded');
-        }
-        // If has content, do nothing - stay expanded
+        // Auto-expand on focus
+        newReplyText.addEventListener('focus', () => {
+            console.log('Textarea focused - adding expanded class');
+            replyBox.classList.add('expanded');
+        });
+        
+        // Smart click-outside behavior - only minimize if truly empty
+        const checkClickOutside = (e) => {
+            if (!replyBox.contains(e.target) && 
+                !e.target.closest('.action-btn') && 
+                replyBox.classList.contains('expanded')) {
+                
+                // Get the actual contenteditable div (not the old textarea reference)
+                const currentEditor = document.getElementById('replyText');
+                if (!currentEditor) return;
+                
+                // Check if editor has any meaningful content
+                let hasContent = false;
+                if (currentEditor.contentEditable === 'true' || currentEditor.contentEditable === true) {
+                    // For contenteditable, check innerHTML after stripping tags
+                    const textContent = (currentEditor.textContent || currentEditor.innerText || '').trim();
+                    hasContent = textContent.length > 0;
+                } else {
+                    // Fallback for textarea
+                    hasContent = (currentEditor.value || '').trim().length > 0;
+                }
+                
+                // Only minimize if truly empty
+                if (!hasContent) {
+                    console.log('Clicked outside with empty editor - minimizing');
+                    replyBox.classList.remove('expanded');
+                }
+                // If has content, do nothing - stay expanded
+            }
+        };
+
+        // Use capturing phase to ensure we check after any other handlers
+        document.addEventListener('click', checkClickOutside, true);
+        
+        // Update word count
+        newReplyText.addEventListener('input', () => {
+            // Get text content based on element type
+            let text = '';
+            const isContentEditable = newReplyText.contentEditable === 'true' || newReplyText.contentEditable === true;
+            if (isContentEditable) {
+                text = newReplyText.textContent || newReplyText.innerText || '';
+            } else {
+                text = newReplyText.value || '';
+            }
+            
+            // FIX: Add null check for trim
+            const words = text.trim ? text.trim().split(/\s+/).filter(word => word.length > 0).length : 0;
+            if (wordCount) {
+                wordCount.textContent = `${words} words`;
+            }
+            
+            // Show draft saved indicator (simulated)
+            this.showDraftSaved();
+        });
+        
+        // Add keyboard shortcuts
+        newReplyText.addEventListener('keydown', (e) => {
+            // Cmd/Ctrl + Enter to send
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                e.preventDefault();
+                window.sendReply();
+            }
+            
+            // Escape to minimize (not close)
+            if (e.key === 'Escape') {
+                console.log('Escape pressed - removing expanded class');
+                replyBox.classList.remove('expanded');
+            }
+        });
     }
-};
 
-// Use capturing phase to ensure we check after any other handlers
-document.addEventListener('click', checkClickOutside, true);
-    
-    // Update word count
-    newReplyText.addEventListener('input', () => {
-        // Get text content based on element type
-        let text = '';
-        const isContentEditable = newReplyText.contentEditable === 'true' || newReplyText.contentEditable === true;
-        if (isContentEditable) {
-            text = newReplyText.textContent || newReplyText.innerText || '';
-        } else {
-            text = newReplyText.value || '';
+    // ADD this helper method after initializeAdaptiveReply:
+    showDraftSaved() {
+        const indicator = document.getElementById('draftIndicator');
+        if (!indicator) return;
+        
+        // Clear existing timeout
+        if (this.draftTimeout) {
+            clearTimeout(this.draftTimeout);
         }
         
-        // FIX: Add null check for trim
-        const words = text.trim ? text.trim().split(/\s+/).filter(word => word.length > 0).length : 0;
-        if (wordCount) {
-            wordCount.textContent = `${words} words`;
-        }
+        // Show indicator
+        indicator.classList.add('show');
         
-        // Show draft saved indicator (simulated)
-        this.showDraftSaved();
-    });
-    
-    // Add keyboard shortcuts
-    newReplyText.addEventListener('keydown', (e) => {
-        // Cmd/Ctrl + Enter to send
-        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-            e.preventDefault();
-            window.sendReply();
-        }
-        
-        // Escape to minimize (not close)
-        if (e.key === 'Escape') {
-            console.log('Escape pressed - removing expanded class');
-            replyBox.classList.remove('expanded');
-        }
-    });
-}
-
-// ADD this helper method after initializeAdaptiveReply:
-showDraftSaved() {
-    const indicator = document.getElementById('draftIndicator');
-    if (!indicator) return;
-    
-    // Clear existing timeout
-    if (this.draftTimeout) {
-        clearTimeout(this.draftTimeout);
+        // Hide after 2 seconds
+        this.draftTimeout = setTimeout(() => {
+            indicator.classList.remove('show');
+        }, 2000);
     }
-    
-    // Show indicator
-    indicator.classList.add('show');
-    
-    // Hide after 2 seconds
-    this.draftTimeout = setTimeout(() => {
-        indicator.classList.remove('show');
-    }, 2000);
-}
     
     hideReplyBox() {
         if (this.elements.replyBox) {
             this.elements.replyBox.style.display = 'none';
             
-            // Clear the editor content
-            if (this.editorCore && this.editorCore.isActive) {
-                this.editorCore.clear();
+            // Properly destroy editor instances instead of just clearing
+            if (this.formattingToolbar) {
+                this.formattingToolbar.destroy();
+                this.formattingToolbar = null;
+            }
+            
+            if (this.editorCore && this.editorCore.initialized) {
+                this.editorCore.destroy();
+                this.editorCore = null;
             } else {
+                // Fallback cleanup for any remaining elements
                 const replyText = document.getElementById('replyText');
                 if (replyText) {
                     if (replyText.contentEditable === 'true' || replyText.contentEditable === true) {
@@ -481,6 +507,13 @@ showDraftSaved() {
                     } else {
                         replyText.value = '';
                     }
+                    replyText.style.display = ''; // Ensure textarea is visible
+                }
+                
+                // Remove any orphaned emailEditor
+                const emailEditor = document.getElementById('emailEditor');
+                if (emailEditor) {
+                    emailEditor.remove();
                 }
             }
         }

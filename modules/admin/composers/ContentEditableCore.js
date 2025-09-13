@@ -1,314 +1,439 @@
 /**
- * ContentEditableCore.js - Core ContentEditable Engine
- * Path: /modules/admin/composers/ContentEditableCore.js
- * Created: September 12, 2025 7:08 AM
+ * ContentEditableCore.js
+ * Rich text editor engine for Blakely Cinematics Admin Mail
+ * Created: September 12, 2025 3:06 PM
+ * Updated: September 12, 2025 4:00 PM
  * 
- * This is the foundation for rich text editing.
- * Handles basic formatting, selection management, and clean HTML output.
+ * ES6 Module version that integrates with existing MVC architecture
  */
 
 export default class ContentEditableCore {
-    constructor(config = {}) {
+    constructor() {
         this.editor = null;
-        this.toolbar = null;
-        this.isActive = false;
+        this.originalTextarea = null;
+        this.selection = null;
+        this.undoStack = [];
+        this.redoStack = [];
+        this.maxUndoSteps = 50;
+        this.initialized = false;
         
-        // Configuration
-        this.config = {
-            placeholder: 'Compose your message...',
-            minHeight: '120px',
-            maxHeight: '50vh',
-            autoFocus: false,
-            ...config
+        // Keyboard shortcuts mapping
+        this.shortcuts = {
+            'b': 'bold',
+            'i': 'italic',
+            'u': 'underline',
+            's': 'strikeThrough',
+            'k': 'createLink',
+            'z': 'undo',
+            'y': 'redo',
+            'shift+z': 'redo'
         };
-        
-        // Track current state
-        this.savedSelection = null;
-        this.lastContent = '';
-        
-        // Bind methods
-        this.handlePaste = this.handlePaste.bind(this);
-        this.handleKeydown = this.handleKeydown.bind(this);
-        this.handleInput = this.handleInput.bind(this);
-        this.saveSelection = this.saveSelection.bind(this);
     }
     
     /**
-     * Initialize the editor on a target element
+     * Initialize the rich text editor with a specific textarea
+     * @param {string} textareaId - ID of the textarea to convert
      */
-    init(targetElement) {
-        if (!targetElement) {
-            console.error('ContentEditableCore: No target element provided');
+    init(textareaId = 'replyText') {
+        if (this.initialized) {
+            console.log('[ContentEditableCore] Already initialized');
+            return true;
+        }
+        
+        console.log('[ContentEditableCore] Initializing rich text editor...');
+        
+        // Check if there's already an emailEditor and clean it up
+        const existingEditor = document.getElementById('emailEditor');
+        if (existingEditor) {
+            console.log('[ContentEditableCore] Cleaning up existing emailEditor');
+            existingEditor.remove();
+        }
+        
+        // Find the textarea to replace
+        this.originalTextarea = document.getElementById(textareaId);
+        if (!this.originalTextarea) {
+            console.warn(`[ContentEditableCore] No textarea with id="${textareaId}" found`);
             return false;
         }
         
-        // Convert textarea to contenteditable div if needed
-        if (targetElement.tagName === 'TEXTAREA') {
-            this.editor = this.convertTextareaToDiv(targetElement);
-        } else {
-            this.editor = targetElement;
-            this.setupEditor();
-        }
+        // Ensure textarea is visible (might have been hidden by previous instance)
+        this.originalTextarea.style.display = '';
         
+        // Convert textarea to contenteditable
+        this.convertToContentEditable();
+        
+        // Set up event listeners
         this.attachEventListeners();
-        this.isActive = true;
         
-        console.log('ContentEditableCore initialized successfully');
+        // Initialize undo/redo with initial state
+        this.captureState();
+        
+        this.initialized = true;
+        console.log('[ContentEditableCore] Rich text editor initialized successfully');
         return true;
     }
     
     /**
      * Convert textarea to contenteditable div
      */
-    convertTextareaToDiv(textarea) {
-        const div = document.createElement('div');
-        
-        // Copy attributes
-        div.id = textarea.id || 'emailEditor';
-        div.className = textarea.className + ' contenteditable-editor';
-        
-        // Set contenteditable
-        div.contentEditable = true;
-        div.spellcheck = true;
-        
-        // Set placeholder
-        div.setAttribute('data-placeholder', this.config.placeholder);
-        
-        // Copy content (escape HTML)
-        div.textContent = textarea.value;
-        
-        // Style
-        div.style.minHeight = this.config.minHeight;
-        div.style.maxHeight = this.config.maxHeight;
-        div.style.overflowY = 'auto';
-        div.style.outline = 'none';
-        div.style.padding = '12px';
-        
-        // Replace textarea
-        textarea.parentNode.replaceChild(div, textarea);
-        
-        return div;
-    }
-    
-    /**
-     * Setup editor properties
-     */
-    setupEditor() {
+    convertToContentEditable() {
+        // Create the contenteditable div
+        this.editor = document.createElement('div');
+        this.editor.id = 'emailEditor';
+        this.editor.className = this.originalTextarea.className + ' email-editor';
         this.editor.contentEditable = true;
-        this.editor.spellcheck = true;
-        this.editor.setAttribute('data-placeholder', this.config.placeholder);
-        this.editor.style.minHeight = this.config.minHeight;
-        this.editor.style.maxHeight = this.config.maxHeight;
+        this.editor.setAttribute('role', 'textbox');
+        this.editor.setAttribute('aria-label', 'Email composer');
+        this.editor.setAttribute('data-placeholder', this.originalTextarea.placeholder || 'Type your message here...');
+        
+        // Copy existing content if any
+        if (this.originalTextarea.value) {
+            this.editor.innerHTML = this.escapeHtml(this.originalTextarea.value);
+        }
+        
+        // Apply styles to match the textarea
+        this.editor.style.width = '100%';
+        this.editor.style.minHeight = '120px';
+        this.editor.style.padding = '12px';
+        this.editor.style.paddingBottom = '25px'; // Room for word count
+        this.editor.style.background = 'rgba(255, 255, 255, 0.03)';
+        this.editor.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+        this.editor.style.borderRadius = '8px';
+        this.editor.style.color = 'var(--text-primary, #e0e0e0)';
+        this.editor.style.fontSize = '0.95rem';
+        this.editor.style.lineHeight = '1.6';
+        this.editor.style.fontFamily = 'inherit';
+        this.editor.style.outline = 'none';
         this.editor.style.overflowY = 'auto';
+        this.editor.style.resize = 'vertical';
+        this.editor.style.transition = 'all 0.3s ease';
+        
+        // Hide original textarea but keep it for form submission
+        this.originalTextarea.style.display = 'none';
+        
+        // Insert the editor after the textarea
+        this.originalTextarea.parentNode.insertBefore(this.editor, this.originalTextarea.nextSibling);
+        
+        // Keep textarea in sync for form submission
+        this.syncTextarea();
     }
     
     /**
-     * Attach event listeners
+     * Attach all event listeners
      */
     attachEventListeners() {
-        // Content events
-        this.editor.addEventListener('paste', this.handlePaste);
-        this.editor.addEventListener('keydown', this.handleKeydown);
-        this.editor.addEventListener('input', this.handleInput);
-        this.editor.addEventListener('mouseup', this.saveSelection);
-        this.editor.addEventListener('keyup', this.saveSelection);
+        if (!this.editor) return;
         
-        // Focus events
-        this.editor.addEventListener('focus', () => {
-            this.editor.classList.add('focused');
+        // Paste event - clean up formatting
+        this.editor.addEventListener('paste', (e) => this.handlePaste(e));
+        
+        // Keyboard shortcuts
+        this.editor.addEventListener('keydown', (e) => this.handleKeydown(e));
+        
+        // Input event for syncing and auto-save
+        this.editor.addEventListener('input', () => {
+            this.syncTextarea();
+            this.handleInput();
         });
         
-        this.editor.addEventListener('blur', () => {
-            this.editor.classList.remove('focused');
-            this.saveSelection();
-        });
+        // Focus/blur for placeholder and expansion
+        this.editor.addEventListener('focus', () => this.handleFocus());
+        this.editor.addEventListener('blur', () => this.handleBlur());
+        
+        // Selection change for toolbar state updates
+        document.addEventListener('selectionchange', () => this.handleSelectionChange());
     }
     
     /**
-     * Execute formatting command
-     */
-    execCommand(command, value = null) {
-        // Restore selection if needed
-        if (this.savedSelection) {
-            this.restoreSelection();
-        }
-        
-        // Focus editor
-        this.editor.focus();
-        
-        // Execute command
-        document.execCommand(command, false, value);
-        
-        // Save new selection
-        this.saveSelection();
-        
-        // Trigger input event for any listeners
-        this.editor.dispatchEvent(new Event('input', { bubbles: true }));
-        
-        return true;
-    }
-    
-    /**
-     * Format text with specific command
-     */
-    formatText(command) {
-        switch(command) {
-            case 'bold':
-                this.execCommand('bold');
-                break;
-            case 'italic':
-                this.execCommand('italic');
-                break;
-            case 'underline':
-                this.execCommand('underline');
-                break;
-            case 'strikethrough':
-                this.execCommand('strikeThrough');
-                break;
-            case 'orderedList':
-                this.execCommand('insertOrderedList');
-                break;
-            case 'unorderedList':
-                this.execCommand('insertUnorderedList');
-                break;
-            case 'quote':
-                this.execCommand('formatBlock', 'blockquote');
-                break;
-            case 'code':
-                this.execCommand('formatBlock', 'pre');
-                break;
-            case 'removeFormat':
-                this.execCommand('removeFormat');
-                break;
-            default:
-                console.warn('Unknown format command:', command);
-        }
-    }
-    
-    /**
-     * Handle paste event - clean HTML
+     * Handle paste event - strip or clean formatting
      */
     handlePaste(e) {
         e.preventDefault();
         
-        // Get paste data
-        const clipboardData = e.clipboardData || window.clipboardData;
-        let pastedData = clipboardData.getData('text/html');
+        let pastedContent = '';
         
-        // If no HTML, get plain text
-        if (!pastedData) {
-            pastedData = clipboardData.getData('text/plain');
-            // Convert plain text to HTML (preserve line breaks)
-            pastedData = pastedData.replace(/\n/g, '<br>');
-        } else {
-            // Clean HTML
-            pastedData = this.cleanHTML(pastedData);
+        // Get clipboard data
+        if (e.clipboardData && e.clipboardData.getData) {
+            const text = e.clipboardData.getData('text/plain');
+            
+            // For now, just insert plain text
+            // Later we can add HTML cleaning if needed
+            if (text) {
+                pastedContent = text;
+            }
         }
         
-        // Insert cleaned content
-        this.execCommand('insertHTML', pastedData);
-    }
-    
-    /**
-     * Clean HTML content
-     */
-    cleanHTML(html) {
-        // Create temporary element
-        const temp = document.createElement('div');
-        temp.innerHTML = html;
-        
-        // Remove script tags
-        const scripts = temp.querySelectorAll('script');
-        scripts.forEach(script => script.remove());
-        
-        // Remove style tags
-        const styles = temp.querySelectorAll('style');
-        styles.forEach(style => style.remove());
-        
-        // Remove on* attributes
-        const allElements = temp.querySelectorAll('*');
-        allElements.forEach(el => {
-            // Remove event handlers
-            for (let attr of el.attributes) {
-                if (attr.name.startsWith('on')) {
-                    el.removeAttribute(attr.name);
-                }
-            }
-            
-            // Remove style attribute (optional - you might want to keep some)
-            el.removeAttribute('style');
-            
-            // Clean class attribute (keep only safe classes)
-            if (el.className) {
-                el.className = '';
-            }
-        });
-        
-        return temp.innerHTML;
+        // Insert the content
+        if (pastedContent) {
+            document.execCommand('insertText', false, pastedContent);
+            this.captureState();
+        }
     }
     
     /**
      * Handle keyboard shortcuts
      */
     handleKeydown(e) {
-        const key = e.key.toLowerCase();
-        const cmd = e.metaKey || e.ctrlKey;
-        const shift = e.shiftKey;
-        
-        // Cmd+B - Bold
-        if (cmd && key === 'b') {
-            e.preventDefault();
-            this.formatText('bold');
-        }
-        
-        // Cmd+I - Italic
-        if (cmd && key === 'i') {
-            e.preventDefault();
-            this.formatText('italic');
-        }
-        
-        // Cmd+U - Underline
-        if (cmd && key === 'u') {
-            e.preventDefault();
-            this.formatText('underline');
-        }
-        
-        // Cmd+Shift+7 - Ordered List
-        if (cmd && shift && key === '7') {
-            e.preventDefault();
-            this.formatText('orderedList');
-        }
-        
-        // Cmd+Shift+8 - Unordered List
-        if (cmd && shift && key === '8') {
-            e.preventDefault();
-            this.formatText('unorderedList');
-        }
-        
-        // Tab - Indent
-        if (key === 'tab') {
-            e.preventDefault();
-            if (shift) {
-                this.execCommand('outdent');
-            } else {
-                this.execCommand('indent');
+        // Check for Cmd/Ctrl key combinations
+        if (e.metaKey || e.ctrlKey) {
+            const key = e.key.toLowerCase();
+            const shortcut = e.shiftKey ? `shift+${key}` : key;
+            
+            if (this.shortcuts[shortcut]) {
+                e.preventDefault();
+                
+                if (shortcut === 'z') {
+                    this.undo();
+                } else if (shortcut === 'y' || shortcut === 'shift+z') {
+                    this.redo();
+                } else {
+                    this.executeCommand(this.shortcuts[shortcut]);
+                }
+                return;
+            }
+            
+            // Cmd/Ctrl + Enter to send
+            if (key === 'enter') {
+                e.preventDefault();
+                if (window.sendReply) {
+                    window.sendReply();
+                }
+                return;
             }
         }
+        
+        // Tab key handling - insert spaces
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            document.execCommand('insertText', false, '    ');
+        }
+        
+        // Escape to minimize reply box
+        if (e.key === 'Escape') {
+            const replyBox = this.editor.closest('.reply-box');
+            if (replyBox && replyBox.classList.contains('expanded')) {
+                replyBox.classList.remove('expanded');
+            }
+        }
+    }
+    
+    /**
+     * Execute formatting command
+     */
+    executeCommand(command, value = null) {
+        // Focus the editor first
+        this.editor.focus();
+        
+        // Execute the command
+        if (command === 'createLink') {
+            const url = prompt('Enter URL:');
+            if (url) {
+                document.execCommand(command, false, url);
+            }
+        } else {
+            document.execCommand(command, false, value);
+        }
+        
+        // Capture state for undo
+        this.captureState();
+        
+        // Update toolbar state if toolbar exists
+        this.updateToolbarState();
+        
+        // Sync with textarea
+        this.syncTextarea();
     }
     
     /**
      * Handle input event
      */
     handleInput() {
-        // Update placeholder visibility
-        if (this.editor.textContent.trim() === '') {
-            this.editor.classList.add('empty');
-        } else {
-            this.editor.classList.remove('empty');
+        // Update word count
+        this.updateWordCount();
+        
+        // Show draft saved indicator
+        this.showDraftSaved();
+        
+        // Capture state for undo (throttled)
+        if (this.captureTimeout) {
+            clearTimeout(this.captureTimeout);
+        }
+        this.captureTimeout = setTimeout(() => {
+            this.captureState();
+        }, 500);
+    }
+    
+    /**
+     * Handle focus event
+     */
+    handleFocus() {
+        const replyBox = this.editor.closest('.reply-box');
+        if (replyBox) {
+            replyBox.classList.add('expanded');
+            // Don't force heights on the reply box itself
+            // Only expand the editor
+            this.editor.style.minHeight = '250px';
         }
         
-        // Save content
-        this.lastContent = this.getHTML();
+        // Remove placeholder visual if empty
+        if (!this.editor.textContent.trim()) {
+            this.editor.classList.add('is-empty');
+        } else {
+            this.editor.classList.remove('is-empty');
+        }
+    }
+    
+    /**
+     * Handle blur event
+     */
+    handleBlur() {
+        // Add placeholder visual if empty
+        if (!this.editor.textContent.trim()) {
+            this.editor.classList.add('is-empty');
+        } else {
+            this.editor.classList.remove('is-empty');
+        }
+    }
+    
+    /**
+     * Handle selection change
+     */
+    handleSelectionChange() {
+        if (document.activeElement === this.editor) {
+            this.updateToolbarState();
+        }
+    }
+    
+    /**
+     * Update toolbar button states based on current selection
+     */
+    updateToolbarState() {
+        const commands = ['bold', 'italic', 'underline', 'strikeThrough', 
+                         'insertOrderedList', 'insertUnorderedList'];
+        
+        commands.forEach(command => {
+            const button = document.querySelector(`[data-command="${command}"]`);
+            if (button) {
+                const isActive = document.queryCommandState(command);
+                button.classList.toggle('active', isActive);
+            }
+        });
+    }
+    
+    /**
+     * Sync content with hidden textarea
+     */
+    syncTextarea() {
+        if (this.originalTextarea && this.editor) {
+            // Get HTML content
+            const html = this.editor.innerHTML;
+            
+            // Store HTML in textarea for form submission
+            // The backend can process HTML emails
+            this.originalTextarea.value = html;
+        }
+    }
+    
+    /**
+     * Update word count display
+     */
+    updateWordCount() {
+        const wordCount = document.getElementById('wordCount');
+        if (!wordCount) return;
+        
+        const text = this.editor.textContent || '';
+        const words = text.trim().split(/\s+/).filter(word => word.length > 0).length;
+        wordCount.textContent = `${words} words`;
+        
+        // Show word count when there's content
+        if (words > 0) {
+            wordCount.style.opacity = '1';
+        }
+    }
+    
+    /**
+     * Show draft saved indicator
+     */
+    showDraftSaved() {
+        const indicator = document.getElementById('draftIndicator');
+        if (!indicator) return;
+        
+        // Clear existing timeout
+        if (this.draftTimeout) {
+            clearTimeout(this.draftTimeout);
+        }
+        
+        // Show indicator
+        indicator.classList.add('show');
+        
+        // Hide after 2 seconds
+        this.draftTimeout = setTimeout(() => {
+            indicator.classList.remove('show');
+        }, 2000);
+    }
+    
+    /**
+     * Capture current state for undo/redo
+     */
+    captureState() {
+        if (!this.editor) return;
+        
+        const state = {
+            html: this.editor.innerHTML,
+            selection: this.saveSelection()
+        };
+        
+        // Don't add duplicate states
+        const lastState = this.undoStack[this.undoStack.length - 1];
+        if (lastState && lastState.html === state.html) {
+            return;
+        }
+        
+        // Add to undo stack
+        this.undoStack.push(state);
+        
+        // Limit stack size
+        if (this.undoStack.length > this.maxUndoSteps) {
+            this.undoStack.shift();
+        }
+        
+        // Clear redo stack on new action
+        this.redoStack = [];
+    }
+    
+    /**
+     * Undo last action
+     */
+    undo() {
+        if (this.undoStack.length > 1) {
+            // Current state goes to redo stack
+            const current = this.undoStack.pop();
+            this.redoStack.push(current);
+            
+            // Restore previous state
+            const previous = this.undoStack[this.undoStack.length - 1];
+            this.editor.innerHTML = previous.html;
+            this.restoreSelection(previous.selection);
+            
+            this.syncTextarea();
+            this.updateWordCount();
+        }
+    }
+    
+    /**
+     * Redo last undone action
+     */
+    redo() {
+        if (this.redoStack.length > 0) {
+            const state = this.redoStack.pop();
+            this.undoStack.push(state);
+            
+            this.editor.innerHTML = state.html;
+            this.restoreSelection(state.selection);
+            
+            this.syncTextarea();
+            this.updateWordCount();
+        }
     }
     
     /**
@@ -317,112 +442,150 @@ export default class ContentEditableCore {
     saveSelection() {
         const selection = window.getSelection();
         if (selection.rangeCount > 0) {
-            this.savedSelection = selection.getRangeAt(0).cloneRange();
+            const range = selection.getRangeAt(0);
+            const preSelectionRange = range.cloneRange();
+            preSelectionRange.selectNodeContents(this.editor);
+            preSelectionRange.setEnd(range.startContainer, range.startOffset);
+            const start = preSelectionRange.toString().length;
+            
+            return {
+                start: start,
+                end: start + range.toString().length
+            };
         }
+        return null;
     }
     
     /**
      * Restore saved selection
      */
-    restoreSelection() {
-        if (this.savedSelection) {
+    restoreSelection(savedSel) {
+        if (!savedSel) return;
+        
+        try {
+            const charIndex = 0;
+            const range = document.createRange();
+            range.setStart(this.editor, 0);
+            range.collapse(true);
+            
+            const nodeStack = [this.editor];
+            let node;
+            let foundStart = false;
+            let stop = false;
+            let charCount = 0;
+            
+            while (!stop && (node = nodeStack.pop())) {
+                if (node.nodeType === 3) {
+                    const nextCharIndex = charCount + node.length;
+                    if (!foundStart && savedSel.start >= charCount && savedSel.start <= nextCharIndex) {
+                        range.setStart(node, savedSel.start - charCount);
+                        foundStart = true;
+                    }
+                    if (foundStart && savedSel.end >= charCount && savedSel.end <= nextCharIndex) {
+                        range.setEnd(node, savedSel.end - charCount);
+                        stop = true;
+                    }
+                    charCount = nextCharIndex;
+                } else {
+                    let i = node.childNodes.length;
+                    while (i--) {
+                        nodeStack.push(node.childNodes[i]);
+                    }
+                }
+            }
+            
             const selection = window.getSelection();
             selection.removeAllRanges();
-            selection.addRange(this.savedSelection);
+            selection.addRange(range);
+        } catch (e) {
+            // Selection restoration failed, ignore
         }
     }
     
     /**
-     * Get clean HTML content
+     * Get HTML content
      */
+    getHtml() {
+        return this.editor ? this.editor.innerHTML : '';
+    }
+
+    // Backward-compat alias used by callers
     getHTML() {
-        return this.editor.innerHTML;
+        return this.getHtml();
     }
     
     /**
      * Get plain text content
      */
     getText() {
-        return this.editor.textContent || this.editor.innerText;
+        return this.editor ? this.editor.textContent : '';
     }
     
     /**
-     * Set HTML content
+     * Set content
      */
+    setContent(html) {
+        if (this.editor) {
+            this.editor.innerHTML = html;
+            this.syncTextarea();
+            this.updateWordCount();
+            this.captureState();
+        }
+    }
+
+    // Backward-compat alias used by TemplateService
     setHTML(html) {
-        this.editor.innerHTML = html;
-        this.handleInput();
+        this.setContent(html);
     }
     
     /**
      * Clear content
      */
     clear() {
-        this.editor.innerHTML = '';
-        this.handleInput();
+        this.setContent('');
+        this.editor.classList.add('is-empty');
     }
     
     /**
      * Focus the editor
      */
     focus() {
-        if (!this.editor) return;
-        
-        this.editor.focus();
-        
-        // Only set cursor position if editor has content
-        try {
-            const selection = window.getSelection();
-            const range = document.createRange();
+        if (this.editor) {
+            this.editor.focus();
+        }
+    }
+
+    // Convenience getter for callers expecting isActive
+    get isActive() {
+        return this.initialized === true;
+    }
+    
+    /**
+     * Destroy the editor and restore textarea
+     */
+    destroy() {
+        if (this.editor && this.originalTextarea) {
+            // Remove the editor
+            this.editor.remove();
             
-            // Check if editor has child nodes
-            if (this.editor.childNodes.length > 0) {
-                // Place cursor at end of existing content
-                range.selectNodeContents(this.editor);
-                range.collapse(false);
-            } else {
-                // Empty editor - just set cursor at beginning
-                range.setStart(this.editor, 0);
-                range.collapse(true);
-            }
+            // Show the original textarea
+            this.originalTextarea.style.display = '';
             
-            selection.removeAllRanges();
-            selection.addRange(range);
-        } catch (e) {
-            // Fallback - just focus without setting cursor position
-            console.log('Could not set cursor position:', e.message);
+            // Clear references
+            this.editor = null;
+            this.originalTextarea = null;
+            this.initialized = false;
         }
     }
     
     /**
-     * Destroy the editor
+     * Escape HTML for display
      */
-    destroy() {
-        if (this.editor) {
-            this.editor.removeEventListener('paste', this.handlePaste);
-            this.editor.removeEventListener('keydown', this.handleKeydown);
-            this.editor.removeEventListener('input', this.handleInput);
-            this.editor.removeEventListener('mouseup', this.saveSelection);
-            this.editor.removeEventListener('keyup', this.saveSelection);
-        }
-        
-        this.isActive = false;
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 
-// CSS needed for placeholder (add to admin-mail.css)
-const placeholderCSS = `
-.contenteditable-editor[data-placeholder]:empty:before {
-    content: attr(data-placeholder);
-    color: var(--text-muted, #999);
-    pointer-events: none;
-    position: absolute;
-}
-
-.contenteditable-editor.focused {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-}
-`;
-
-console.log('ContentEditableCore loaded. Add this CSS to admin-mail.css:', placeholderCSS);
+// Don't auto-initialize - let MailView handle it
