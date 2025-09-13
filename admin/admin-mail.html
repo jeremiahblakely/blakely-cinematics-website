@@ -121,6 +121,7 @@
                 
                 <select class="account-selector" id="accountSelector">
                     <option value="all">All Accounts</option>
+                    <option value="admin">admin</option>
                     <option value="jd@jeremiahblakely.com">jd@jeremiahblakely.com</option>
                     <option value="jd@blakelycinematics.com">jd@blakelycinematics.com</option>
                 </select>
@@ -205,68 +206,44 @@
                     <input type="text" placeholder="BCC:" class="bcc-input">
                 </div>
                 
-                <!-- Single-row writing tools -->
-                <div class="writing-tools">
-                    <!-- Text Styles -->
-                    <div class="tool-group">
-                        <button class="tool-btn" onclick="formatText('bold')" title="Bold (⌘B)"><b>B</b></button>
-                        <button class="tool-btn" onclick="formatText('italic')" title="Italic (⌘I)"><i>I</i></button>
-                        <button class="tool-btn" onclick="formatText('underline')" title="Underline (⌘U)"><u>U</u></button>
-                        <button class="tool-btn" onclick="formatText('strike')" title="Strikethrough"><s>S</s></button>
-                    </div>
-                    
-                    <div class="tool-divider"></div>
-                    
-                    <!-- Alignment -->
-                    <div class="tool-group">
-                        <button class="tool-btn" title="Align Left">
-                            <img src="../assets/icons/svg/Hicon/Linear/Text%20Align%20Left.svg" width="14" height="14" alt="Align Left">
+                <!-- Rich Text Formatting Toolbar -->
+                <div class="formatting-toolbar" id="replyToolbar">
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" data-command="bold" title="Bold (⌘B)">
+                            <span class="btn-icon">B</span>
                         </button>
-                        <button class="tool-btn" title="Center">
-                            <img src="../assets/icons/svg/Hicon/Linear/Text%20Align%20Center.svg" width="14" height="14" alt="Center">
+                        <button class="toolbar-btn" data-command="italic" title="Italic (⌘I)">
+                            <span class="btn-icon">I</span>
                         </button>
-                        <button class="tool-btn" title="Align Right">
-                            <img src="../assets/icons/svg/Hicon/Linear/Text%20Align%20Right.svg" width="14" height="14" alt="Align Right">
+                        <button class="toolbar-btn" data-command="underline" title="Underline (⌘U)">
+                            <span class="btn-icon">U</span>
+                        </button>
+                        <span class="toolbar-separator"></span>
+                        <button class="toolbar-btn" data-command="insertUnorderedList" title="Bullet List">
+                            <span class="btn-icon">•</span>
+                        </button>
+                        <button class="toolbar-btn" data-command="insertOrderedList" title="Numbered List">
+                            <span class="btn-icon">1.</span>
                         </button>
                     </div>
-                    
-                    <div class="tool-divider"></div>
-                    
-                    <!-- Lists -->
-                    <div class="tool-group">
-                        <button class="tool-btn" onclick="insertList('bullet')" title="Bullet List">•</button>
-                        <button class="tool-btn" onclick="insertList('number')" title="Numbered List">1.</button>
-                        <button class="tool-btn" onclick="formatText('quote')" title="Quote">"</button>
-                        <button class="tool-btn" onclick="showTemplates()" title="Insert Template">
-                            📄
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" data-command="createLink" title="Insert Link (⌘K)">
+                            <span class="btn-icon">🔗</span>
+                        </button>
+                        <button class="toolbar-btn" data-command="removeFormat" title="Clear Formatting">
+                            <span class="btn-icon">⌫</span>
                         </button>
                     </div>
-                    
-                    <div class="tool-divider"></div>
-                    
-                    <!-- AI Assistant -->
-                    <button class="tool-btn ai-btn" onclick="toggleAI()" title="AI Assistant">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                        </svg>
-                    </button>
-                    
-                    <!-- Fullscreen button (floated right) -->
-                    <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Focus Mode">⛶</button>
                 </div>
-                
-                <!-- AI Assistant Panel (hidden by default) -->
-                <div class="ai-panel" id="aiPanel" style="display: none;">
-                    <button onclick="aiRewrite()">Rewrite</button>
-                    <button onclick="aiExpand()">Expand</button>
-                    <button onclick="aiSummarize()">Summarize</button>
-                    <button onclick="aiTone('professional')">Professional</button>
-                    <button onclick="aiTone('friendly')">Friendly</button>
-                </div>
-                
-                <div class="textarea-wrapper">
-                    <textarea id="replyText" class="reply-text auto-expand" 
-                              placeholder="Type your reply here..."></textarea>
+
+                <div class="editor-wrapper">
+                    <div id="replyEditor" 
+                         class="reply-text contenteditable-editor auto-expand"
+                         contenteditable="true"
+                         role="textbox"
+                         aria-multiline="true"
+                         data-placeholder="Type your reply here…"
+                         spellcheck="true"></div>
                     <span class="word-count" id="wordCount">0 words</span>
                 </div>
                 
@@ -280,6 +257,7 @@
                                 <button class="action-btn primary" onclick="sendReply()">Send Reply</button>
                             </div>
                         </div>
+            </div> <!-- closes reply-box -->
         </main>
         
         <!-- Widgets Sidebar -->
@@ -305,5 +283,6 @@
     
     <!-- Portal root for floating elements -->
     <div id="portal-root"></div>
+<!-- Account Switcher Script -->
 </body>
 </html>

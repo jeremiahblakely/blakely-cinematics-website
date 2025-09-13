@@ -105,15 +105,18 @@ export default class MailView {
     
     createEmailItem(email) {
         const div = document.createElement('div');
-        div.className = `mail-item ${email.unread ? 'unread' : ''} ${email.starred ? 'starred' : ''}`;
+        div.className = `mail-item mail-card ${email.unread ? 'unread' : ''} ${email.starred ? 'starred' : ''}`;
         div.dataset.emailId = email.id;
-        
+        if (email.emailId) {
+            div.dataset.emailUid = email.emailId;
+        }
+
         div.innerHTML = `
             <div class="mail-item-header">
                 <span class="mail-item-sender">${this.escapeHtml(email.sender)}</span>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="mail-item-actions">
                     <span class="mail-item-time">${email.time}</span>
-                    <span class="email-star" data-email-id="${email.id}" style="cursor: pointer; font-size: 1rem;">
+                    <span class="email-star" data-email-id="${email.id}" title="Star" style="cursor: pointer; font-size: 1rem;">
                         ${email.starred ? '⭐' : '☆'}
                     </span>
                 </div>
@@ -125,7 +128,7 @@ export default class MailView {
                 ${email.hasAttachments ? '<span class="mail-tag attachment">📎</span>' : ''}
             </div>
         `;
-        
+
         return div;
     }
     
@@ -137,8 +140,45 @@ export default class MailView {
         }
         
         // Update content
-        this.elements.emailSubject.textContent = email.subject;
-        this.elements.emailBody.innerHTML = email.body; // Already sanitized HTML
+        console.debug('[Mail] displayEmail render', {
+            id: email.id,
+            emailId: email.emailId,
+            subject: email.subject,
+            hasHtml: !!email.htmlBody || !!email.body,
+            hasText: !!email.textBody
+        });
+        this.elements.emailSubject.textContent = email.subject || '(No Subject)';
+        // Prefer provided HTML body; fallback to textBody; final fallback message
+        let html = email.body || email.htmlBody || '';
+        if (!html && email.textBody) {
+            const esc = (s) => (s || '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+            html = `<pre style="white-space:pre-wrap;">${esc(email.textBody)}</pre>`;
+        }
+        if (!html) {
+            html = '<p style="color: var(--text-secondary);">(No content)</p>';
+        }
+        // Isolate email content inside a sandboxed iframe to prevent style leakage
+        const container = this.elements.emailBody;
+        while (container.firstChild) container.removeChild(container.firstChild);
+        const iframe = document.createElement('iframe');
+        iframe.className = 'email-iframe';
+        iframe.setAttribute('sandbox', 'allow-same-origin');
+        const docHtml = `<!doctype html><html><head><meta charset="utf-8"><style>
+            html,body{margin:0;padding:0;background:transparent;color:#E0F2FE;font:14px/1.6 -apple-system, Inter, Segoe UI, Roboto, Arial, sans-serif;}
+            img,video,canvas,svg{max-width:100%;height:auto}
+            table{max-width:100%;border-collapse:collapse}
+            a{color:#7dd3fc}
+            blockquote{border-left:3px solid #555;padding-left:8px;margin-left:0}
+            pre{white-space:pre-wrap}
+        </style></head><body>` + html + `</body></html>`;
+        iframe.srcdoc = docHtml;
+        iframe.onload = () => {
+            try {
+                const b = iframe.contentDocument && iframe.contentDocument.body;
+                if (b) iframe.style.height = Math.max(b.scrollHeight, b.offsetHeight, b.clientHeight) + 'px';
+            } catch {}
+        };
+        container.appendChild(iframe);
         
         // Update sender info
         const initials = email.sender.split(' ').map(n => n[0]).join('');
@@ -287,7 +327,7 @@ export default class MailView {
                 <span>${folder.icon}</span>
                 <span>${folder.name}</span>
             </div>
-            ${folder.count !== null && folder.count !== 0 ? `<span class="mail-folder-count">${folder.count}</span>` : ''}
+            <span class="mail-folder-count">${folder.count ?? 0}</span>
         `;
         
         return li;

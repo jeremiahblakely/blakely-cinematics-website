@@ -60,11 +60,11 @@ export default class SignatureService {
         if (!editorCore || !editorCore.editor) return;
         
         const signature = this.getSignature();
-        const currentHTML = editorCore.getHTML();
+        const currentHTML = editorCore.editor ? editorCore.editor.innerHTML : "";
         
         // Only add if signature isn't already there
         if (!currentHTML.includes('email-signature')) {
-            editorCore.setHTML(currentHTML + signature.html);
+            if (editorCore.editor) editorCore.editor.innerHTML = currentHTML + signature.html;
         }
     }
     

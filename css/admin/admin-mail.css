@@ -30,6 +30,9 @@
     --sidebar-width: 260px;
     --email-list-width: 555px; /* Increased by 100px from 455px */
     --widget-width: 340px;
+    /* Spacing */
+    --standard-gap: 8px;
+    --column-gap: calc(var(--standard-gap) / 2);
 }
 
 * {
@@ -56,6 +59,8 @@ body {
     height: 100vh;
     position: relative;
     z-index: 2;
+    overflow-x: hidden; /* prevent horizontal scroll of app frame */
+    column-gap: var(--column-gap);
 }
 
 /* Header */
@@ -248,15 +253,73 @@ body {
     backdrop-filter: blur(10px);
     border-right: 1px solid var(--border-default);
     overflow-y: auto;
+    overflow-x: hidden; /* no sideways scroll in list */
+    padding: 0 var(--standard-gap);
+    padding-left: calc(var(--standard-gap) / 2);
+}
+
+/* Inline loading and empty states */
+.loading, .no-emails {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px;
+    color: var(--text-secondary);
+}
+
+.inline-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-default);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    display: inline-block;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Load more / retry buttons in list */
+.load-more-btn, .retry-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    margin: 8px 0;
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.load-more-btn:hover, .retry-btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--accent-primary);
 }
 
 .mail-list-search {
-    padding: 16px;
-    background: rgba(42, 0, 56, 0.4);
+    padding: var(--standard-gap);
+    padding-left: calc(var(--standard-gap) / 2);
+    /* Solid themed background to prevent overlap show-through */
+    background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-default);
     position: sticky;
     top: 0;
-    z-index: 10;
+    /* Ensure header stays above list items and popovers */
+    z-index: 200;
+    /* Visual separation from list */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* Guard against any fixed header variants by providing optional spacing */
+.mail-list.has-fixed-header {
+    padding-top: 72px; /* adjust if header height changes */
 }
 
 .mail-search-input {
@@ -268,6 +331,7 @@ body {
     color: var(--text-primary);
     font-size: 0.9rem;
     transition: all 0.3s;
+    margin: 0 0 var(--standard-gap) 0;
 }
 
 .mail-search-input:focus {
@@ -280,7 +344,7 @@ body {
 .account-selector {
     width: 100%;
     padding: 10px;
-    margin-top: 12px;
+    margin: 0 0 var(--standard-gap) 0;
     background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.05));
     border: 1px solid var(--accent-primary);
     border-radius: 6px;
@@ -297,8 +361,8 @@ body {
 
 .mail-actions-row {
     display: flex;
-    gap: 8px;
-    margin-top: 8px;
+    gap: var(--standard-gap);
+    margin: 0 0 var(--standard-gap) 0;
 }
 
 .mail-action-btn {
@@ -347,30 +411,64 @@ body {
     justify-content: space-between;
 }
 
-.mail-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 3px;
-    background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
-    opacity: 0;
-    transition: opacity 0.3s;
+/* Card styling for email items */
+.mail-card {
+    border-bottom: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 8px;
+    margin: var(--standard-gap) 0; /* 8px vertical gap, align horizontally via list padding */
+    max-width: 100%;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
 }
+
+.mail-card:hover { transform: translateY(-1px); }
+
+/* Unread: animated glowing border */
+@keyframes unread-glow {
+    0%, 100% { border-color: rgba(139, 92, 246, 0.8); box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
+    50% { border-color: rgba(139, 92, 246, 1); box-shadow: 0 0 20px rgba(139, 92, 246, 0.8); }
+}
+
+.mail-card.unread {
+    animation: unread-glow 2s ease-in-out infinite;
+}
+
+/* Read emails: flatter, subtle */
+.mail-card:not(.unread) {
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    padding: 16px;
+    opacity: 0.95;
+}
+
+/* Remove legacy left-bar selection/hover indicator for card design */
+.mail-item::before { display: none; }
 
 .mail-item:hover {
     background: rgba(0, 255, 255, 0.03);
     transform: translateX(2px);
 }
 
-.mail-item:hover::before {
-    opacity: 1;
+/* no-op: legacy indicator disabled for cards */
+.mail-item:hover::before { opacity: 0; }
+
+/* Selection state styled for cards: outline/highlight that respects rounded corners */
+.mail-card.active,
+.mail-card.selected {
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.55), 0 0 18px rgba(139, 92, 246, 0.25);
+    border-color: rgba(139, 92, 246, 0.85);
+    background: rgba(139, 92, 246, 0.08);
+    transition: all 0.2s ease;
 }
 
-.mail-item.active {
-    background: rgba(0, 255, 255, 0.08);
-    border-left: 3px solid var(--accent-primary);
+/* Visual hierarchy: unread + selected remains most prominent */
+.mail-card.unread.active,
+.mail-card.unread.selected {
+    animation: unread-glow 1.8s ease-in-out infinite;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.65), 0 0 22px rgba(139, 92, 246, 0.35);
 }
 
 .mail-item.unread {
@@ -390,6 +488,32 @@ body {
     width: 100%;
 }
 
+.mail-item-actions { display: flex; align-items: center; gap: 8px; }
+
+.email-delete {
+    background: transparent;
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 6px;
+    transition: all 0.2s ease;
+}
+
+.email-delete:hover {
+    border-color: var(--error);
+    color: var(--error);
+    background: rgba(255, 0, 85, 0.08);
+}
+
+/* Slide/fade out for delete */
+.mail-item.leaving { opacity: 0; transform: translateX(12px); transition: all 0.22s ease; }
+
+/* Thinner, subtle scrollbar for email list */
+.mail-list::-webkit-scrollbar { width: 8px; }
+.mail-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+.mail-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
 .mail-item-sender {
     font-weight: 500;
     font-size: 0.95rem;
@@ -407,6 +531,7 @@ body {
     color: var(--text-primary);
     margin-bottom: 6px;
     font-weight: 400;
+    overflow-wrap: anywhere; /* break long subjects to prevent sideways scroll */
 }
 
 .mail-item-preview {
@@ -417,6 +542,7 @@ body {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    overflow-wrap: anywhere;
 }
 
 .mail-item-tags {
@@ -464,7 +590,8 @@ body {
     backdrop-filter: blur(5px);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: hidden;
+    overflow-x: hidden; /* avoid horizontal scroll in viewer */
 }
 
 .mail-content-pinned {
@@ -574,6 +701,14 @@ body {
         0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
+/* Iframe used to render email content in isolation */
+.email-iframe {
+    width: 100%;
+    border: none;
+    background: transparent;
+    display: block;
+}
+
 /* Reply Box - Hidden by default */
 #replyBox {
     background: rgba(42, 0, 56, 0.6);
@@ -670,10 +805,10 @@ body {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Expanded state for adaptive height */
+/* When focused/expanded - only expand the editor area, not the whole box */
 .reply-box.expanded {
-    min-height: auto; /* Let content determine height */
-    max-height: 80vh; /* Increased for better usability */
+    min-height: auto; /* Don't force the whole box to expand */
+    max-height: 70vh;
     overflow-y: auto;
 }
 
@@ -689,8 +824,9 @@ body {
     opacity: 1;
 }
 
-.reply-box.expanded .reply-toolbar {
-    display: flex; /* Show toolbar only when expanded */
+.reply-box.expanded .reply-toolbar,
+.reply-box.expanded .formatting-toolbar {
+    display: flex !important; /* Show toolbar only when expanded */
 }
 
 /* Format buttons in toolbar */
@@ -1082,24 +1218,78 @@ body {
 }
 
 /* Force reply buttons to be visible */
+/* Reply footer buttons - match compose style */
 .reply-footer {
+    position: sticky;
+    bottom: 0;
+    background: inherit;
+    padding-top: 12px;
+    margin-top: 12px;
     display: flex !important;
     justify-content: space-between;
     align-items: center;
-    margin-top: 12px;
 }
 
-/* Consolidated reply actions */
 .reply-actions {
-    display: flex !important;
-    align-items: center;
+    display: flex;
     gap: 12px;
+    justify-content: flex-end;
 }
 
+/* Style buttons like compose */
 .reply-actions .action-btn {
+    padding: 10px 24px;
+    border-radius: 6px;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
     display: inline-block !important;
     opacity: 1 !important;
     visibility: visible !important;
+}
+
+.reply-actions .action-btn.primary {
+    background: var(--accent-primary, #00ffff);
+    color: var(--bg-primary, #000);
+}
+
+.reply-actions .action-btn.primary:hover {
+    background: var(--accent-secondary, #00dddd);
+    transform: translateY(-1px);
+}
+
+.reply-actions .action-btn:not(.primary) {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary, #fff);
+}
+
+.reply-actions .action-btn:not(.primary):hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Remove all background effects from reply footer */
+.reply-footer {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+}
+
+/* Ensure reply box has uniform background */
+.reply-box {
+    /* Use a single solid color instead of gradient */
+    background: rgba(20, 20, 30, 0.95) !important;
+    /* Or match your compose window background exactly */
+}
+
+/* Remove any pseudo-elements that might create overlays */
+.reply-footer::before,
+.reply-footer::after,
+.reply-box::before,
+.reply-box::after {
+    display: none !important;
 }
 
 .reply-actions .word-count {
@@ -1202,11 +1392,14 @@ body {
 }
 
 /* Force auto-expand in expanded state */
-.reply-box.expanded .contenteditable-editor {
-    min-height: 300px !important;
-    height: auto !important;
-    max-height: 50vh;
-    flex: 1;
+/* When focused/expanded - only expand the editor area */
+.reply-box.expanded .email-editor,
+.reply-box.expanded #emailEditor,
+.reply-box.expanded .contenteditable-editor,
+.reply-box.expanded .reply-text {
+    min-height: 250px;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
 /* Ensure proper spacing in reply box */
@@ -1226,7 +1419,7 @@ body {
 .reply-box.expanded:has(.contenteditable-editor) {
     display: flex;
     flex-direction: column;
-    min-height: auto;
+    min-height: auto; /* Don't force the container height */
 }
 
 /* Rich Text Formatting Styles */
@@ -2011,4 +2204,240 @@ body {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     animation: holo-border 4s ease infinite;
+}
+/* ============================================
+   REPLY BOX THEME SYNC WITH COMPOSE
+   Added: September 12, 2025
+   Syncs reply box styling with compose theme switcher
+   ============================================ */
+
+/* Default Theme (Original Cyberpunk) */
+.reply-box.compose-default,
+.reply-box:not([class*="compose-"]) {
+    background: linear-gradient(135deg, 
+        rgba(20, 10, 30, 0.98) 0%, 
+        rgba(30, 15, 45, 0.98) 100%) !important;
+    border: 1px solid var(--accent-primary, #00FFFF) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Metallic Theme */
+.reply-box.compose-metallic {
+    background: linear-gradient(145deg, #1F0A2A, #2A0F3A) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+        0 10px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+.reply-box.compose-metallic .reply-text,
+.reply-box.compose-metallic textarea {
+    background: linear-gradient(145deg, rgba(15, 5, 20, 0.6), rgba(20, 10, 25, 0.4)) !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Glass Theme */
+.reply-box.compose-glass {
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.reply-box.compose-glass .reply-text,
+.reply-box.compose-glass textarea {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Solid Dark Theme */
+.reply-box.compose-solid {
+    background: #0D0015 !important;
+    border: 1px solid var(--accent-primary, #00FFFF) !important;
+    box-shadow: 
+        inset 0 0 20px rgba(0, 255, 255, 0.03),
+        0 0 30px rgba(0, 255, 255, 0.1) !important;
+}
+
+.reply-box.compose-solid .reply-text,
+.reply-box.compose-solid textarea {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(0, 255, 255, 0.2) !important;
+}
+
+/* Holographic Theme (if exists) */
+.reply-box.compose-holo {
+    background: linear-gradient(135deg, 
+        rgba(10, 5, 15, 0.95) 0%, 
+        rgba(20, 10, 30, 0.95) 100%) !important;
+    border: 2px solid transparent !important;
+    border-image: linear-gradient(90deg, #00FFFF, #FF10F0, #9D00FF, #39FF14) 1 !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.reply-box.compose-holo::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+        rgba(0, 255, 255, 0.03), 
+        rgba(255, 16, 240, 0.03), 
+        rgba(157, 0, 255, 0.03), 
+        rgba(57, 255, 20, 0.03));
+    background-size: 400% 400%;
+    animation: holo-border 4s ease infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.reply-box.compose-holo .reply-text,
+.reply-box.compose-holo textarea {
+    background: rgba(15, 10, 25, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    position: relative;
+    z-index: 2;
+}
+
+/* Ensure all child elements maintain theme consistency */
+.reply-box[class*="compose-"] .reply-header,
+.reply-box[class*="compose-"] .reply-footer,
+.reply-box[class*="compose-"] .reply-toolbar,
+.reply-box[class*="compose-"] .formatting-toolbar {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: inherit;
+}
+
+/* Theme-aware action buttons */
+.reply-box[class*="compose-"] .action-btn.primary {
+    transition: all 0.3s ease;
+}
+
+.reply-box.compose-metallic .action-btn.primary {
+    background: linear-gradient(145deg, var(--accent-primary), var(--accent-secondary));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.reply-box.compose-glass .action-btn.primary {
+    background: rgba(0, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.reply-box.compose-solid .action-btn.primary {
+    background: var(--accent-primary);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+.reply-box.compose-holo .action-btn.primary {
+    background: linear-gradient(90deg, #00FFFF, #FF10F0);
+    background-size: 200% 200%;
+    animation: holo-border 3s ease infinite;
+}
+
+
+
+/* Date Created: September 12, 2025 */
+
+/* ============================================
+   TOOLBAR BORDER - ONLY FOR FORMATTING BUTTONS
+   Added: September 12, 2025
+   Only apply border to the actual formatting toolbar with buttons
+   ============================================ */
+
+/* Target only the toolbar that contains the formatting buttons (B, I, U, etc.) */
+.reply-box .formatting-toolbar:has(button),
+.reply-box .toolbar:has(.format-btn),
+.reply-box div.formatting-toolbar {
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px;
+}
+
+/* Make sure the reply header stays clean without border */
+.reply-header {
+    border: none !important;
+}
+
+/* Ensure the "Replying to" header section has no border */
+.reply-box > .reply-header:first-child {
+    border: none !important;
+}
+
+/* Date Updated: September 12, 2025 */
+
+/* ============================================
+   CONTENTEDITABLE REPLY EDITOR ENHANCEMENTS
+   Added: September 13, 2025
+   ============================================ */
+
+.contenteditable-editor {
+    outline: none;
+    min-height: 120px;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.contenteditable-editor.is-empty:before {
+    content: attr(data-placeholder);
+    pointer-events: none;
+    opacity: 0.5;
+    color: var(--text-muted, rgba(255, 255, 255, 0.4));
+}
+
+/* Ensure proper focus styling for accessibility */
+.contenteditable-editor:focus {
+    border-color: var(--accent-primary, #00FFFF) !important;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2) !important;
+    background: rgba(0, 255, 255, 0.02) !important;
+}
+
+/* Rich text formatting within editor */
+.contenteditable-editor b,
+.contenteditable-editor strong {
+    color: var(--accent-primary, #00FFFF);
+    font-weight: 600;
+}
+
+.contenteditable-editor i,
+.contenteditable-editor em {
+    color: var(--accent-secondary, #FF00FF);
+    font-style: italic;
+}
+
+.contenteditable-editor u {
+    text-decoration: underline;
+    text-decoration-color: var(--accent-primary, #00FFFF);
+    text-underline-offset: 2px;
+}
+
+.contenteditable-editor ul,
+.contenteditable-editor ol {
+    margin-left: 20px;
+    padding-left: 0;
+}
+
+.contenteditable-editor li {
+    margin-bottom: 4px;
+}
+
+.contenteditable-editor a {
+    color: var(--accent-primary, #00FFFF);
+    text-decoration: underline;
+}
+
+.contenteditable-editor a:hover {
+    color: var(--accent-secondary, #FF00FF);
+}
+
+/* Active toolbar button states */
+.toolbar-btn.active {
+    background: var(--accent-primary, #00FFFF) !important;
+    color: var(--bg-primary, #000) !important;
+    border-color: var(--accent-primary, #00FFFF) !important;
 }

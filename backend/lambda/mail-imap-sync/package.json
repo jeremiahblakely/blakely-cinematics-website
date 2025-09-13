@@ -1,0 +1,13 @@
+{
+  "name": "mail-imap-sync",
+  "version": "1.0.0",
+  "description": "WorkMail IMAP sync for Blakely Cinematics",
+  "main": "index.js",
+  "dependencies": {
+    "node-imap": "^0.9.6",
+    "mailparser": "^3.6.5",
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0",
+    "@aws-sdk/client-secrets-manager": "^3.600.0"
+  }
+}

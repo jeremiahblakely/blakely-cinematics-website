@@ -1,0 +1,6 @@
+{
+  "name": "blakely-cinematics-mail-fetch",
+  "version": "1.0.0",
+  "description": "Lambda function to fetch emails from DynamoDB",
+  "main": "index.js"
+}

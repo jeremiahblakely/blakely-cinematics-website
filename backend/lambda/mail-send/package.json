@@ -1,0 +1,9 @@
+{
+  "name": "blakely-cinematics-mail-send",
+  "version": "1.0.0",
+  "description": "Lambda function to send emails via SES",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1450.0"
+  }
+}

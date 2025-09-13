@@ -4,6 +4,7 @@
 
 import MailModel from '../models/MailModel.js';
 import MailView from '../views/MailView.js';
+import { mailAPI } from '../services/MailAPIService.js';
 import TemplateService from '../services/TemplateService.js';
 import ComposeView from '../components/ComposeView.js';
 import ThemeSwitcher from '../components/ThemeSwitcher.js';
@@ -12,7 +13,8 @@ export default class MailController {
     constructor() {
         this.model = new MailModel();
         this.view = new MailView();
-        this.undoStack = []; // Store undo functions
+        // Initialize view after creation
+        this.view.initialize();        this.undoStack = []; // Store undo functions
         this.templateService = new TemplateService();
         this.composeView = new ComposeView(null, null, this.view.signatureService);
         
@@ -34,12 +36,13 @@ export default class MailController {
     }
     
     initializeEventListeners() {
-        // Email list click handler
+        // Email list click handler (event delegation)
         this.view.elements.emailList.addEventListener('click', (e) => {
+            // No inline delete button
             // Check for checkbox click
             const checkbox = e.target.closest('.email-checkbox');
             if (checkbox) {
-                const emailId = parseInt(checkbox.dataset.emailId);
+                const emailId = Number(checkbox.dataset.emailId);
                 this.toggleEmailSelection(emailId);
                 return;
             }
@@ -48,7 +51,7 @@ export default class MailController {
             const star = e.target.closest('.email-star');
             if (star) {
                 e.stopPropagation();
-                const emailId = parseInt(star.dataset.emailId);
+                const emailId = Number(star.dataset.emailId);
                 this.toggleStar(emailId);
                 return;
             }
@@ -56,10 +59,29 @@ export default class MailController {
             // Regular email click
             const emailItem = e.target.closest('.mail-item');
             if (emailItem) {
-                const emailId = parseInt(emailItem.dataset.emailId);
-                this.selectEmail(emailId);
+                // Try numeric id first
+                let emailId = Number(emailItem.dataset.emailId);
+                if (Number.isFinite(emailId)) {
+                    console.debug('[Mail] item click -> select by id', emailId);
+                    this.selectEmail(emailId);
+                    return;
+                }
+                // Fallback: use uid to find the email
+                const uid = emailItem.dataset.emailUid;
+                if (uid && typeof this.model.getEmailByUid === 'function') {
+                    const found = this.model.getEmailByUid(uid);
+                    if (found) {
+                        console.debug('[Mail] item click -> select by uid', uid);
+                        this.selectEmail(found.id);
+                        return;
+                    }
+                }
+                console.warn('[Mail] Clicked email not found', emailItem.dataset);
             }
         });
+
+        // Bind global card delete for other triggers if needed
+        window.trashEmail = (id) => this.trashEmail(id);
         
         // Folder click handler
         document.querySelector('.mail-folders').addEventListener('click', (e) => {
@@ -108,16 +130,10 @@ document.addEventListener('keydown', (e) => {
         return;
     }
     
-    // Delete key for delete email
-    if (e.key === 'Delete' && this.model.selectedEmail) {
+    // Delete key (including Mac backspace) moves to trash
+    if ((e.key === 'Delete' || e.key === 'Backspace') && !e.metaKey && !e.ctrlKey && this.model.selectedEmail) {
         e.preventDefault();
         this.deleteSelectedEmail();
-    }
-    
-    // Backspace for archive
-    if (e.key === 'Backspace' && !e.metaKey && !e.ctrlKey && this.model.selectedEmail) {
-        e.preventDefault();
-        this.archiveSelectedEmail();
     }
     
     // A for archive
@@ -226,9 +242,9 @@ document.addEventListener('keydown', (e) => {
             console.log('Format:', command);
             
             // First check if we have ContentEditableCore instance
-            if (this.view.editorCore && this.view.editorCore.isActive) {
+            if (this.view.editorCore && this.view.editorCore.initialized) {
                 // Use ContentEditableCore for formatting
-                this.view.editorCore.formatText(command);
+                this.view.editorCore.executeCommand(command);
                 console.log('Formatted with ContentEditableCore:', command);
                 return;
             }
@@ -279,16 +295,24 @@ document.addEventListener('keydown', (e) => {
         const currentAccount = account || this.view.elements.accountSelector.value;
         
         const emails = this.model.getEmails(currentFolder, currentAccount);
+        console.log("Loading emails for folder:", currentFolder, "count:", emails.length);
         this.view.renderEmailList(emails);
+        // Render Load more if pagination token exists
+        if (typeof this.renderLoadMoreControl === 'function') {
+            this.renderLoadMoreControl();
+        }
     }
     
     selectEmail(emailId) {
         const email = this.model.getEmailById(emailId);
         if (email) {
+            console.debug('[Mail] selectEmail ->', emailId, email.subject);
             this.model.selectedEmail = email;
             this.model.markAsRead(emailId);
             this.view.displayEmail(email);
             this.updateFolderCounts();
+        } else {
+            console.warn('[Mail] selectEmail: email not found for id', emailId);
         }
     }
     
@@ -297,8 +321,73 @@ document.addEventListener('keydown', (e) => {
         this.view.renderEmailList(emails);
     }
     
-    filterByAccount(account) {
+    async filterByAccount(account) {
+        try {
+            // Switch API user context and refetch for selected account
+            if (account && account !== 'all') {
+                if (typeof mailAPI?.setUserId === 'function') {
+                    mailAPI.setUserId(account);
+                }
+            }
+            const resp = await this.model.fetchEmailsFromAPI(this.model.currentFolder, 50);
+            const emails = resp.emails;
+            if (emails && emails.length) {
+                this.model.emails = emails.map(e => this.model.transformAPIEmail(e, this.model.currentFolder));
+                this.model.nextToken = resp.nextToken || null;
+                this.model.updateFolderCounts();
+                this.loadFolders();
+            }
+        } catch (e) {
+            console.error('Account filter fetch failed:', e);
+        }
         this.loadEmails(this.model.currentFolder, account);
+    }
+
+    // Render a Load More button if more pages exist
+    renderLoadMoreControl() {
+        const list = document.getElementById('emailList');
+        if (!list) return;
+        // Remove existing control
+        const existing = document.getElementById('loadMoreEmails');
+        if (existing) existing.remove();
+        if (this.model.nextToken) {
+            const btn = document.createElement('button');
+            btn.id = 'loadMoreEmails';
+            btn.textContent = 'Load more';
+            btn.className = 'load-more-btn';
+            btn.style.display = 'block';
+            btn.style.margin = '12px auto';
+            btn.addEventListener('click', () => this.loadMoreEmails());
+            list.appendChild(btn);
+        }
+    }
+
+    async loadMoreEmails() {
+        // Show a small inline loader in the button
+        const btn = document.getElementById('loadMoreEmails');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Loading…';
+            btn.classList.add('loading');
+        }
+        try {
+            const { appended } = await this.model.loadMoreEmails(50);
+            // Re-render list and control
+            this.view.renderEmailList(this.model.getEmails(this.model.currentFolder));
+            this.renderLoadMoreControl();
+            if (!appended) {
+                this.view.showNotification('No more emails to load', 'info');
+            }
+        } catch (e) {
+            console.error('Load more failed:', e);
+            this.view.showNotification('Failed to load more emails', 'error');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Load more';
+                btn.classList.remove('loading');
+            }
+        }
     }
     
     // Folder Operations
@@ -360,26 +449,48 @@ document.addEventListener('keydown', (e) => {
     // Delete Operations
     deleteSelectedEmail() {
         let undoFunction;
-        
+
+        // Determine next selection index based on current view ordering
+        const currentFolder = this.model.currentFolder;
+        const currentAccount = this.view?.elements?.accountSelector?.value;
+        const listBefore = this.model.getEmails(currentFolder, currentAccount);
+
+        const selectNextAfterIndex = (idx) => {
+            const listAfter = this.model.getEmails(currentFolder, currentAccount);
+            if (!listAfter.length) { this.view.clearEmailContent(); return; }
+            const nextIdx = Math.min(idx, listAfter.length - 1);
+            const nextEmail = listAfter[nextIdx];
+            if (nextEmail) this.selectEmail(nextEmail.id); else this.view.clearEmailContent();
+        };
+
         if (this.model.selectedEmails.size > 0) {
+            let minIndex = Infinity;
+            this.model.selectedEmails.forEach((id) => {
+                const i = listBefore.findIndex(e => e.id === id);
+                if (i >= 0) minIndex = Math.min(minIndex, i);
+            });
             undoFunction = this.model.bulkDelete();
             this.view.showNotification(
                 `${this.model.selectedEmails.size} emails moved to trash`,
                 'success',
-                true // Show undo button
+                true
             );
+            this.loadEmails();
+            this.loadFolders();
+            if (minIndex !== Infinity) selectNextAfterIndex(minIndex);
         } else if (this.model.selectedEmail) {
             const emailId = this.model.selectedEmail.id;
+            const indexBefore = listBefore.findIndex(e => e.id === emailId);
             undoFunction = this.model.deleteEmail(emailId);
             this.view.showNotification('Email moved to trash', 'success', true);
+            this.loadEmails();
+            this.loadFolders();
+            if (indexBefore >= 0) selectNextAfterIndex(indexBefore);
         }
-        
+
         if (undoFunction) {
             this.undoStack.push(undoFunction);
         }
-        
-        this.loadEmails();
-        this.view.clearEmailContent();
     }
     
     // Archive Operations
@@ -428,6 +539,31 @@ document.addEventListener('keydown', (e) => {
             this.view.clearEmailContent();
             this.view.showNotification(`Moved to ${targetFolder}`, 'success', true);
         });
+    }
+
+    // Trash a single email (move to 'trash' with small slide/fade animation)
+    trashEmail(emailId) {
+        const itemEl = document.querySelector(`[data-email-id="${emailId}"]`);
+        if (itemEl) {
+            itemEl.classList.add('leaving');
+        }
+        // Use model.moveToFolder if available; otherwise emulate
+        if (typeof this.model.moveToFolder === 'function') {
+            const undoFn = this.model.moveToFolder(emailId, 'trash');
+            if (undoFn) this.undoStack.push(undoFn);
+        } else {
+            const email = this.model.getEmailById(emailId);
+            if (email) {
+                const prev = email.folder;
+                email.folder = 'trash';
+                this.undoStack.push(() => { email.folder = prev; });
+            }
+        }
+        setTimeout(() => {
+            this.loadEmails();
+            this.loadFolders();
+            this.view.showNotification('Moved to trash', 'success');
+        }, 220);
     }
     
     // Snooze
@@ -589,4 +725,3 @@ if (typeof window !== 'undefined') {
         window.selectAllEmails = () => controller.selectAllEmails();
     };
 }
-

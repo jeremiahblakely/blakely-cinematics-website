@@ -8,17 +8,15 @@ export default class MailModel {
     constructor() {
         this.emails = [];
         this.folders = [];
-        this.currentFolder = 'all';
+        this.currentFolder = 'inbox';
         this.selectedEmail = null;
         this.selectedEmails = new Set();
         this.starredEmails = new Set();
         this.snoozedEmails = new Map();
-        this._idSeq = 1; // simple in-memory id generator for stable selection
         this.accounts = [
             { value: 'all', label: 'All Accounts' },
-            { value: 'admin', label: 'admin' },
-            { value: 'jd@blakelycinematics.com', label: 'jd@blakelycinematics.com' },
-            { value: 'jd@jeremiahblakely.com', label: 'jd@jeremiahblakely.com' }
+            { value: 'jd@jeremiahblakely.com', label: 'jd@jeremiahblakely.com' },
+            { value: 'jd@blakelycinematics.com', label: 'jd@blakelycinematics.com' }
         ];
         this.events = {};
         this.isLoading = false;
@@ -32,9 +30,7 @@ export default class MailModel {
     
     initializeFolders() {
         this.folders = [
-            { id: 'all', name: 'All Mail', icon: '📨', count: 0 },
             { id: 'inbox', name: 'Inbox', icon: '📥', count: 0 },
-            { id: 'unread', name: 'Unread', icon: '✉️', count: 0 },
             { id: 'starred', name: 'Starred', icon: '⭐', count: 0 },
             { id: 'sent', name: 'Sent', icon: '📤', count: 0 },
             { id: 'drafts', name: 'Drafts', icon: '📝', count: 0 },
@@ -63,50 +59,37 @@ export default class MailModel {
         };
     }
     
-    // Fetch emails from API (via service)
-    async fetchEmailsFromAPI(folder = this.currentFolder, limit = 50, nextToken = null) {
-        try {
-            const result = await mailAPI.fetchEmails(folder, limit, nextToken);
-            if (result && result.success) {
-                return { emails: result.emails || [], nextToken: result.nextToken || null };
-            }
-            return { emails: [], nextToken: null };
-        } catch (error) {
-            console.error('Failed to fetch emails:', error);
-            return { emails: [], nextToken: null };
-        }
-    }
-
     // Load emails from API
     async loadEmailsFromAPI() {
         this.isLoading = true;
         try {
-            let { emails, nextToken } = await this.fetchEmailsFromAPI('inbox', 50);
-            // Fallback: some stages may not have the folder GSI; query all by userId
-            if (!emails || emails.length === 0) {
-                const fallback = await this.fetchEmailsFromAPI('all', 50);
-                emails = fallback.emails;
-                nextToken = fallback.nextToken;
-            }
-            if (emails && emails.length > 0) {
-                // Transform API emails to match our UI format if needed
-                const folder = (emails[0] && emails[0].folder) || 'inbox';
-                this.emails = emails.map(email => this.transformAPIEmail(email, folder));
-                this.nextToken = nextToken || null;
-                
-                // Update starred emails set
-                this.emails.forEach(email => {
-                    if (email.starred) {
-                        this.starredEmails.add(email.id);
+            // Load emails from multiple folders
+            const foldersToLoad = ['inbox', 'sent', 'drafts', 'trash'];
+            const allEmails = [];
+            
+            for (const folder of foldersToLoad) {
+                const result = await mailAPI.fetchEmails(folder, 50);
+                if (result.success) {
+                    // Transform API emails to match our format
+                    const transformedEmails = result.emails.map(email => this.transformAPIEmail(email, folder));
+                    allEmails.push(...transformedEmails);
+                    
+                    // Update folder count
+                    const folderObj = this.folders.find(f => f.id === folder);
+                    if (folderObj) {
+                        folderObj.count = result.count;
                     }
-                });
-                
-                this.updateFolderCounts();
-            } else {
-                // Fall back to empty array if no emails
-                this.loadMockEmails();
-                this.nextToken = null;
+                }
             }
+            
+            this.emails = allEmails;
+            
+            // Update starred emails set
+            this.emails.forEach(email => {
+                if (email.starred) {
+                    this.starredEmails.add(email.id);
+                }
+            });
             
         } catch (error) {
             console.error('Failed to load emails from API:', error);
@@ -116,29 +99,13 @@ export default class MailModel {
             this.isLoading = false;
         }
     }
-
-    // Append more emails using pagination token
-    async loadMoreEmails(limit = 50) {
-        if (!this.nextToken) return { appended: 0, nextToken: null };
-        const { emails, nextToken } = await this.fetchEmailsFromAPI(this.currentFolder, limit, this.nextToken);
-        if (emails && emails.length) {
-            const folder = (emails[0] && emails[0].folder) || this.currentFolder;
-            const transformed = emails.map(e => this.transformAPIEmail(e, folder));
-            this.emails = this.emails.concat(transformed);
-            this.updateFolderCounts();
-        }
-        this.nextToken = nextToken || null;
-        return { appended: emails?.length || 0, nextToken: this.nextToken };
-    }
     
     // Transform API email to match our UI format
     transformAPIEmail(apiEmail, folder) {
-        // Generate a numeric ID for UI (sequential to avoid collisions)
-        const numericId = this._idSeq++;
-        // Normalize folder: treat 'unread' items as part of the Inbox
-        const effectiveFolder = apiEmail.folder === 'unread'
-            ? 'inbox'
-            : (apiEmail.folder || folder);
+        // Generate a numeric ID for UI (using timestamp from emailId)
+        const numericId = apiEmail.emailId ? 
+            parseInt(apiEmail.emailId.split('-')[1]) || Date.now() : 
+            Date.now();
         
         return {
             id: numericId,
@@ -157,20 +124,52 @@ export default class MailModel {
             date: new Date(apiEmail.timestamp || Date.now()),
             unread: apiEmail.status !== 'read',
             starred: apiEmail.starred || false,
-            folder: effectiveFolder,
+            folder: folder,
             account: apiEmail.to?.[0] || 'jd@blakelycinematics.com',
             tags: this.extractTags(apiEmail),
             bookingId: apiEmail.bookingId || null,
             clientEmail: apiEmail.from,
             hasAttachments: apiEmail.attachments?.length > 0,
-            archived: effectiveFolder === 'archived',
+            archived: apiEmail.folder === 'archived',
             body: apiEmail.htmlBody || `<p>${apiEmail.textBody || ''}</p>`
         };
     }
     
     // Load mock emails as fallback
     loadMockEmails() {
-        this.emails = [];
+        this.emails = [
+            {
+                id: 1,
+                emailId: 'mock-1',
+                threadId: 'THREAD#001',
+                sender: 'Welcome to Blakely Mail',
+                email: 'admin@blakelycinematics.com',
+                recipients: { to: ['jd@blakelycinematics.com'], cc: [], bcc: [] },
+                subject: 'Email System Connected Successfully!',
+                preview: 'Your email system is now connected to AWS. You can send and receive emails...',
+                time: 'Just now',
+                date: new Date(),
+                unread: true,
+                starred: true,
+                folder: 'inbox',
+                account: 'jd@blakelycinematics.com',
+                tags: ['system'],
+                bookingId: null,
+                clientEmail: 'admin@blakelycinematics.com',
+                hasAttachments: false,
+                archived: false,
+                body: `<p>Congratulations!</p>
+                <p>Your email system is now connected to AWS Lambda and ready to use.</p>
+                <p>You can:</p>
+                <ul>
+                    <li>Send emails via SES</li>
+                    <li>Save drafts to DynamoDB</li>
+                    <li>Manage emails across folders</li>
+                    <li>Delete emails when needed</li>
+                </ul>
+                <p>Start by composing a new email or replying to this message.</p>`
+            }
+        ];
         
         this.updateFolderCounts();
     }
@@ -189,7 +188,7 @@ export default class MailModel {
         
         if (diff < 3600000) { // Less than 1 hour
             const mins = Math.floor(diff / 60000);
-            return mins === 0 ? 'Just now' : `${mins}m`;
+            return mins === 0 ? 'Just now' : `${mins}m ago`;
         } else if (diff < 86400000) { // Less than 1 day
             return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
         } else if (diff < 172800000) { // Less than 2 days
@@ -222,15 +221,10 @@ export default class MailModel {
         // Handle special folders
         if (folder === 'starred') {
             filtered = filtered.filter(e => this.starredEmails.has(e.id));
-        } else if (folder === 'unread') {
-            filtered = filtered.filter(e => e.unread && e.folder !== 'trash' && !e.archived);
         } else if (folder === 'archived') {
             filtered = filtered.filter(e => e.archived === true);
         } else if (folder && folder !== 'all') {
             filtered = filtered.filter(e => e.folder === folder && !e.archived);
-        } else if (folder === 'all') {
-            // Exclude trash and archived from All Mail view
-            filtered = filtered.filter(e => e.folder !== 'trash' && !e.archived);
         }
         
         if (account && account !== 'all') {
@@ -251,10 +245,6 @@ export default class MailModel {
     
     getEmailById(id) {
         return this.emails.find(e => e.id === id);
-    }
-
-    getEmailByUid(uid) {
-        return this.emails.find(e => e.emailId === uid);
     }
     
     // API-integrated send email
@@ -347,24 +337,31 @@ export default class MailModel {
         }
     }
     
-    // Delete with API (move to trash instead of hard delete)
+    // Delete with API
     async deleteEmail(emailId) {
         const email = this.emails.find(e => e.id === emailId);
         if (email) {
             const previousFolder = email.folder;
-            // Move to trash in-memory
-            email.folder = 'trash';
-            email.archived = false;
-
-            // Inform backend best-effort
+            
+            // Delete via API if it has a real emailId
             if (email.emailId && !email.emailId.startsWith('mock')) {
-                try { await mailAPI.deleteEmail(email.emailId); } catch (e) { console.warn('Delete API failed (non-fatal)', e?.message || e); }
+                const result = await mailAPI.deleteEmail(email.emailId);
+                if (!result.success) {
+                    console.error('Failed to delete email via API:', result.error);
+                }
             }
-
+            
+            // Remove locally
+            const index = this.emails.findIndex(e => e.id === emailId);
+            if (index !== -1) {
+                this.emails.splice(index, 1);
+            }
+            
             this.updateFolderCounts();
             
             // Return undo function
             return () => {
+                this.emails.push(email);
                 email.folder = previousFolder;
                 this.updateFolderCounts();
             };
@@ -526,14 +523,6 @@ export default class MailModel {
     }
     
     updateFolderCounts() {
-        const allF = this.folders.find(f => f.id === 'all');
-        if (allF) {
-            allF.count = this.emails.filter(e => 
-                !e.archived &&
-                e.folder !== 'trash' &&
-                !this.snoozedEmails.has(e.id)
-            ).length;
-        }
         const inbox = this.folders.find(f => f.id === 'inbox');
         if (inbox) {
             inbox.count = this.emails.filter(e => 
@@ -542,11 +531,6 @@ export default class MailModel {
                 !e.archived &&
                 !this.snoozedEmails.has(e.id)
             ).length;
-        }
-
-        const unreadF = this.folders.find(f => f.id === 'unread');
-        if (unreadF) {
-            unreadF.count = this.emails.filter(e => e.unread && e.folder !== 'trash' && !e.archived).length;
         }
         
         const starred = this.folders.find(f => f.id === 'starred');
@@ -647,6 +631,4 @@ export default class MailModel {
     searchEmails(query) {
         return this.getEmails(this.currentFolder, null, query);
     }
-
-    // Transform API email format to UI format
 }

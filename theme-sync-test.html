@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Theme Sync Test</title>
+    <style>
+        body { background: #1a1a1a; color: white; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #2a4a2a; border: 1px solid #4a8a4a; }
+        .info { background: #2a2a4a; border: 1px solid #4a4a8a; }
+    </style>
+</head>
+<body>
+    <h1>Reply Box Theme Sync Test</h1>
+    
+    <div class="status info">
+        <h2>✅ CSS Updates Applied:</h2>
+        <ul>
+            <li>Added theme classes for reply box (.compose-default, .compose-metallic, .compose-glass, .compose-solid, .compose-holo)</li>
+            <li>Synced reply box background, borders, and shadows with compose themes</li>
+            <li>Updated textarea and button styles for each theme</li>
+        </ul>
+    </div>
+    
+    <div class="status success">
+        <h2>✅ JavaScript Updates Applied:</h2>
+        <ul>
+            <li>Updated applyTheme() function to apply themes to both compose container and reply box</li>
+            <li>Added DOMContentLoaded listener to apply saved theme to reply box on page load</li>
+            <li>Theme preference saved to localStorage and persists across sessions</li>
+        </ul>
+    </div>
+    
+    <div class="status info">
+        <h2>📋 Files Modified:</h2>
+        <ul>
+            <li>/Users/jeremiahblakely/Desktop/blakely-cinematics-website/css/admin/admin-mail.css</li>
+            <li>/Users/jeremiahblakely/Desktop/blakely-cinematics-website/js/admin-app.js</li>
+        </ul>
+    </div>
+    
+    <div class="status success">
+        <h2>🎨 Available Themes:</h2>
+        <ul>
+            <li><strong>Default (Cyberpunk):</strong> Original gradient with cyan accent</li>
+            <li><strong>Metallic:</strong> Inset shadows with metallic finish</li>
+            <li><strong>Glass:</strong> Translucent with backdrop blur</li>
+            <li><strong>Solid Dark:</strong> Flat dark with neon glow</li>
+            <li><strong>Holographic:</strong> Animated rainbow border effect</li>
+        </ul>
+    </div>
+    
+    <p>Test the theme switcher in admin-mail.html to verify that both the compose view and reply box change themes together.</p>
+</body>
+</html>

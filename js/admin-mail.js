@@ -130,8 +130,19 @@ function showReply() {
     const replyBox = document.getElementById('replyBox');
     if (replyBox) {
         replyBox.style.display = 'block';
+        
+        // Initialize the rich text editor
+        initReplyEditor();
+        
+        // Focus the contenteditable editor
+        const editor = document.getElementById('replyEditor');
+        if (editor) {
+            editor.focus();
+        }
+        
+        // Fallback to old textarea if editor not found
         const textarea = document.getElementById('replyText');
-        if (textarea) {
+        if (!editor && textarea) {
             textarea.focus();
         }
     }
@@ -439,4 +450,163 @@ function aiSummarize() {
 
 function aiTone(tone) {
     console.log('AI Tone:', tone, '- To be implemented');
+}
+
+// ============================================
+// CONTENTEDITABLE REPLY EDITOR
+// Added: September 13, 2025
+// ============================================
+
+/**
+ * Initialize the rich text reply editor
+ */
+function initReplyEditor() {
+    const ed = document.getElementById('replyEditor');
+    if (!ed || ed.dataset._init) return;
+    ed.dataset._init = '1';
+
+    // placeholder behavior
+    const setPlaceholder = () => {
+        if (ed.textContent.trim() === '') ed.classList.add('is-empty');
+        else ed.classList.remove('is-empty');
+    };
+    setPlaceholder();
+    
+    ed.addEventListener('input', () => {
+        setPlaceholder();
+        updateWordCount(ed);
+    });
+
+    // paste: basic safe paste (plain text). Can upgrade to sanitizer later.
+    ed.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        document.execCommand('insertText', false, text);
+    });
+
+    // keyboard shortcuts
+    ed.addEventListener('keydown', (e) => {
+        if (e.metaKey || e.ctrlKey) {
+            switch (e.key.toLowerCase()) {
+                case 'b':
+                    e.preventDefault();
+                    document.execCommand('bold', false, null);
+                    break;
+                case 'i':
+                    e.preventDefault();
+                    document.execCommand('italic', false, null);
+                    break;
+                case 'u':
+                    e.preventDefault();
+                    document.execCommand('underline', false, null);
+                    break;
+                case 'k':
+                    e.preventDefault();
+                    const href = prompt('Enter URL (https://…):');
+                    if (href && /^https?:|^mailto:/i.test(href)) {
+                        document.execCommand('createLink', false, href);
+                        // add rel/target safely (post-fix)
+                        const sel = window.getSelection();
+                        if (sel && sel.anchorNode) {
+                            const a = sel.anchorNode.parentElement?.closest('a');
+                            if (a) { 
+                                a.target = '_blank'; 
+                                a.rel = 'noopener noreferrer nofollow'; 
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+    });
+
+    // toolbar clicks
+    const toolbar = document.getElementById('replyToolbar');
+    if (toolbar) {
+        toolbar.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-command]');
+            if (!btn) return;
+            
+            const cmd = btn.getAttribute('data-command');
+            
+            if (cmd === 'createLink') {
+                const href = prompt('Enter URL (https://…):');
+                if (!href || !/^https?:|^mailto:/i.test(href)) return;
+                document.execCommand('createLink', false, href);
+                // add rel/target safely (post-fix)
+                const sel = window.getSelection();
+                if (sel && sel.anchorNode) {
+                    const a = sel.anchorNode.parentElement?.closest('a');
+                    if (a) { 
+                        a.target = '_blank'; 
+                        a.rel = 'noopener noreferrer nofollow'; 
+                    }
+                }
+                return;
+            }
+            
+            document.execCommand(cmd, false, null);
+            ed.focus();
+            
+            // Update button states
+            updateToolbarStates();
+        });
+    }
+    
+    // Update toolbar button states on selection change
+    ed.addEventListener('keyup', updateToolbarStates);
+    ed.addEventListener('mouseup', updateToolbarStates);
+    
+    console.log('[Admin Mail] Reply editor initialized');
+}
+
+/**
+ * Update word count for contenteditable editor
+ */
+function updateWordCount(ed) {
+    const text = ed.innerText.trim();
+    const words = text ? text.split(/\s+/).length : 0;
+    const wc = document.getElementById('wordCount');
+    if (wc) wc.textContent = `${words} ${words === 1 ? 'word' : 'words'}`;
+}
+
+/**
+ * Update toolbar button states based on current selection
+ */
+function updateToolbarStates() {
+    const toolbar = document.getElementById('replyToolbar');
+    if (!toolbar) return;
+    
+    const commands = ['bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList'];
+    
+    commands.forEach(cmd => {
+        const btn = toolbar.querySelector(`[data-command="${cmd}"]`);
+        if (btn) {
+            try {
+                const isActive = document.queryCommandState(cmd);
+                btn.classList.toggle('active', isActive);
+            } catch (e) {
+                // Some commands don't support queryCommandState
+            }
+        }
+    });
+}
+
+/**
+ * Get HTML content from reply editor
+ */
+function getReplyContent() {
+    const ed = document.getElementById('replyEditor');
+    if (!ed) return '';
+    return ed.innerHTML;
+}
+
+/**
+ * Set content in reply editor
+ */
+function setReplyContent(htmlContent) {
+    const ed = document.getElementById('replyEditor');
+    if (!ed) return;
+    ed.innerHTML = htmlContent;
+    updateWordCount(ed);
 }
