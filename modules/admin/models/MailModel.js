@@ -3,6 +3,7 @@
 // Updated: September 12, 2025 - Integrated with AWS Lambda Email API
 
 import { mailAPI } from '../services/MailAPIService.js';
+import mailCache from '../services/MailCacheService.js';
 
 export default class MailModel {
     constructor() {
@@ -66,14 +67,28 @@ export default class MailModel {
     // Fetch emails from API (via service)
     async fetchEmailsFromAPI(folder = this.currentFolder, limit = 50, nextToken = null) {
         try {
-            const result = await mailAPI.fetchEmails(folder, limit, nextToken);
+            // Pull conditional headers from cache
+            let etag = null, lastModified = null;
+            try {
+                const state = await mailCache.getFolderState(mailAPI.userId, folder);
+                etag = state?.etag || null;
+                lastModified = state?.lastModified || null;
+            } catch {}
+
+            const result = await mailAPI.fetchEmails(folder, limit, nextToken, { etag, lastModified });
             if (result && result.success) {
-                return { emails: result.emails || [], nextToken: result.nextToken || null };
+                return {
+                    emails: result.emails || [],
+                    nextToken: result.nextToken || null,
+                    etag: result.etag || null,
+                    lastModified: result.lastModified || null,
+                    notModified: !!result.notModified
+                };
             }
-            return { emails: [], nextToken: null };
+            return { emails: [], nextToken: null, etag: null, lastModified: null, notModified: false };
         } catch (error) {
             console.error('Failed to fetch emails:', error);
-            return { emails: [], nextToken: null };
+            return { emails: [], nextToken: null, etag: null, lastModified: null, notModified: false };
         }
     }
 

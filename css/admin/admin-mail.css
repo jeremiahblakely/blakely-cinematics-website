@@ -158,6 +158,58 @@ body {
     box-shadow: 0 10px 40px var(--accent-glow);
 }
 
+/* Compose header From selector (compact, inline) */
+.compose-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    padding: 0 12px;
+}
+.compose-title { 
+    margin: 0; 
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: none; /* Allow clicks to pass through to elements behind */
+}
+.compose-from-label { 
+    font-size: 0.85rem; 
+    color: var(--text-secondary); 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 6px;
+    z-index: 1; /* Ensure it stays clickable */
+    position: relative;
+}
+.compose-header-bar .btn-close { 
+    z-index: 1; /* Ensure it stays clickable */
+    position: relative;
+}
+.compose-from-select {
+    background: rgba(0, 255, 255, 0.06);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    border-radius: 6px;
+    padding: 4px 6px;
+    min-width: 260px;
+}
+
+.compose-from-select option {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+@media (max-width: 680px) {
+  .compose-header-bar {
+    grid-template-columns: auto 1fr auto;
+    row-gap: 6px;
+  }
+  .compose-title { grid-column: 1 / -1; }
+}
+
 /* Sidebar */
 .mail-sidebar {
     background: rgba(19, 0, 31, 0.6);
@@ -229,12 +281,18 @@ body {
 }
 
 .mail-folder-count {
-    background: var(--accent-primary);
-    color: var(--bg-primary);
+    background: transparent;
+    border: 1px solid var(--accent-primary);
+    color: var(--accent-primary);
     padding: 2px 8px;
-    border-radius: 12px;
+    border-radius: 50%;
     font-size: 0.75rem;
     font-weight: 600;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .folder-separator {
@@ -520,6 +578,42 @@ body {
     font-size: 0.75rem;
     color: var(--accent-primary);
     opacity: 0.7;
+}
+
+/* Compose box success glow */
+@keyframes composeSuccess {
+    0% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0); }
+    50% { box-shadow: 0 0 20px 5px rgba(0, 255, 255, 0.6); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0); }
+}
+
+.compose-container.message-sent,
+.compose-btn.message-sent,
+.compose-new.message-sent {
+    animation: composeSuccess 1s ease-out;
+    position: relative;
+}
+
+/* SENT text that appears */
+.sent-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #00ffff;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-shadow: 0 0 10px #00ffff;
+    animation: sentFadeIn 2s ease-out forwards;
+    pointer-events: none;
+    z-index: 1001;
+}
+
+@keyframes sentFadeIn {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    40% { transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; }
 }
 
 .mail-item-subject {
@@ -1671,25 +1765,32 @@ body {
 }
 
 .field-row label {
-    width: 60px;
+    width: 80px; /* Increased width for better alignment */
     color: var(--text-secondary);
     font-size: 0.9rem;
+    text-align: left; /* Align labels consistently */
 }
 
 .compose-field-input {
     flex: 1;
     padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 20, 30, 0.6); /* More cyberpunk dark background */
+    border: 1px solid rgba(0, 255, 255, 0.2); /* Cyan border */
     border-radius: 6px;
-    color: var(--text-primary);
+    color: var(--accent-primary); /* Cyan text color for entered text */
     font-size: 0.95rem;
+    transition: all 0.3s ease;
 }
 
 .compose-field-input:focus {
     outline: none;
     border-color: var(--accent-primary);
-    background: rgba(0, 255, 255, 0.02);
+    background: rgba(0, 30, 40, 0.8); /* Darker focused state */
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); /* Cyan glow */
+}
+
+.compose-field-input::placeholder {
+    color: var(--text-muted); /* Muted placeholder text */
 }
 
 .compose-editor-area {

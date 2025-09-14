@@ -10,6 +10,13 @@
     <!-- Last Updated: December 17, 2024 7:45 PM -->
     
     <link rel="stylesheet" href="../css/admin/admin-mail.css">
+    <style>
+        /* Minimal inline style for tiny connection status dot */
+        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; vertical-align: middle; background: var(--success, #16a34a); box-shadow: 0 0 0 1px rgba(255,255,255,0.15) inset; }
+        .status-online { background: var(--success, #16a34a); }
+        .status-sync { background: var(--warning, #f59e0b); }
+        .status-offline { background: var(--error, #dc2626); }
+    </style>
 </head>
 <body>
     
@@ -21,6 +28,7 @@
                 <span class="admin-accent">ADMIN</span>
                 <span class="divider">|</span>
                 <span>MAIL</span>
+                <span id="connStatusDot" class="status-dot status-online" title="Online"></span>
             </div>
             
             <div class="mail-header-actions">
@@ -239,13 +247,10 @@
                 </div>
 
                 <div class="editor-wrapper">
-                    <div id="replyEditor" 
-                         class="reply-text contenteditable-editor auto-expand"
-                         contenteditable="true"
-                         role="textbox"
-                         aria-multiline="true"
-                         data-placeholder="Type your reply here…"
-                         spellcheck="true"></div>
+                    <textarea id="replyText" 
+                         class="reply-text auto-expand"
+                         placeholder="Type your reply here…"
+                         spellcheck="true"></textarea>
                     <span class="word-count" id="wordCount">0 words</span>
                 </div>
                 

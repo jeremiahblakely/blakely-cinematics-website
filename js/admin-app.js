@@ -5,6 +5,7 @@
 
 import MailController from '../modules/admin/controllers/MailController.js';
 import { mailAPI } from '../modules/admin/services/MailAPIService.js';
+import mailCache from '../modules/admin/services/MailCacheService.js';
 
 // Portal utility for rendering outside header hierarchy
 class Portal {
@@ -186,6 +187,8 @@ function initializeThemeManagement() {
 // Main initialization
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Initializing Blakely Admin Mail...');
+    // Expose cache for DevTools testing
+    try { window.mailCache = mailCache; } catch {}
     
     // Initialize Mail Controller
     try {
@@ -194,6 +197,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Minimal error UI with smart retry
         const retryDelaysMs = [1000, 3000, 3000]; // tuneable
+        let lastSyncAt = null;
+
+        // Connection status dot helpers (tiny indicator next to MAIL)
+        function setConnectionStatus(state, title) {
+            const dot = document.getElementById('connStatusDot');
+            if (!dot) return;
+            dot.classList.remove('status-online', 'status-sync', 'status-offline');
+            if (state === 'offline') dot.classList.add('status-offline');
+            else if (state === 'sync') dot.classList.add('status-sync');
+            else dot.classList.add('status-online');
+            if (title) dot.title = title;
+        }
+
+        function formatLastSync(ts) {
+            if (!ts) return 'Never';
+            try {
+                const d = new Date(ts);
+                const now = Date.now();
+                const diff = Math.max(0, now - ts);
+                const mins = Math.floor(diff / 60000);
+                if (mins < 1) return 'Just now';
+                if (mins === 1) return '1 minute ago';
+                if (mins < 60) return `${mins} minutes ago`;
+                return d.toLocaleString();
+            } catch { return 'Unknown'; }
+        }
+
+        // Display-only indicator: no popover or click handlers
+
+        window.addEventListener('online', () => {
+            setConnectionStatus('online', 'Online');
+        });
+        window.addEventListener('offline', () => {
+            setConnectionStatus('offline', 'Offline');
+        });
 
         async function tryLoadEmails(attempt = 1) {
             const list = document.getElementById('emailList');
@@ -201,8 +239,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 list.innerHTML = '<div class="loading"><span class="inline-spinner"></span> Loading emails…</div>';
             }
             try {
+                setConnectionStatus('sync', 'Syncing…');
                 let resp = await mailController.model.fetchEmailsFromAPI(mailController.model.currentFolder, 50);
                 let emails = resp.emails;
+                // If server says not modified, treat as success and stop here
+                if (resp.notModified) {
+                    console.log('Emails up to date (304 Not Modified)');
+                    // Update folder state ETag if provided
+                    try {
+                        const currentAccount = mailAPI?.userId || 'admin';
+                        const currentFolder = mailController.model.currentFolder || 'inbox';
+                        await mailCache.putFolderState(currentAccount, currentFolder, {
+                            etag: resp.etag || null,
+                            lastModified: resp.lastModified || null,
+                            nextToken: mailController.model.nextToken || null,
+                            updatedAt: Date.now()
+                        });
+                    } catch {}
+                    try { lastSyncAt = Date.now(); localStorage.setItem('blakely_mail_last_sync', String(lastSyncAt)); } catch {}
+                    setConnectionStatus('online', 'Up to date');
+                    return true;
+                }
                 // Fallback: if inbox is empty, try 'all' and normalize to inbox (unread->inbox)
                 if ((!emails || emails.length === 0) && mailController.model.currentFolder !== 'all') {
                     resp = await mailController.model.fetchEmailsFromAPI('all', 50);
@@ -236,23 +293,59 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof mailController.renderLoadMoreControl === 'function') {
                         mailController.renderLoadMoreControl();
                     }
+                    // Write-through cache (IndexedDB) — non-blocking
+                    try {
+                        const currentAccount = mailAPI?.userId || 'admin';
+                        const currentFolder = mailController.model.currentFolder || 'inbox';
+                        const transformed = mailController.model.emails;
+                        // Persist list items
+                        mailCache.upsertEmails(currentAccount, currentFolder, transformed)
+                            .then(({ written }) => console.debug(`[Cache] upsertEmails written: ${written}`))
+                            .catch((e) => console.warn('[Cache] upsertEmails failed', e));
+                        // Persist folder state meta
+                        mailCache.putFolderState(currentAccount, currentFolder, {
+                            etag: resp.etag || null,
+                            lastModified: resp.lastModified || null,
+                            nextToken: mailController.model.nextToken || null,
+                            updatedAt: Date.now()
+                        }).catch((e) => console.warn('[Cache] putFolderState failed', e));
+                    } catch (cacheErr) {
+                        console.warn('Write-through cache failed:', cacheErr);
+                    }
+
+                    try { lastSyncAt = Date.now(); localStorage.setItem('blakely_mail_last_sync', String(lastSyncAt)); } catch {}
+                    setConnectionStatus('online', 'Online');
                     console.log('Emails loaded from API');
-                    mailController.view && mailController.view.showNotification('Emails loaded from API', 'success');
+                    // Auto-select previously viewed email, or the first email
+                    try {
+                        const account = document.getElementById('accountSelector')?.value || 'all';
+                        const listNow = mailController.model.getEmails(mailController.model.currentFolder, account);
+                        const savedUid = localStorage.getItem('lastSelectedEmailUid');
+                        let target = null;
+                        if (savedUid && typeof mailController.model.getEmailByUid === 'function') {
+                            target = mailController.model.getEmailByUid(savedUid);
+                        }
+                        if (!target && listNow && listNow.length) {
+                            target = listNow[0];
+                        }
+                        if (target) {
+                            mailController.selectEmail(target.id);
+                        }
+                    } catch (e) {
+                        console.warn('Auto-select email failed:', e);
+                    }
                     return true;
                 }
                 throw new Error('No emails returned');
             } catch (err) {
                 console.error(`Failed to load emails (attempt ${attempt}):`, err);
-                // If some emails already exist, show a light notice
-                if (mailController.model.emails && mailController.model.emails.length > 0) {
-                    mailController.view && mailController.view.showNotification('Trouble refreshing emails. Will retry…', 'info');
-                }
+                // No toasts: rely on inline list UI only
                 if (attempt < retryDelaysMs.length) {
                     const nextDelay = retryDelaysMs[attempt - 1];
                     setTimeout(() => tryLoadEmails(attempt + 1), nextDelay);
                 } else {
-                    // Final failure: show minimal inline retry UI
-                    mailController.view && mailController.view.showNotification('Unable to load emails. Check connection or retry.', 'error');
+                    setConnectionStatus(navigator.onLine ? 'online' : 'offline', navigator.onLine ? 'Online' : 'Offline');
+                    // Final failure: show minimal inline retry UI (no toasts)
                     if (list) {
                         list.innerHTML = '<div class="no-emails">Unable to load emails. <button id="retryEmailBtn" class="retry-btn" style="margin-left:8px;">Retry</button></div>';
                         const btn = document.getElementById('retryEmailBtn');
@@ -266,8 +359,58 @@ document.addEventListener('DOMContentLoaded', () => {
         // Expose manual retry
         window.retryEmailLoad = () => tryLoadEmails(1);
 
-        // Kick off initial load shortly after init
-        setTimeout(() => { tryLoadEmails(1); }, 100);
+        // Cache-first render: preload from IndexedDB, then kick off network fetch
+        (async () => {
+            try {
+                const savedFolder = localStorage.getItem('lastSelectedFolder') || 'inbox';
+                const savedAccount = localStorage.getItem('lastSelectedAccount') || mailAPI.userId || 'admin';
+                const cached = await mailCache.getEmailsByFolder(savedAccount, savedFolder, 50);
+                if (cached && cached.length) {
+                    // Map cached records to API-like shape and transform
+                    const toApiShape = (r) => ({
+                        emailId: r.emailId,
+                        from: r.from,
+                        fromName: r.fromName,
+                        to: r.to,
+                        cc: r.cc,
+                        bcc: r.bcc,
+                        subject: r.subject,
+                        htmlBody: r.htmlBody,
+                        textBody: r.textBody,
+                        timestamp: r.timestamp,
+                        status: r.unread ? 'unread' : 'read',
+                        starred: r.starred,
+                        folder: r.folder,
+                        attachments: r.attachments || []
+                    });
+                    const transformed = cached.map(r => mailController.model.transformAPIEmail(toApiShape(r), r.folder));
+                    // Set current folder and render list from cache
+                    mailController.model.setCurrentFolder(savedFolder);
+                    mailController.model.emails = transformed;
+                    mailController.model.updateFolderCounts();
+                    mailController.loadFolders();
+                    mailController.loadEmails(savedFolder, savedAccount);
+
+                    // Auto-select last viewed or first
+                    const savedUid = localStorage.getItem('lastSelectedEmailUid');
+                    let target = null;
+                    if (savedUid && typeof mailController.model.getEmailByUid === 'function') {
+                        target = mailController.model.getEmailByUid(savedUid);
+                    }
+                    if (!target && transformed && transformed.length) {
+                        target = transformed[0];
+                    }
+                    if (target) {
+                        mailController.selectEmail(target.id);
+                    }
+                }
+            } catch (e) {
+                console.warn('Cache-first preload failed:', e);
+            } finally {
+                // Kick off network fetch shortly after preload
+                setTimeout(() => { tryLoadEmails(1); }, 100);
+            }
+        })();
         
         if (window.initMailFunctions) {
             window.initMailFunctions(mailController);
@@ -279,7 +422,76 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize Theme Management
     initializeThemeManagement();
+
+    // Register Service Worker (scope: site root) — silent, no prompts
+    try {
+        if ('serviceWorker' in navigator) {
+            const isLocalhost = ['localhost', '127.0.0.1'].includes(location.hostname);
+            if (location.protocol === 'https:' || isLocalhost) {
+                navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                    .then(reg => { console.log('Service Worker registered:', reg.scope); })
+                    .catch(err => console.warn('Service Worker registration failed:', err));
+            }
+        }
+    } catch (e) {
+        console.warn('Service Worker not registered:', e);
+    }
 });
+
+// Message sent animation helper (uses the header status dot)
+window.showMessageSent = function() {
+    try {
+        const dot = document.getElementById('connStatusDot');
+        const target = document.querySelector('.compose-container, .compose-btn, [data-compose]');
+        if (!dot || !target) return;
+
+        const dotRect = dot.getBoundingClientRect();
+        const trgRect = target.getBoundingClientRect();
+        const deltaX = (trgRect.left + trgRect.width / 2) - (dotRect.left + dotRect.width / 2);
+        const deltaY = (trgRect.top + trgRect.height / 2) - (dotRect.top + dotRect.height / 2);
+
+        // Create a flying clone of the dot at its current position
+        const flyingDot = dot.cloneNode(true);
+        const cs = window.getComputedStyle(dot);
+        flyingDot.style.position = 'fixed';
+        flyingDot.style.left = `${dotRect.left}px`;
+        flyingDot.style.top = `${dotRect.top}px`;
+        flyingDot.style.width = cs.width;
+        flyingDot.style.height = cs.height;
+        flyingDot.style.margin = '0';
+        flyingDot.style.zIndex = '10000';
+        flyingDot.style.pointerEvents = 'none';
+        flyingDot.style.transition = 'transform 1s cubic-bezier(0.4, 0, 0.2, 1), opacity 1s linear';
+        document.body.appendChild(flyingDot);
+
+        // Trigger flight on next frame
+        requestAnimationFrame(() => {
+            flyingDot.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.5)`;
+            flyingDot.style.opacity = '0';
+        });
+
+        // After flight completes, glow compose and show SENT
+        setTimeout(() => {
+            try {
+                const pos = window.getComputedStyle(target).position;
+                if (pos === 'static') target.style.position = 'relative';
+                target.classList.add('message-sent');
+                const sent = document.createElement('span');
+                sent.className = 'sent-indicator';
+                sent.textContent = 'SENT';
+                target.appendChild(sent);
+                setTimeout(() => {
+                    target.classList.remove('message-sent');
+                    sent.remove();
+                }, 2000);
+            } finally {
+                flyingDot.remove();
+            }
+        }, 1000);
+    } catch (e) {
+        console.warn('showMessageSent failed:', e);
+    }
+}
 
 // Updated: September 12, 2025 - Enhanced theme application
 // Override the applyTheme function to sync reply box with compose theme

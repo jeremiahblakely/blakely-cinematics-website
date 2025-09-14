@@ -5,6 +5,7 @@
 import MailModel from '../models/MailModel.js';
 import MailView from '../views/MailView.js';
 import { mailAPI } from '../services/MailAPIService.js';
+import mailCache from '../services/MailCacheService.js';
 import TemplateService from '../services/TemplateService.js';
 import ComposeView from '../components/ComposeView.js';
 import ThemeSwitcher from '../components/ThemeSwitcher.js';
@@ -38,6 +39,16 @@ export default class MailController {
     initializeEventListeners() {
         // Email list click handler (event delegation)
         this.view.elements.emailList.addEventListener('click', (e) => {
+            // If compose window is open, close it before navigating to an email
+            try {
+                if (document.querySelector('.compose-container')) {
+                    if (this.composeView && typeof this.composeView.close === 'function') {
+                        this.composeView.close();
+                    } else if (typeof window.closeCompose === 'function') {
+                        window.closeCompose();
+                    }
+                }
+            } catch {}
             // No inline delete button
             // Check for checkbox click
             const checkbox = e.target.closest('.email-checkbox');
@@ -59,14 +70,18 @@ export default class MailController {
             // Regular email click
             const emailItem = e.target.closest('.mail-item');
             if (emailItem) {
-                // Try numeric id first
-                let emailId = Number(emailItem.dataset.emailId);
+                // Prefer validated numeric id; if not present or stale, try uid fallback
+                const rawId = emailItem.dataset.emailId;
+                let emailId = Number(rawId);
                 if (Number.isFinite(emailId)) {
-                    console.debug('[Mail] item click -> select by id', emailId);
-                    this.selectEmail(emailId);
-                    return;
+                    const byId = this.model.getEmailById(emailId);
+                    if (byId) {
+                        console.debug('[Mail] item click -> select by id', emailId);
+                        this.selectEmail(emailId);
+                        return;
+                    }
                 }
-                // Fallback: use uid to find the email
+                // Fallback: use uid to find the email when ids changed after refresh
                 const uid = emailItem.dataset.emailUid;
                 if (uid && typeof this.model.getEmailByUid === 'function') {
                     const found = this.model.getEmailByUid(uid);
@@ -185,13 +200,43 @@ document.addEventListener('keydown', (e) => {
             }
         };
         
-        window.sendNewEmail = () => {
-            if (this.composeView) {
-                const data = this.composeView.getData();
-                console.log('Sending email:', data);
-                // TODO: Implement actual send via API
-                this.view.showNotification('Email sent successfully', 'success');
-                this.composeView.close();
+        window.sendNewEmail = async () => {
+            if (!this.composeView) {
+                console.error('ComposeView not initialized');
+                return;
+            }
+            const data = this.composeView.getData();
+            console.log('Sending email:', data);
+            // Normalize recipients to arrays
+            const to = (data.to || '')
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean);
+            const cc = (data.cc || '')
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean);
+            const payload = {
+                to,
+                cc,
+                bcc: [],
+                subject: data.subject || '(No Subject)',
+                body: data.body || '',
+                htmlBody: data.body || '',
+                from: data.from || undefined
+            };
+            try {
+                const result = await this.model.sendEmail(payload);
+                if (result && result.success) {
+                    this.view.showNotification('Email sent successfully', 'success');
+                    this.composeView.close();
+                    try { if (window.showMessageSent) window.showMessageSent(); } catch {}
+                } else {
+                    this.view.showNotification(`Failed to send email${result?.error ? ': ' + result.error : ''}`, 'error');
+                }
+            } catch (err) {
+                console.error('Compose send failed:', err);
+                this.view.showNotification(`Failed to send email${err?.message ? ': ' + err.message : ''}`, 'error');
             }
         };
         
@@ -304,6 +349,16 @@ document.addEventListener('keydown', (e) => {
     }
     
     selectEmail(emailId) {
+        // Auto-close compose window if it is open
+        try {
+            if (document.querySelector('.compose-container')) {
+                if (this.composeView && typeof this.composeView.close === 'function') {
+                    this.composeView.close();
+                } else if (typeof window.closeCompose === 'function') {
+                    window.closeCompose();
+                }
+            }
+        } catch {}
         const email = this.model.getEmailById(emailId);
         if (email) {
             console.debug('[Mail] selectEmail ->', emailId, email.subject);
@@ -311,6 +366,38 @@ document.addEventListener('keydown', (e) => {
             this.model.markAsRead(emailId);
             this.view.displayEmail(email);
             this.updateFolderCounts();
+            // Persist last selected email UID for next visit
+            try {
+                if (email.emailId) {
+                    localStorage.setItem('lastSelectedEmailUid', email.emailId);
+                }
+                localStorage.setItem('lastSelectedFolder', this.model.currentFolder || 'all');
+                const acct = this.view?.elements?.accountSelector?.value || 'all';
+                localStorage.setItem('lastSelectedAccount', acct);
+            } catch {}
+
+            // Step 3: Hydrate body from cache and update flags in cache (non-blocking)
+            (async () => {
+                try {
+                    const userId = mailAPI?.userId || 'admin';
+                    // If no body, try cached record
+                    if (!email.body && email.emailId) {
+                        const rec = await mailCache.getEmail(userId, email.emailId);
+                        if (rec && (rec.htmlBody || rec.textBody)) {
+                            email.body = rec.htmlBody || (rec.textBody ? `<pre style=\"white-space:pre-wrap;\">${rec.textBody}</pre>` : '');
+                            this.view.displayEmail(email);
+                        }
+                    }
+                    // Persist read flag to cache
+                    if (email.emailId) {
+                        await mailCache.updateFlags(userId, email.emailId, { unread: false });
+                    }
+                    // Upsert this email to capture latest content/flags
+                    await mailCache.upsertEmails(userId, this.model.currentFolder || email.folder || 'inbox', [email]);
+                } catch (e) {
+                    console.warn('[Mail] cache hydrate/update failed', e?.message || e);
+                }
+            })();
         } else {
             console.warn('[Mail] selectEmail: email not found for id', emailId);
         }
@@ -419,6 +506,15 @@ document.addEventListener('keydown', (e) => {
             isStarred ? 'Email starred' : 'Star removed',
             'success'
         );
+        // Write star flag to cache (best-effort)
+        try {
+            const email = this.model.getEmailById(emailId);
+            if (email?.emailId) {
+                const userId = mailAPI?.userId || 'admin';
+                mailCache.updateFlags(userId, email.emailId, { starred: isStarred });
+                mailCache.upsertEmails(userId, this.model.currentFolder || email.folder || 'inbox', [email]);
+            }
+        } catch {}
     }
     
     // Read/Unread Actions
@@ -429,6 +525,15 @@ document.addEventListener('keydown', (e) => {
         } else if (this.model.selectedEmail) {
             this.model.markAsRead(this.model.selectedEmail.id);
             this.view.updateEmailReadStatus(this.model.selectedEmail.id, false);
+            // Cache update for single selection
+            try {
+                const email = this.model.selectedEmail;
+                if (email?.emailId) {
+                    const userId = mailAPI?.userId || 'admin';
+                    mailCache.updateFlags(userId, email.emailId, { unread: false });
+                    mailCache.upsertEmails(userId, this.model.currentFolder || email.folder || 'inbox', [email]);
+                }
+            } catch {}
         }
         this.updateFolderCounts();
         this.view.showNotification('Marked as read', 'success');
@@ -441,6 +546,15 @@ document.addEventListener('keydown', (e) => {
         } else if (this.model.selectedEmail) {
             this.model.markAsUnread(this.model.selectedEmail.id);
             this.view.updateEmailReadStatus(this.model.selectedEmail.id, true);
+            // Cache update for single selection
+            try {
+                const email = this.model.selectedEmail;
+                if (email?.emailId) {
+                    const userId = mailAPI?.userId || 'admin';
+                    mailCache.updateFlags(userId, email.emailId, { unread: true });
+                    mailCache.upsertEmails(userId, this.model.currentFolder || email.folder || 'inbox', [email]);
+                }
+            } catch {}
         }
         this.updateFolderCounts();
         this.view.showNotification('Marked as unread', 'success');
@@ -661,6 +775,7 @@ document.addEventListener('keydown', (e) => {
             if (result.success) {
                 this.view.hideReplyBox();
                 this.view.showNotification('Email sent successfully', 'success');
+                try { if (window.showMessageSent) window.showMessageSent(); } catch {}
             } else {
                 this.view.showNotification('Failed to send email', 'error');
             }

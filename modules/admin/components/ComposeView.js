@@ -23,12 +23,35 @@ export default class ComposeView {
         // Save current content INCLUDING event listeners and data
         this.originalContent = this.contentArea.cloneNode(true);
         
+        // Prepare From options
+        const emailRx = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+        const accounts = (window.mailController && window.mailController.model && Array.isArray(window.mailController.model.accounts))
+            ? window.mailController.model.accounts.map(a => a.value || a).filter(v => emailRx.test(v))
+            : [];
+        const cfg = (typeof window !== 'undefined' && window.CONFIG) ? window.CONFIG : {};
+        const cfgAllowed = Array.isArray(cfg.ALLOWED_FROM) ? cfg.ALLOWED_FROM.filter(v => emailRx.test(v)) : [];
+        const selectorEl = document.getElementById('accountSelector');
+        const selectedAccount = selectorEl && emailRx.test(selectorEl.value || '') ? selectorEl.value : null;
+        const allowed = [...new Set([...(cfgAllowed || []), ...(accounts || []), ...(selectedAccount ? [selectedAccount] : [])])];
+        let lastFrom = null;
+        try { lastFrom = localStorage.getItem('composeFrom'); } catch {}
+        const defaultFrom = (allowed.includes(lastFrom) && lastFrom) || (selectedAccount && allowed.includes(selectedAccount) && selectedAccount) || allowed[0] || '';
+        const hasOptions = allowed && allowed.length > 0;
+        const fromOptions = hasOptions
+            ? allowed.map(addr => `<option value=\"${addr}\" ${addr===defaultFrom?'selected':''}>${addr}</option>`).join('')
+            : `<option value=\"\" selected disabled>No verified senders</option>`;
+
         // Replace with compose interface
         this.contentArea.innerHTML = `
             <div class="compose-container">
                 <div class="compose-header-bar">
-                    <h2>New Message</h2>
-                    <button class="btn-close" onclick="closeCompose()">✕</button>
+                    <label class="compose-from-label">From:
+                        <select id="composeFrom" class="compose-from-select" aria-label="From address">
+                            ${fromOptions}
+                        </select>
+                    </label>
+                    <h2 class="compose-title">New Message</h2>
+                    <button class="btn-close" onclick="closeCompose()" title="Close">✕</button>
                 </div>
                 
                 <div class="compose-fields-section">
@@ -211,11 +234,31 @@ export default class ComposeView {
     }
     
     getData() {
+        let body = '';
+        try {
+            if (this.composeEditor && typeof this.composeEditor.getHTML === 'function') {
+                body = this.composeEditor.getHTML();
+            } else if (this.composeEditor && typeof this.composeEditor.getHtml === 'function') {
+                // Fallback to legacy method name if present
+                body = this.composeEditor.getHtml();
+            } else {
+                body = document.getElementById('composeBody')?.value || '';
+            }
+        } catch {
+            body = document.getElementById('composeBody')?.value || '';
+        }
+        // Persist selected From for next time
+        try {
+            const sel = document.getElementById('composeFrom');
+            if (sel && sel.value) localStorage.setItem('composeFrom', sel.value);
+        } catch {}
+
         return {
             to: document.getElementById('composeTo')?.value || '',
             cc: document.getElementById('composeCc')?.value || '',
             subject: document.getElementById('composeSubject')?.value || '',
-            body: this.composeEditor ? this.composeEditor.getHtml() : ''
+            body,
+            from: document.getElementById('composeFrom')?.value || ''
         };
     }
 }

@@ -150,6 +150,14 @@ export default class MailView {
         this.elements.emailSubject.textContent = email.subject || '(No Subject)';
         // Prefer provided HTML body; fallback to textBody; final fallback message
         let html = email.body || email.htmlBody || '';
+        // Sanitize to avoid script execution warnings in sandboxed iframe
+        try {
+            // Remove <script> tags and inline event handlers to reduce console noise and improve safety
+            html = (html || '').replace(/<script\b[\s\S]*?<\/script>/gi, '');
+            html = html.replace(/ on[a-z]+\s*=\s*"[^"]*"/gi, '');
+            html = html.replace(/ on[a-z]+\s*=\s*'[^']*'/gi, '');
+            html = html.replace(/javascript:\s*/gi, '');
+        } catch {}
         if (!html && email.textBody) {
             const esc = (s) => (s || '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
             html = `<pre style="white-space:pre-wrap;">${esc(email.textBody)}</pre>`;
@@ -343,23 +351,14 @@ export default class MailView {
     }
     
     showReplyBox(replyData) {
-        // Clean up any existing toolbar instances first
-        if (this.formattingToolbar) {
-            const existingToolbars = document.querySelectorAll(".reply-box .formatting-toolbar");
-            existingToolbars.forEach(toolbar => toolbar.remove());
-            this.formattingToolbar = null;
-        }
-        if (this.editorCore && this.editorCore.initialized) {
-            this.editorCore.destroy && this.editorCore.destroy();
-            this.editorCore = null;
-        }
+        // Idempotent init: never destroy editor/toolbar here. Initialize once and reuse.
         if (this.elements.replyBox) {
             // Update reply metadata
             if (this.elements.replyTo && replyData && replyData.to) {
                 this.elements.replyTo.textContent = replyData.to.join(', ');
             }
             
-            // Initialize ContentEditableCore if not already done
+            // Initialize ContentEditableCore for reply box (same as ComposeView)
             if (!this.editorCore || !this.editorCore.initialized) {
                 try {
                     this.editorCore = new ContentEditableCore();
@@ -368,12 +367,23 @@ export default class MailView {
                     if (initialized) {
                         console.log('[MailView] ContentEditableCore initialized successfully');
                         
-                        // Initialize FormattingToolbar
+                        // Initialize FormattingToolbar with the editor core
                         this.formattingToolbar = new FormattingToolbar(this.editorCore);
                         this.formattingToolbar.init();
-                        console.log('[MailView] FormattingToolbar initialized');
                         
-                        // Auto-append signature after initialization
+                        // Ensure toolbar has correct CSS class and ID for styling
+                        const tbEl = document.querySelector('.formatting-toolbar');
+                        if (tbEl) {
+                            tbEl.id = 'replyToolbar';
+                            
+                            // Move toolbar into the reply box if not already there
+                            const editorWrapper = this.elements.replyBox.querySelector('.editor-wrapper');
+                            if (editorWrapper && tbEl.parentElement !== this.elements.replyBox) {
+                                this.elements.replyBox.insertBefore(tbEl, editorWrapper);
+                            }
+                        }
+                        
+                        // Auto-append signature after initialization if available
                         if (this.signatureService) {
                             setTimeout(() => {
                                 this.signatureService.appendToEditor(this.editorCore);
@@ -390,6 +400,8 @@ export default class MailView {
                                 }
                             }, 100);
                         }
+                        
+                        console.log('[MailView] Reply box now using ContentEditableCore like ComposeView');
                     } else {
                         console.warn('[MailView] Failed to initialize ContentEditableCore');
                     }
@@ -399,8 +411,11 @@ export default class MailView {
                 }
             }
             
-            // Initialize adaptive behavior for the reply box
-            this.initializeAdaptiveReply();
+            // Initialize adaptive behavior for the reply box (bind once)
+            if (!this.replyAdaptiveBound) {
+                this.initializeAdaptiveReply();
+                this.replyAdaptiveBound = true;
+            }
             
             // Show the reply box
             this.elements.replyBox.style.display = 'block';
@@ -417,24 +432,24 @@ export default class MailView {
         }
     }
 
-    // ADD this new method right after showReplyBox:
+    // Toolbar functionality is now handled by FormattingToolbar class
+
+    // ADD this new method right after initializeToolbarButtons:
     initializeAdaptiveReply() {
         const replyBox = this.elements.replyBox;
-        const replyText = document.getElementById('replyText');
         const wordCount = document.getElementById('wordCount');
         const draftIndicator = document.getElementById('draftIndicator');
         
-        if (!replyText || !replyBox) return;
+        if (!replyBox) return;
         
-        // Remove any existing event listeners to prevent duplicates
-        const newReplyText = replyText.cloneNode(true);
-        replyText.parentNode.replaceChild(newReplyText, replyText);
-        
-        // Auto-expand on focus
-        newReplyText.addEventListener('focus', () => {
-            console.log('Textarea focused - adding expanded class');
-            replyBox.classList.add('expanded');
-        });
+        // Use event delegation for focus to handle dynamic element replacement
+        replyBox.addEventListener('focus', (e) => {
+            const targetId = e.target.id;
+            if (targetId === 'replyText' || targetId === 'emailEditor' || e.target.classList.contains('contenteditable-editor')) {
+                console.log('Reply editor focused - adding expanded class');
+                replyBox.classList.add('expanded');
+            }
+        }, true);
         
         // Smart click-outside behavior - only minimize if truly empty
         const checkClickOutside = (e) => {
@@ -442,8 +457,8 @@ export default class MailView {
                 !e.target.closest('.action-btn') && 
                 replyBox.classList.contains('expanded')) {
                 
-                // Get the actual contenteditable div (not the old textarea reference)
-                const currentEditor = document.getElementById('replyText');
+                // Get the actual editor element (ContentEditableCore creates 'emailEditor')
+                const currentEditor = document.getElementById('emailEditor') || document.getElementById('replyText') || replyBox.querySelector('.contenteditable-editor');
                 if (!currentEditor) return;
                 
                 // Check if editor has any meaningful content
@@ -467,41 +482,50 @@ export default class MailView {
         };
 
         // Use capturing phase to ensure we check after any other handlers
-        document.addEventListener('click', checkClickOutside, true);
+        if (!this._replyClickOutsideBound) {
+            document.addEventListener('click', checkClickOutside, true);
+            this._replyClickOutsideBound = true;
+        }
         
-        // Update word count
-        newReplyText.addEventListener('input', () => {
-            // Get text content based on element type
-            let text = '';
-            const isContentEditable = newReplyText.contentEditable === 'true' || newReplyText.contentEditable === true;
-            if (isContentEditable) {
-                text = newReplyText.textContent || newReplyText.innerText || '';
-            } else {
-                text = newReplyText.value || '';
+        // Update word count using event delegation
+        replyBox.addEventListener('input', (e) => {
+            const target = e.target;
+            if (target.id === 'replyText' || target.id === 'emailEditor' || target.classList.contains('contenteditable-editor')) {
+                // Get text content based on element type
+                let text = '';
+                const isContentEditable = target.contentEditable === 'true' || target.contentEditable === true;
+                if (isContentEditable) {
+                    text = target.textContent || target.innerText || '';
+                } else {
+                    text = target.value || '';
+                }
+                
+                // FIX: Add null check for trim
+                const words = text.trim ? text.trim().split(/\s+/).filter(word => word.length > 0).length : 0;
+                if (wordCount) {
+                    wordCount.textContent = `${words} words`;
+                }
+                
+                // Show draft saved indicator (simulated)
+                this.showDraftSaved();
             }
-            
-            // FIX: Add null check for trim
-            const words = text.trim ? text.trim().split(/\s+/).filter(word => word.length > 0).length : 0;
-            if (wordCount) {
-                wordCount.textContent = `${words} words`;
-            }
-            
-            // Show draft saved indicator (simulated)
-            this.showDraftSaved();
         });
         
-        // Add keyboard shortcuts
-        newReplyText.addEventListener('keydown', (e) => {
-            // Cmd/Ctrl + Enter to send
-            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-                e.preventDefault();
-                window.sendReply();
-            }
-            
-            // Escape to minimize (not close)
-            if (e.key === 'Escape') {
-                console.log('Escape pressed - removing expanded class');
-                replyBox.classList.remove('expanded');
+        // Add keyboard shortcuts using event delegation
+        replyBox.addEventListener('keydown', (e) => {
+            const target = e.target;
+            if (target.id === 'replyText' || target.id === 'emailEditor' || target.classList.contains('contenteditable-editor')) {
+                // Cmd/Ctrl + Enter to send
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    window.sendReply();
+                }
+                
+                // Escape to minimize (not close)
+                if (e.key === 'Escape') {
+                    console.log('Escape pressed - removing expanded class');
+                    replyBox.classList.remove('expanded');
+                }
             }
         });
     }
@@ -529,31 +553,20 @@ export default class MailView {
         if (this.elements.replyBox) {
             this.elements.replyBox.style.display = 'none';
             
-            // Properly destroy editor instances instead of just clearing
-            if (this.formattingToolbar) {
-                this.formattingToolbar.destroy();
-                this.formattingToolbar = null;
-            }
-            
+            // Clear editor content but keep the editor initialized
             if (this.editorCore && this.editorCore.initialized) {
-                this.editorCore.destroy();
-                this.editorCore = null;
+                this.editorCore.clearContent();
             } else {
-                // Fallback cleanup for any remaining elements
+                // Fallback cleanup for textarea
                 const replyText = document.getElementById('replyText');
                 if (replyText) {
-                    if (replyText.contentEditable === 'true' || replyText.contentEditable === true) {
-                        replyText.innerHTML = '';
-                    } else {
-                        replyText.value = '';
-                    }
-                    replyText.style.display = ''; // Ensure textarea is visible
+                    replyText.value = '';
                 }
                 
                 // Remove any orphaned emailEditor
                 const emailEditor = document.getElementById('emailEditor');
                 if (emailEditor) {
-                    emailEditor.remove();
+                    emailEditor.innerHTML = '';
                 }
             }
         }
@@ -564,19 +577,26 @@ export default class MailView {
     }
     
     getReplyData() {
+        // Check if ContentEditableCore is active
+        if (this.editorCore && this.editorCore.initialized) {
+            const body = this.editorCore.getHTML();  // Get rich HTML from ContentEditableCore
+            const to = this.elements.replyTo ? this.elements.replyTo.textContent.split(',').map(e => e.trim()) : [];
+            
+            return {
+                to,
+                cc: [],
+                bcc: [],
+                subject: this.model?.selectedEmail?.subject || '',
+                body,
+                threadId: this.model?.selectedEmail?.threadId || null
+            };
+        }
+        
+        // Fallback to textarea
         const replyText = document.getElementById('replyText');
         if (!replyText) return null;
         
-        // Check if it's contenteditable or textarea
-        let body = '';
-        if (this.editorCore && this.editorCore.isActive) {
-            body = this.editorCore.getHTML();  // Get rich HTML
-        } else if (replyText.contentEditable === 'true' || replyText.contentEditable === true) {
-            body = replyText.innerHTML;
-        } else {
-            body = replyText.value;  // Fallback for textarea
-        }
-        
+        const body = replyText.value || '';
         const to = this.elements.replyTo ? this.elements.replyTo.textContent.split(',').map(e => e.trim()) : [];
         
         return {

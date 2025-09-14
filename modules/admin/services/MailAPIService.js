@@ -15,6 +15,12 @@ export default class MailAPIService {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         };
+        // Optionally add API key if provided via window.CONFIG.API_KEY
+        try {
+            if (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.API_KEY) {
+                this.headers['x-api-key'] = window.CONFIG.API_KEY;
+            }
+        } catch {}
         
         // Current user (will be set from auth or account selector)
         // Fallback chain: localStorage -> window.ADMIN_MAIL_DEFAULT_USER -> 'admin'
@@ -46,13 +52,20 @@ export default class MailAPIService {
             }
             
             const response = await fetch(`${this.baseURL}${endpoint}`, options);
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || `HTTP error! status: ${response.status}`);
+            let data = null;
+            try {
+                data = await response.clone().json();
+            } catch {
+                try { data = await response.text(); } catch { data = null; }
             }
-            
-            return data;
+            if (!response.ok) {
+                const msg = (data && data.error) ? data.error : (typeof data === 'string' && data ? data : `HTTP ${response.status}`);
+                const err = new Error(msg || 'API error');
+                err.status = response.status;
+                err.payload = data;
+                throw err;
+            }
+            return data || {};
         } catch (error) {
             console.error('API call failed:', error);
             throw error;
@@ -61,10 +74,15 @@ export default class MailAPIService {
     
     // Send email
     async sendEmail(emailData) {
+        // Basic client-side validation to avoid 500s from missing fields
+        const toList = Array.isArray(emailData.to) ? emailData.to : (emailData.to ? [emailData.to] : []);
+        if (!toList.length) {
+            return { success: false, error: 'Missing recipient (To)' };
+        }
         const payload = {
             userId: this.userId,
-            from: emailData.from || 'jeremiah.blakely@gmail.com', // Use verified email
-            to: emailData.to,
+            from: emailData.from || (this.userId && this.userId.includes('@') ? this.userId : 'jeremiah.blakely@gmail.com'), // prefer selected account if email-like
+            to: toList,
             cc: emailData.cc || [],
             bcc: emailData.bcc || [],
             subject: emailData.subject,
@@ -83,12 +101,12 @@ export default class MailAPIService {
             };
         } catch (error) {
             console.error('Failed to send email:', error);
-            return { success: false, error: error.message };
+            return { success: false, error: error.message || 'Failed to send email' };
         }
     }
     
-    // Fetch emails from inbox
-    async fetchEmails(folder = 'inbox', limit = 50, nextToken = null) {
+    // Fetch emails with optional conditional headers (ETag/Last-Modified)
+    async fetchEmails(folder = 'inbox', limit = 50, nextToken = null, options = {}) {
         try {
             const params = new URLSearchParams({ userId: this.userId, folder: folder, limit: limit });
             if (nextToken) params.set('nextToken', nextToken);
@@ -98,19 +116,46 @@ export default class MailAPIService {
                 folder,
                 limit,
                 nextTokenPresent: !!nextToken,
-                url
+                url,
+                etag: options?.etag || null,
+                lastModified: options?.lastModified || null
             });
-            
-            const result = await this.apiCall(url, 'GET');
+
+            // Build headers including conditional ones
+            const headers = { ...this.headers };
+            if (options?.etag) headers['If-None-Match'] = options.etag;
+            if (options?.lastModified) headers['If-Modified-Since'] = options.lastModified;
+
+            // Use fetch directly to access headers and status codes
+            const resp = await fetch(`${this.baseURL}${url}`, { method: 'GET', headers, mode: 'cors' });
+
+            const etag = resp.headers?.get('ETag') || null;
+            const lastModified = resp.headers?.get('Last-Modified') || null;
+            const status = resp.status;
+
+            if (status === 304) {
+                // Not modified: no body expected
+                return { success: true, emails: [], count: 0, nextToken: null, etag, lastModified, status, notModified: true };
+            }
+
+            const data = await resp.json();
+            if (!resp.ok) {
+                throw new Error(data?.error || `HTTP error! status: ${status}`);
+            }
+
             return {
-                success: result.success,
-                emails: result.emails || [],
-                count: result.count || 0,
-                nextToken: result.nextToken || null
+                success: data.success,
+                emails: data.emails || [],
+                count: data.count || 0,
+                nextToken: data.nextToken || null,
+                etag,
+                lastModified,
+                status,
+                notModified: false
             };
         } catch (error) {
             console.error('Failed to fetch emails:', error);
-            return { success: false, emails: [], error: error.message, nextToken: null };
+            return { success: false, emails: [], error: error.message, nextToken: null, etag: null, lastModified: null, status: 0, notModified: false };
         }
     }
     
