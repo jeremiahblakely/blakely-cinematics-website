@@ -327,17 +327,20 @@ export default class MailView {
     
     createFolderItem(folder, isActive) {
         const li = document.createElement('li');
-        li.className = `mail-folder-item ${isActive ? 'active' : ''}`;
+        li.className = `mail-folder-item ${isActive ? 'active' : ''} folder-${folder.id}`;
         li.dataset.folder = folder.id;
-        
+
+        const count = Number.isFinite(folder.count) ? folder.count : (parseInt(folder.count) || 0);
+        const countClass = count > 0 ? 'mail-folder-count has-unread' : 'mail-folder-count no-messages';
+
         li.innerHTML = `
             <div class="mail-folder-name">
                 <span>${folder.icon}</span>
                 <span>${folder.name}</span>
             </div>
-            <span class="mail-folder-count">${folder.count ?? 0}</span>
+            <span class="${countClass}">${count}</span>
         `;
-        
+
         return li;
     }
     

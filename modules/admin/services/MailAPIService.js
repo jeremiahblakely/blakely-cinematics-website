@@ -10,17 +10,7 @@ export default class MailAPIService {
             ? window.CONFIG.API_BASE_URL
             : 'https://qtgzo3psyb.execute-api.us-east-1.amazonaws.com/prod';
         
-        // Default headers
-        this.headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        };
-        // Optionally add API key if provided via window.CONFIG.API_KEY
-        try {
-            if (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.API_KEY) {
-                this.headers['x-api-key'] = window.CONFIG.API_KEY;
-            }
-        } catch {}
+        // No static headers; compute at call-time to ensure API key is present
         
         // Current user (will be set from auth or account selector)
         // Fallback chain: localStorage -> window.ADMIN_MAIL_DEFAULT_USER -> 'admin'
@@ -28,6 +18,36 @@ export default class MailAPIService {
         try { storedId = localStorage.getItem('adminUserId'); } catch {}
         const configuredId = (typeof window !== 'undefined' && window.ADMIN_MAIL_DEFAULT_USER) || null;
         this.userId = storedId || configuredId || 'admin';
+    }
+
+    // Normalize an email address: trim + lowercase
+    normalizeEmail(email) {
+        if (!email) return '';
+        try { return String(email).trim().toLowerCase(); } catch { return ''; }
+    }
+
+    // Basic validator (used post-normalization when needed)
+    validateEmail(email) {
+        const normalized = this.normalizeEmail(email);
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(normalized);
+    }
+
+    // Build headers for every request, always including x-api-key if available
+    getHeaders(extra = {}) {
+        let apiKey = '';
+        try {
+            apiKey = (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.API_KEY) || '';
+            if (!apiKey && typeof window !== 'undefined' && window.localStorage) {
+                apiKey = localStorage.getItem('BC_API_KEY') || '';
+            }
+        } catch {}
+        const base = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (apiKey) base['x-api-key'] = apiKey;
+        return { ...base, ...extra };
     }
 
     // Allow controller to switch account context
@@ -43,7 +63,7 @@ export default class MailAPIService {
         try {
             const options = {
                 method,
-                headers: this.headers,
+                headers: this.getHeaders(),
                 mode: 'cors'
             };
             
@@ -74,21 +94,28 @@ export default class MailAPIService {
     
     // Send email
     async sendEmail(emailData) {
+        // Normalize all email fields to avoid SES case-sensitivity issues
+        const toListRaw = Array.isArray(emailData.to) ? emailData.to : (emailData.to ? [emailData.to] : []);
+        const toList = toListRaw.map(e => this.normalizeEmail(e)).filter(Boolean);
+        const ccList = (Array.isArray(emailData.cc) ? emailData.cc : []).map(e => this.normalizeEmail(e)).filter(Boolean);
+        const bccList = (Array.isArray(emailData.bcc) ? emailData.bcc : []).map(e => this.normalizeEmail(e)).filter(Boolean);
+        const fromAddr = this.normalizeEmail(emailData.from || (this.userId && this.userId.includes('@') ? this.userId : ''));
+        const replyToAddr = emailData.replyTo ? this.normalizeEmail(emailData.replyTo) : undefined;
+
         // Basic client-side validation to avoid 500s from missing fields
-        const toList = Array.isArray(emailData.to) ? emailData.to : (emailData.to ? [emailData.to] : []);
         if (!toList.length) {
             return { success: false, error: 'Missing recipient (To)' };
         }
         const payload = {
             userId: this.userId,
-            from: emailData.from || (this.userId && this.userId.includes('@') ? this.userId : 'jeremiah.blakely@gmail.com'), // prefer selected account if email-like
+            from: fromAddr || (this.userId && this.userId.includes('@') ? this.userId.toLowerCase() : 'jeremiah.blakely@gmail.com'), // prefer selected account if email-like
             to: toList,
-            cc: emailData.cc || [],
-            bcc: emailData.bcc || [],
+            cc: ccList,
+            bcc: bccList,
             subject: emailData.subject,
             textBody: emailData.textBody || emailData.body,
             htmlBody: emailData.htmlBody || `<div>${emailData.body || emailData.textBody}</div>`,
-            replyTo: emailData.replyTo,
+            replyTo: replyToAddr,
             inReplyTo: emailData.threadId
         };
         
@@ -122,7 +149,7 @@ export default class MailAPIService {
             });
 
             // Build headers including conditional ones
-            const headers = { ...this.headers };
+            const headers = this.getHeaders();
             if (options?.etag) headers['If-None-Match'] = options.etag;
             if (options?.lastModified) headers['If-Modified-Since'] = options.lastModified;
 

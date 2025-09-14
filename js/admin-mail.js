@@ -610,3 +610,39 @@ function setReplyContent(htmlContent) {
     ed.innerHTML = htmlContent;
     updateWordCount(ed);
 }
+
+// ============================================
+// FOLDER COUNT STYLING
+// ============================================
+
+/**
+ * Apply conditional styling to folder counts based on their values
+ * Adds 'has-unread' class to parent folder items when count > 0
+ */
+function updateFolderCountStyling() {
+    document.querySelectorAll('.mail-folder-count').forEach(count => {
+        const value = parseInt(count.textContent) || 0;
+        const parentFolder = count.closest('.mail-folder-item');
+        
+        if (value > 0) {
+            // Add class to the parent folder item
+            if (parentFolder) {
+                parentFolder.classList.add('has-unread');
+            }
+            // Also add class directly to the count
+            count.classList.add('unread');
+        } else {
+            // Remove classes when count is 0
+            if (parentFolder) {
+                parentFolder.classList.remove('has-unread');
+            }
+            count.classList.remove('unread');
+        }
+    });
+}
+
+// Run on page load
+document.addEventListener('DOMContentLoaded', updateFolderCountStyling);
+
+// Run whenever folder counts might change (call this function when updating counts via AJAX)
+// updateFolderCountStyling();

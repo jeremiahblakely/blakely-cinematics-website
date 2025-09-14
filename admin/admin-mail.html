@@ -10,6 +10,8 @@
     <!-- Last Updated: December 17, 2024 7:45 PM -->
     
     <link rel="stylesheet" href="../css/admin/admin-mail.css">
+    <!-- App runtime config (API base URL, API key, allowed From list) -->
+    <script src="admin-app-config.js"></script>
     <style>
         /* Minimal inline style for tiny connection status dot */
         .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; vertical-align: middle; background: var(--success, #16a34a); box-shadow: 0 0 0 1px rgba(255,255,255,0.15) inset; }
@@ -32,12 +34,8 @@
             </div>
             
             <div class="mail-header-actions">
-                <button class="compose-btn" onclick="openCompose()">
-                    <span>✉️</span> Compose New
-                </button>
-                
-                <button class="action-btn" onclick="openSettings()">
-                    <span>⚙️</span> Settings
+                <button class="action-btn settings-btn" onclick="openSettings()">
+                    <span class="settings-icon">⚙️</span> Settings
                 </button>
                 
                 <button class="action-btn" onclick="location.href='admin.html'">
@@ -141,6 +139,9 @@
                     </button>
                     <button class="mail-action-btn btn-mark-unread" onclick="markAsUnread()">
                         ○ Mark Unread
+                    </button>
+                    <button class="compose-btn" onclick="openCompose()">
+                        <span>✉️</span> Compose New
                     </button>
                 </div>
                 </div>
