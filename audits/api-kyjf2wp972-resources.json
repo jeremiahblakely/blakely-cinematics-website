@@ -1,0 +1,124 @@
+{
+    "items": [
+        {
+            "id": "2dywi2",
+            "parentId": "9423kf",
+            "pathPart": "{assetId}",
+            "path": "/vip/galleries/{galleryId}/assets/{assetId}"
+        },
+        {
+            "id": "2lxqq0",
+            "parentId": "3myzx8",
+            "pathPart": "{folderId}",
+            "path": "/vip/galleries/{galleryId}/folders/{folderId}",
+            "resourceMethods": {
+                "DELETE": {},
+                "GET": {},
+                "OPTIONS": {},
+                "PATCH": {}
+            }
+        },
+        {
+            "id": "2x8obg",
+            "parentId": "y0yo5k1r2b",
+            "pathPart": "health",
+            "path": "/health",
+            "resourceMethods": {
+                "GET": {}
+            }
+        },
+        {
+            "id": "3myzx8",
+            "parentId": "m0rfcv",
+            "pathPart": "folders",
+            "path": "/vip/galleries/{galleryId}/folders",
+            "resourceMethods": {
+                "GET": {},
+                "OPTIONS": {},
+                "POST": {}
+            }
+        },
+        {
+            "id": "9423kf",
+            "parentId": "m0rfcv",
+            "pathPart": "assets",
+            "path": "/vip/galleries/{galleryId}/assets",
+            "resourceMethods": {
+                "GET": {}
+            }
+        },
+        {
+            "id": "eddonj",
+            "parentId": "m0rfcv",
+            "pathPart": "restore",
+            "path": "/vip/galleries/{galleryId}/restore",
+            "resourceMethods": {
+                "POST": {}
+            }
+        },
+        {
+            "id": "fouc18",
+            "parentId": "m0rfcv",
+            "pathPart": "trash",
+            "path": "/vip/galleries/{galleryId}/trash",
+            "resourceMethods": {
+                "OPTIONS": {},
+                "POST": {}
+            }
+        },
+        {
+            "id": "gbsc1o",
+            "parentId": "xldf7i",
+            "pathPart": "galleries",
+            "path": "/vip/galleries"
+        },
+        {
+            "id": "m0rfcv",
+            "parentId": "gbsc1o",
+            "pathPart": "{galleryId}",
+            "path": "/vip/galleries/{galleryId}",
+            "resourceMethods": {
+                "GET": {}
+            }
+        },
+        {
+            "id": "o3unqg",
+            "parentId": "m0rfcv",
+            "pathPart": "finalize",
+            "path": "/vip/galleries/{galleryId}/finalize",
+            "resourceMethods": {
+                "POST": {}
+            }
+        },
+        {
+            "id": "seah4s",
+            "parentId": "2lxqq0",
+            "pathPart": "items",
+            "path": "/vip/galleries/{galleryId}/folders/{folderId}/items",
+            "resourceMethods": {
+                "DELETE": {},
+                "OPTIONS": {},
+                "POST": {}
+            }
+        },
+        {
+            "id": "wi9y32",
+            "parentId": "2dywi2",
+            "pathPart": "rating",
+            "path": "/vip/galleries/{galleryId}/assets/{assetId}/rating",
+            "resourceMethods": {
+                "PATCH": {}
+            }
+        },
+        {
+            "id": "xldf7i",
+            "parentId": "y0yo5k1r2b",
+            "pathPart": "vip",
+            "path": "/vip"
+        },
+        {
+            "id": "y0yo5k1r2b",
+            "path": "/"
+        }
+    ]
+}

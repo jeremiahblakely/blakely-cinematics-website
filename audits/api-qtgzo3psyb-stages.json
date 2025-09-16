@@ -1,0 +1,14 @@
+{
+    "item": [
+        {
+            "deploymentId": "2uey8i",
+            "stageName": "prod",
+            "cacheClusterEnabled": false,
+            "cacheClusterStatus": "NOT_AVAILABLE",
+            "methodSettings": {},
+            "tracingEnabled": false,
+            "createdDate": "2025-08-30T01:06:24-05:00",
+            "lastUpdatedDate": "2025-09-14T14:18:46-05:00"
+        }
+    ]
+}

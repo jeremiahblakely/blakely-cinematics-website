@@ -1,0 +1,7 @@
+./vip-handler-lambda/package.json
+./lambda-functions/stripe-checkout/package.json
+./backend/package.json
+./backend/lambda/mail-fetch/package.json
+./backend/lambda/mail-manage/package.json
+./backend/lambda/mail-imap-sync/package.json
+./backend/lambda/mail-send/package.json

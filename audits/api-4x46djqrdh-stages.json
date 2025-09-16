@@ -1,0 +1,26 @@
+{
+    "item": [
+        {
+            "deploymentId": "5tvlr8",
+            "stageName": "default",
+            "description": "Created by AWS Lambda",
+            "cacheClusterEnabled": false,
+            "cacheClusterStatus": "NOT_AVAILABLE",
+            "methodSettings": {},
+            "tracingEnabled": false,
+            "createdDate": "2025-08-13T12:46:35-05:00",
+            "lastUpdatedDate": "2025-08-16T16:46:54-05:00"
+        },
+        {
+            "deploymentId": "l5j5ld",
+            "stageName": "prod",
+            "cacheClusterEnabled": false,
+            "cacheClusterSize": "0.5",
+            "cacheClusterStatus": "NOT_AVAILABLE",
+            "methodSettings": {},
+            "tracingEnabled": false,
+            "createdDate": "2025-08-17T21:10:23-05:00",
+            "lastUpdatedDate": "2025-08-17T21:10:23-05:00"
+        }
+    ]
+}

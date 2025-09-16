@@ -1,0 +1,53 @@
+{
+    "items": [
+        {
+            "id": "4wtsjx",
+            "parentId": "ddl7yhp4re",
+            "pathPart": "authenticate",
+            "path": "/authenticate",
+            "resourceMethods": {
+                "POST": {}
+            }
+        },
+        {
+            "id": "59gsui",
+            "parentId": "ddl7yhp4re",
+            "pathPart": "upload",
+            "path": "/upload",
+            "resourceMethods": {
+                "POST": {}
+            }
+        },
+        {
+            "id": "ddl7yhp4re",
+            "path": "/"
+        },
+        {
+            "id": "gmsntm",
+            "parentId": "ddl7yhp4re",
+            "pathPart": "images",
+            "path": "/images",
+            "resourceMethods": {
+                "POST": {}
+            }
+        },
+        {
+            "id": "w2znk7",
+            "parentId": "ddl7yhp4re",
+            "pathPart": "create-gallery",
+            "path": "/create-gallery",
+            "resourceMethods": {
+                "POST": {}
+            }
+        },
+        {
+            "id": "y9qt87",
+            "parentId": "ddl7yhp4re",
+            "pathPart": "delete-gallery",
+            "path": "/delete-gallery",
+            "resourceMethods": {
+                "POST": {}
+            }
+        }
+    ]
+}

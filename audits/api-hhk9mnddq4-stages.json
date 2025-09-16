@@ -1,0 +1,15 @@
+{
+    "item": [
+        {
+            "deploymentId": "l83570",
+            "stageName": "prod",
+            "cacheClusterEnabled": false,
+            "cacheClusterSize": "0.5",
+            "cacheClusterStatus": "NOT_AVAILABLE",
+            "methodSettings": {},
+            "tracingEnabled": false,
+            "createdDate": "2025-08-18T16:17:32-05:00",
+            "lastUpdatedDate": "2025-08-18T16:51:29-05:00"
+        }
+    ]
+}

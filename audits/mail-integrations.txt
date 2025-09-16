@@ -1,0 +1,13 @@
+/mail/inbox	get	
+/mail/inbox	options	
+/mail/send	post	
+/mail/send	options	
+/mail/{id}	delete	
+/mail/{id}	options	
+/mail/draft	post	
+/mail/draft	options	
+/mail	get	
+/mail	options	
+/mail/sync	post	
+/mail/manage	post	
+/mail/manage	options	

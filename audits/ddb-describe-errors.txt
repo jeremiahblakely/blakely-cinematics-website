@@ -1,0 +1,38 @@
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	JDTV-Favorites' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	JDTV-UserPreferences' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	JDTV-Videos' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	JDTV-WatchHistory' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	JDTV-WatchProgress' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-admin' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-bookings' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-contacts' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-emails' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-galleries' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-images' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-slotlocks' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-vip-assets' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-vip-folders' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-vip-galleries' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-vip-placements' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-vip-ratings' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	blakely-cinematics-vip-selections' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+
+An error occurred (ValidationException) when calling the DescribeTable operation: 1 validation error detected: Value 'TABLENAMES	jdx-projects' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+

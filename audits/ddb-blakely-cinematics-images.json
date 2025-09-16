@@ -1,0 +1,49 @@
+{
+    "Table": {
+        "AttributeDefinitions": [
+            {
+                "AttributeName": "galleryCode",
+                "AttributeType": "S"
+            },
+            {
+                "AttributeName": "imageId",
+                "AttributeType": "S"
+            }
+        ],
+        "TableName": "blakely-cinematics-images",
+        "KeySchema": [
+            {
+                "AttributeName": "galleryCode",
+                "KeyType": "HASH"
+            },
+            {
+                "AttributeName": "imageId",
+                "KeyType": "RANGE"
+            }
+        ],
+        "TableStatus": "ACTIVE",
+        "CreationDateTime": "2025-08-19T23:59:41.143000-05:00",
+        "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 0,
+            "WriteCapacityUnits": 0
+        },
+        "TableSizeBytes": 585,
+        "ItemCount": 4,
+        "TableArn": "arn:aws:dynamodb:us-east-1:642278445221:table/blakely-cinematics-images",
+        "TableId": "1082aced-8bfa-47a8-945b-3e5377175956",
+        "BillingModeSummary": {
+            "BillingMode": "PAY_PER_REQUEST",
+            "LastUpdateToPayPerRequestDateTime": "2025-08-19T23:59:41.143000-05:00"
+        },
+        "TableClassSummary": {
+            "TableClass": "STANDARD"
+        },
+        "DeletionProtectionEnabled": false,
+        "WarmThroughput": {
+            "ReadUnitsPerSecond": 12000,
+            "WriteUnitsPerSecond": 4000,
+            "Status": "ACTIVE"
+        }
+    }
+}

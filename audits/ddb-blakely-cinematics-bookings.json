@@ -1,0 +1,38 @@
+{
+    "Table": {
+        "AttributeDefinitions": [
+            {
+                "AttributeName": "bookingId",
+                "AttributeType": "S"
+            }
+        ],
+        "TableName": "blakely-cinematics-bookings",
+        "KeySchema": [
+            {
+                "AttributeName": "bookingId",
+                "KeyType": "HASH"
+            }
+        ],
+        "TableStatus": "ACTIVE",
+        "CreationDateTime": "2025-08-25T00:50:15.452000-05:00",
+        "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 0,
+            "WriteCapacityUnits": 0
+        },
+        "TableSizeBytes": 2342,
+        "ItemCount": 10,
+        "TableArn": "arn:aws:dynamodb:us-east-1:642278445221:table/blakely-cinematics-bookings",
+        "TableId": "9f7e7b6c-fb9d-4f46-81b4-26ee9741c7be",
+        "BillingModeSummary": {
+            "BillingMode": "PAY_PER_REQUEST",
+            "LastUpdateToPayPerRequestDateTime": "2025-08-25T00:50:15.452000-05:00"
+        },
+        "DeletionProtectionEnabled": false,
+        "WarmThroughput": {
+            "ReadUnitsPerSecond": 12000,
+            "WriteUnitsPerSecond": 4000,
+            "Status": "ACTIVE"
+        }
+    }
+}

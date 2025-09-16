@@ -1,0 +1,18 @@
+{
+    "items": [
+        {
+            "id": "6hksuc",
+            "parentId": "e4k972nbna",
+            "pathPart": "contact",
+            "path": "/contact",
+            "resourceMethods": {
+                "OPTIONS": {},
+                "POST": {}
+            }
+        },
+        {
+            "id": "e4k972nbna",
+            "path": "/"
+        }
+    ]
+}

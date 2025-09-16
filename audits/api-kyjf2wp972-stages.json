@@ -1,0 +1,14 @@
+{
+    "item": [
+        {
+            "deploymentId": "i51hn4",
+            "stageName": "dev",
+            "cacheClusterEnabled": false,
+            "cacheClusterStatus": "NOT_AVAILABLE",
+            "methodSettings": {},
+            "tracingEnabled": false,
+            "createdDate": "2025-08-28T21:18:43-05:00",
+            "lastUpdatedDate": "2025-09-01T18:35:46-05:00"
+        }
+    ]
+}

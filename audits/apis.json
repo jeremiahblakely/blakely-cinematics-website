@@ -1,0 +1,81 @@
+{
+    "items": [
+        {
+            "id": "0n42z2wsrj",
+            "name": "blakely-cinematics-api",
+            "description": "Client portal API",
+            "createdDate": "2025-08-20T00:21:45-05:00",
+            "binaryMediaTypes": [
+                "*/*"
+            ],
+            "apiKeySource": "HEADER",
+            "endpointConfiguration": {
+                "types": [
+                    "REGIONAL"
+                ],
+                "ipAddressType": "ipv4"
+            },
+            "disableExecuteApiEndpoint": false,
+            "rootResourceId": "ddl7yhp4re"
+        },
+        {
+            "id": "4x46djqrdh",
+            "name": "getJDTVVideos-API",
+            "description": "Created by AWS Lambda",
+            "createdDate": "2025-08-13T12:46:34-05:00",
+            "apiKeySource": "HEADER",
+            "endpointConfiguration": {
+                "types": [
+                    "REGIONAL"
+                ],
+                "ipAddressType": "ipv4"
+            },
+            "disableExecuteApiEndpoint": false,
+            "rootResourceId": "o2r6j02xx7"
+        },
+        {
+            "id": "hhk9mnddq4",
+            "name": "blakely-cinematics-api",
+            "description": "Contact form API for Blakely Cinematics",
+            "createdDate": "2025-08-18T16:15:53-05:00",
+            "apiKeySource": "HEADER",
+            "endpointConfiguration": {
+                "types": [
+                    "REGIONAL"
+                ],
+                "ipAddressType": "ipv4"
+            },
+            "disableExecuteApiEndpoint": false,
+            "rootResourceId": "e4k972nbna"
+        },
+        {
+            "id": "kyjf2wp972",
+            "name": "VIP Portal API",
+            "createdDate": "2025-08-28T21:14:56-05:00",
+            "apiKeySource": "HEADER",
+            "endpointConfiguration": {
+                "types": [
+                    "REGIONAL"
+                ],
+                "ipAddressType": "ipv4"
+            },
+            "disableExecuteApiEndpoint": false,
+            "rootResourceId": "y0yo5k1r2b"
+        },
+        {
+            "id": "qtgzo3psyb",
+            "name": "blakely-cinematics-unified-api",
+            "description": "Unified API for Blakely Cinematics",
+            "createdDate": "2025-08-30T01:05:29-05:00",
+            "apiKeySource": "HEADER",
+            "endpointConfiguration": {
+                "types": [
+                    "EDGE"
+                ],
+                "ipAddressType": "ipv4"
+            },
+            "disableExecuteApiEndpoint": false,
+            "rootResourceId": "ud5lev2ztf"
+        }
+    ]
+}

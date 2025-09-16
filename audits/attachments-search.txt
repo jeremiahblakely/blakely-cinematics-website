@@ -1,0 +1,27 @@
+./audits/unified-deployed/unified-index.js:4:const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+./audits/unified-deployed/unified-index.js:5:const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+./audits/unified-deployed/unified-index.js:11:const s3 = new S3Client({ region: 'us-east-1' });
+./js/admin-app.js:384:                        attachments: r.attachments || []
+./update-lambda.sh:71:                                    attachments: parsed.attachments?.map(att => ({
+./backend/test-asset-manager.js:7:    getSignedUrlPromise: async (operation, params) => {
+./backend/test-gallery-crud.js:25:    getSignedUrlPromise: async () => 'https://mock-upload-url.com',
+./backend/lambda/mail-fetch/index.js:144:                attachments: item.attachments || []
+./backend/lambda/gallery-crud/index.js:527: * Helper: Generate presigned upload URL
+./backend/lambda/gallery-crud/index.js:531:    return s3.getSignedUrlPromise('putObject', {
+./backend/lambda/unified-index.js:4:const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+./backend/lambda/unified-index.js:5:const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+./backend/lambda/unified-index.js:11:const s3 = new S3Client({ region: 'us-east-1' });
+./backend/lambda/asset-manager/index.js:111:    const uploadUrl = await s3.getSignedUrlPromise('putObject', {
+./backend/lambda/asset-manager/index.js:159:        const uploadUrl = await s3.getSignedUrlPromise('putObject', {
+./backend/lambda/asset-manager/index.js.bak:111:    const uploadUrl = await s3.getSignedUrlPromise('putObject', {
+./backend/lambda/asset-manager/index.js.bak:159:        const uploadUrl = await s3.getSignedUrlPromise('putObject', {
+./backend/lambda/asset-manager/index.js.bak:273:  return s3.getSignedUrlPromise("getObject", {
+./backend/lambda/mail-imap-sync/index.js:96:                                    attachments: parsed.attachments?.length || 0,
+./backend/lambda/mail-imap-sync/index.js:113:                                    attachments: 0,
+./backend/lambda/mail-imap-sync/index.js:217:                attachments: email.attachments,
+./modules/admin/models/MailModel-updated.js:132:            hasAttachments: apiEmail.attachments?.length > 0,
+./modules/admin/models/MailModel-updated.js:601:            attachments: email.hasAttachments ? ['[Original attachments]'] : []
+./modules/admin/models/MailModel.js:216:            hasAttachments: apiEmail.attachments?.length > 0,
+./modules/admin/models/MailModel.js:668:            attachments: email.hasAttachments ? ['[Original attachments]'] : []
+./modules/admin/components/ComposeView.js:83:                    <div class="compose-attachments" id="attachmentArea" style="display: none;">
+./modules/admin/services/MailCacheService.js:142:          attachments: e.attachments || [],

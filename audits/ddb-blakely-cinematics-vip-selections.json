@@ -1,0 +1,120 @@
+{
+    "Table": {
+        "AttributeDefinitions": [
+            {
+                "AttributeName": "assetId",
+                "AttributeType": "S"
+            },
+            {
+                "AttributeName": "clientId",
+                "AttributeType": "S"
+            },
+            {
+                "AttributeName": "finalizedAt",
+                "AttributeType": "N"
+            },
+            {
+                "AttributeName": "folderId",
+                "AttributeType": "S"
+            },
+            {
+                "AttributeName": "galleryId",
+                "AttributeType": "S"
+            }
+        ],
+        "TableName": "blakely-cinematics-vip-selections",
+        "KeySchema": [
+            {
+                "AttributeName": "galleryId",
+                "KeyType": "HASH"
+            },
+            {
+                "AttributeName": "assetId",
+                "KeyType": "RANGE"
+            }
+        ],
+        "TableStatus": "ACTIVE",
+        "CreationDateTime": "2025-09-01T14:23:57.629000-05:00",
+        "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 0,
+            "WriteCapacityUnits": 0
+        },
+        "TableSizeBytes": 510,
+        "ItemCount": 5,
+        "TableArn": "arn:aws:dynamodb:us-east-1:642278445221:table/blakely-cinematics-vip-selections",
+        "TableId": "a3655001-c2ab-4447-b9c5-1a2559d0a6cc",
+        "BillingModeSummary": {
+            "BillingMode": "PAY_PER_REQUEST",
+            "LastUpdateToPayPerRequestDateTime": "2025-09-01T14:23:57.629000-05:00"
+        },
+        "GlobalSecondaryIndexes": [
+            {
+                "IndexName": "gsi_clientId_finalizedAt",
+                "KeySchema": [
+                    {
+                        "AttributeName": "clientId",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "finalizedAt",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL"
+                },
+                "IndexStatus": "ACTIVE",
+                "ProvisionedThroughput": {
+                    "NumberOfDecreasesToday": 0,
+                    "ReadCapacityUnits": 0,
+                    "WriteCapacityUnits": 0
+                },
+                "IndexSizeBytes": 510,
+                "ItemCount": 5,
+                "IndexArn": "arn:aws:dynamodb:us-east-1:642278445221:table/blakely-cinematics-vip-selections/index/gsi_clientId_finalizedAt",
+                "WarmThroughput": {
+                    "ReadUnitsPerSecond": 12000,
+                    "WriteUnitsPerSecond": 4000,
+                    "Status": "ACTIVE"
+                }
+            },
+            {
+                "IndexName": "gsi_folderId_finalizedAt",
+                "KeySchema": [
+                    {
+                        "AttributeName": "folderId",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "finalizedAt",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL"
+                },
+                "IndexStatus": "ACTIVE",
+                "ProvisionedThroughput": {
+                    "NumberOfDecreasesToday": 0,
+                    "ReadCapacityUnits": 0,
+                    "WriteCapacityUnits": 0
+                },
+                "IndexSizeBytes": 96,
+                "ItemCount": 1,
+                "IndexArn": "arn:aws:dynamodb:us-east-1:642278445221:table/blakely-cinematics-vip-selections/index/gsi_folderId_finalizedAt",
+                "WarmThroughput": {
+                    "ReadUnitsPerSecond": 12000,
+                    "WriteUnitsPerSecond": 4000,
+                    "Status": "ACTIVE"
+                }
+            }
+        ],
+        "DeletionProtectionEnabled": false,
+        "WarmThroughput": {
+            "ReadUnitsPerSecond": 12000,
+            "WriteUnitsPerSecond": 4000,
+            "Status": "ACTIVE"
+        }
+    }
+}
