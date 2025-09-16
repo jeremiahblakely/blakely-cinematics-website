@@ -11,6 +11,22 @@ export default class MailView {
         this.elements = {};
     }
     
+    // Parse strings like: "Name" <email@domain.com> into { name, address }
+    parseAddressDisplay(raw) {
+        if (!raw) return { name: '', address: '' };
+        if (typeof raw === 'object' && (raw.address || raw.email || raw.name)) {
+            return {
+                name: (raw.name || '').toString().replace(/^"|"$/g, '').trim(),
+                address: (raw.address || raw.email || '').toString().trim()
+            };
+        }
+        const str = String(raw).trim();
+        const m = str.match(/^\s*"?([^"<]+?)"?\s*<\s*([^>\s]+)\s*>\s*$/);
+        if (m) return { name: m[1].trim(), address: m[2].trim() };
+        const emailMatch = str.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+        return { name: str.replace(/<[^>]*>/g, '').replace(/"/g, '').trim(), address: emailMatch ? emailMatch[0] : '' };
+    }
+    
     initialize() {
         this.elements = this.cacheElements();
         this.initializeNotificationSystem();
@@ -111,9 +127,14 @@ export default class MailView {
             div.dataset.emailUid = email.emailId;
         }
 
+        const senderName = this.parseAddressDisplay(email.sender).name || email.sender || '';
+        const toRecipient = (email.recipients && Array.isArray(email.recipients.to) && email.recipients.to.length)
+            ? (this.parseAddressDisplay(email.recipients.to[0]).name || this.parseAddressDisplay(email.recipients.to[0]).address || email.recipients.to[0])
+            : 'Unknown Recipient';
+
         div.innerHTML = `
             <div class="mail-item-header">
-                <span class="mail-item-sender">${this.escapeHtml(email.sender)}</span>
+                <span class="mail-item-sender">${this.escapeHtml(senderName)}</span>
                 <div class="mail-item-actions">
                     <span class="mail-item-time">${email.time}</span>
                     <span class="email-star" data-email-id="${email.id}" title="Star" style="cursor: pointer; font-size: 1rem;">
@@ -122,6 +143,7 @@ export default class MailView {
                 </div>
             </div>
             <div class="mail-item-subject">${this.escapeHtml(email.subject)}</div>
+            <div class="mail-item-to">To: ${this.escapeHtml(toRecipient)}</div>
             <div class="mail-item-preview">${this.escapeHtml(email.preview)}</div>
             <div class="mail-item-tags">
                 ${email.tags.map(tag => `<span class="mail-tag ${tag}">${tag}</span>`).join('')}
@@ -188,15 +210,16 @@ export default class MailView {
         };
         container.appendChild(iframe);
         
-        // Update sender info
-        const initials = email.sender.split(' ').map(n => n[0]).join('');
-        this.elements.senderAvatar.textContent = initials;
-        this.elements.senderName.textContent = email.sender;
-        this.elements.senderEmail.textContent = email.email;
+        // Update sender info (display clean name + address)
+        const parsedFrom = this.parseAddressDisplay(email.sender || email.email);
+        const initials = (parsedFrom.name || '??').split(' ').map(n => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase();
+        this.elements.senderAvatar.textContent = initials || '⟂';
+        this.elements.senderName.textContent = parsedFrom.name || email.sender || 'Unknown Sender';
+        this.elements.senderEmail.textContent = parsedFrom.address || email.email || '';
         this.elements.emailDate.textContent = email.time;
         
         // Update reply box
-        this.elements.replyTo.textContent = email.sender;
+        this.elements.replyTo.textContent = parsedFrom.name || email.sender || '';
         
         // Update star button
         const starButton = document.querySelector('.mail-content-actions button[onclick="toggleStar()"] span');

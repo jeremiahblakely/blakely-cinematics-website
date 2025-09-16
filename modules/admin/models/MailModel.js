@@ -9,7 +9,7 @@ export default class MailModel {
     constructor() {
         this.emails = [];
         this.folders = [];
-        this.currentFolder = 'all';
+        this.currentFolder = 'inbox';
         this.selectedEmail = null;
         this.selectedEmails = new Set();
         this.starredEmails = new Set();
@@ -148,6 +148,27 @@ export default class MailModel {
     
     // Transform API email to match our UI format
     transformAPIEmail(apiEmail, folder) {
+        // Helper to parse strings like: "Name" <email@domain.com>
+        const parseAddress = (raw) => {
+            if (!raw) return { name: '', address: '' };
+            if (typeof raw === 'object' && (raw.address || raw.email || raw.name)) {
+                return {
+                    name: (raw.name || '').toString().replace(/^"|"$/g, '').trim(),
+                    address: (raw.address || raw.email || '').toString().trim()
+                };
+            }
+            const str = String(raw).trim();
+            const m = str.match(/^\s*"?([^"<]+?)"?\s*<\s*([^>\s]+)\s*>\s*$/);
+            if (m) {
+                return { name: m[1].trim(), address: m[2].trim() };
+            }
+            // Try to pull out an email if present, else treat as name only
+            const emailMatch = str.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+            return {
+                name: str.replace(/<[^>]*>/g, '').replace(/"/g, '').trim(),
+                address: emailMatch ? emailMatch[0] : ''
+            };
+        };
         // Generate a numeric ID for UI (sequential to avoid collisions)
         const numericId = this._idSeq++;
         // Normalize folder: treat 'unread' items as part of the Inbox
@@ -159,10 +180,18 @@ export default class MailModel {
             id: numericId,
             emailId: apiEmail.emailId, // Keep original for API calls
             threadId: apiEmail.inReplyTo || `THREAD#${numericId}`,
-            sender: apiEmail.fromName || apiEmail.from || 'Unknown Sender',
-            email: apiEmail.from || 'no-reply@example.com',
+            // Normalize From into name + address
+            ...(() => {
+                const fromRaw = apiEmail.fromName || apiEmail.from || '';
+                const parsed = parseAddress(fromRaw);
+                return {
+                    sender: parsed.name || 'Unknown Sender',
+                    email: parsed.address || 'no-reply@example.com'
+                };
+            })(),
             recipients: {
-                to: Array.isArray(apiEmail.to) ? apiEmail.to : [apiEmail.to].filter(Boolean),
+                // Preserve original recipient formatting to retain display names
+                to: (Array.isArray(apiEmail.to) ? apiEmail.to : [apiEmail.to].filter(Boolean)),
                 cc: apiEmail.cc || [],
                 bcc: apiEmail.bcc || []
             },
@@ -173,10 +202,17 @@ export default class MailModel {
             unread: apiEmail.status !== 'read',
             starred: apiEmail.starred || false,
             folder: effectiveFolder,
-            account: apiEmail.to?.[0] || 'jd@blakelycinematics.com',
+            account: (() => {
+                const tos = Array.isArray(apiEmail.to) ? apiEmail.to : [apiEmail.to].filter(Boolean);
+                const addr = tos.length ? parseAddress(tos[0]).address : '';
+                return addr || 'jd@blakelycinematics.com';
+            })(),
             tags: this.extractTags(apiEmail),
             bookingId: apiEmail.bookingId || null,
-            clientEmail: apiEmail.from,
+            clientEmail: (() => {
+                const parsed = parseAddress(apiEmail.from || '');
+                return parsed.address || apiEmail.from || null;
+            })(),
             hasAttachments: apiEmail.attachments?.length > 0,
             archived: effectiveFolder === 'archived',
             body: apiEmail.htmlBody || `<p>${apiEmail.textBody || ''}</p>`

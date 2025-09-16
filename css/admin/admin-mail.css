@@ -709,6 +709,13 @@ button.btn-mark-unread:hover,
     overflow-wrap: anywhere; /* break long subjects to prevent sideways scroll */
 }
 
+/* Recipient line under subject */
+.mail-item-to {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
 .mail-item-preview {
     font-size: 0.85rem;
     color: var(--text-secondary);

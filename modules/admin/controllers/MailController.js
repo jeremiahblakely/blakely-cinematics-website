@@ -20,7 +20,7 @@ export default class MailController {
         this.composeView = new ComposeView(null, null, this.view.signatureService);
         
         this.initializeEventListeners();
-        this.initialize();
+        void this.initialize();
         
         // Initialize theme switcher after DOM is ready
         setTimeout(() => {
@@ -28,10 +28,20 @@ export default class MailController {
         }, 100);
     }
     
-    initialize() {
-        // Load initial data
+    async initialize() {
+        // Set inbox as default to match UI
+        this.model.setCurrentFolder('inbox');
+
+        // Load folders first
         this.loadFolders();
-        this.loadEmails();
+
+        // CRITICAL: Wait for emails to load from API
+        await this.model.loadEmailsFromAPI();
+
+        // Now render with real data (not placeholders)
+        this.loadEmails('inbox');
+
+        // Load other components
         this.loadCalendar();
         this.loadAccounts();
     }
