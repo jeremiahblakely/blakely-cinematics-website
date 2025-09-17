@@ -1,8 +1,7 @@
-// blakely-cinematics-mail-manage Lambda Function
-// Created: September 12, 2025, 6:50 PM
-// Updated: September 12, 2025, 7:30 PM - Fixed DELETE and move-folder
-// Updated: December 16, 2025, 8:40 PM - Added mark-unread, toggle-star, archive, snooze
-// Purpose: Manage email drafts, folders, and operations
+cat > /tmp/mail-manage-index.js << 'EOF'
+// mail-manage Lambda Function
+// Updated: December 17, 2024 8:45 PM
+// Handles email operations: move to folders, mark read/unread, star, archive
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, UpdateCommand, DeleteCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
@@ -16,19 +15,23 @@ exports.handler = async (event) => {
     try {
         const httpMethod = event.httpMethod || event.requestContext?.http?.method || 'POST';
         
-        // Handle DELETE requests specially
+        // Handle DELETE requests - move to trash, not permanent delete
         if (httpMethod === 'DELETE') {
             const pathParams = event.pathParameters || {};
             const queryParams = event.queryStringParameters || {};
             
-            // Extract emailId from path (e.g., /mail/{id})
             const emailId = pathParams.id || pathParams.proxy || event.path?.split('/').pop();
             const userId = queryParams.userId || 'admin';
             
-            return await deleteEmail({ userId, emailId });
+            // Move to trash instead of deleting
+            return await moveToFolder({ 
+                userId, 
+                emailId, 
+                targetFolder: 'trash' 
+            });
         }
         
-        // Handle other requests with body
+        // Handle POST requests with body
         const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {};
         const action = body.action || 'save-draft';
         
@@ -38,7 +41,15 @@ exports.handler = async (event) => {
             case 'move-folder':
                 return await moveToFolder(body);
             case 'delete-email':
-                return await deleteEmail(body);
+                // This also moves to trash, not permanent delete
+                return await moveToFolder({
+                    userId: body.userId,
+                    emailId: body.emailId,
+                    targetFolder: 'trash'
+                });
+            case 'permanent-delete':
+                // Only use this for permanent deletion from trash
+                return await permanentlyDelete(body);
             case 'mark-read':
                 return await markAsRead(body);
             case 'mark-unread':
@@ -46,42 +57,47 @@ exports.handler = async (event) => {
             case 'toggle-star':
                 return await toggleStar(body);
             case 'archive':
-                return await archiveEmail(body);
-            case 'snooze':
-                return await snoozeEmail(body);
+                return await moveToFolder({
+                    userId: body.userId,
+                    emailId: body.emailId,
+                    targetFolder: 'archive'
+                });
+            case 'restore':
+                return await restoreFromTrash(body);
             default:
-                return createResponse(400, { error: 'Invalid action' });
+                return createResponse(400, {
+                    success: false,
+                    error: `Unknown action: ${action}`
+                });
         }
-        
     } catch (error) {
         console.error('Error:', error);
-        return createResponse(500, { 
-            error: 'Failed to process request',
-            details: error.message 
+        return createResponse(500, {
+            success: false,
+            error: error.message || 'Internal server error'
         });
     }
 };
 
 async function saveDraft(data) {
-    const emailId = `draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+    const emailId = data.emailId || `draft-${Date.now()}`;
     const params = {
         TableName: 'blakely-cinematics-emails',
         Item: {
             userId: data.userId || 'admin',
             emailId: emailId,
             folder: 'drafts',
-            from: data.from,
-            to: data.to,
             subject: data.subject || '(No Subject)',
-            textBody: data.textBody || '',
+            from: data.from || 'admin@blakelycinematics.com',
+            to: data.to || [],
+            cc: data.cc || [],
+            bcc: data.bcc || [],
             htmlBody: data.htmlBody || '',
-            timestamp: Date.now(),
+            textBody: data.textBody || '',
+            timestamp: new Date().toISOString(),
             status: 'draft',
-            lastModified: Date.now(),
-            unread: true,
             starred: false,
-            archived: false
+            lastModified: new Date().toISOString()
         }
     };
     
@@ -90,35 +106,55 @@ async function saveDraft(data) {
     
     return createResponse(200, {
         success: true,
-        emailId: emailId,
-        message: 'Draft saved successfully'
+        message: 'Draft saved',
+        emailId: emailId
     });
 }
 
 async function moveToFolder(data) {
+    // First, get the current email to preserve data
+    const getParams = {
+        TableName: 'blakely-cinematics-emails',
+        Key: {
+            userId: data.userId || 'admin',
+            emailId: data.emailId
+        }
+    };
+    
+    const getCommand = new GetCommand(getParams);
+    const currentEmail = await docClient.send(getCommand);
+    
+    // Store original folder for restore operations
+    const originalFolder = currentEmail.Item?.folder || 'inbox';
+    
+    // Update the folder
     const params = {
         TableName: 'blakely-cinematics-emails',
         Key: {
             userId: data.userId || 'admin',
             emailId: data.emailId
         },
-        UpdateExpression: 'SET folder = :folder, lastModified = :modified',
+        UpdateExpression: 'SET folder = :folder, lastModified = :modified, originalFolder = :original',
         ExpressionAttributeValues: {
-            ':folder': data.targetFolder || data.newFolder || 'inbox',
-            ':modified': Date.now()
-        }
+            ':folder': data.targetFolder,
+            ':modified': new Date().toISOString(),
+            ':original': data.targetFolder === 'trash' ? originalFolder : (currentEmail.Item?.originalFolder || originalFolder)
+        },
+        ReturnValues: 'ALL_NEW'
     };
     
     const command = new UpdateCommand(params);
-    await docClient.send(command);
+    const result = await docClient.send(command);
     
     return createResponse(200, {
         success: true,
-        message: `Email moved to ${data.targetFolder || data.newFolder}`
+        message: `Email moved to ${data.targetFolder}`,
+        email: result.Attributes
     });
 }
 
-async function deleteEmail(data) {
+async function permanentlyDelete(data) {
+    // This permanently removes from DynamoDB - use with caution
     const params = {
         TableName: 'blakely-cinematics-emails',
         Key: {
@@ -132,7 +168,29 @@ async function deleteEmail(data) {
     
     return createResponse(200, {
         success: true,
-        message: 'Email deleted successfully'
+        message: 'Email permanently deleted'
+    });
+}
+
+async function restoreFromTrash(data) {
+    // Get the email to find its original folder
+    const getParams = {
+        TableName: 'blakely-cinematics-emails',
+        Key: {
+            userId: data.userId || 'admin',
+            emailId: data.emailId
+        }
+    };
+    
+    const getCommand = new GetCommand(getParams);
+    const email = await docClient.send(getCommand);
+    
+    const targetFolder = email.Item?.originalFolder || data.targetFolder || 'inbox';
+    
+    return await moveToFolder({
+        userId: data.userId,
+        emailId: data.emailId,
+        targetFolder: targetFolder
     });
 }
 
@@ -143,23 +201,24 @@ async function markAsRead(data) {
             userId: data.userId || 'admin',
             emailId: data.emailId
         },
-        UpdateExpression: 'SET #status = :status, unread = :unread, lastModified = :modified',
+        UpdateExpression: 'SET #status = :status, lastModified = :modified',
         ExpressionAttributeNames: {
             '#status': 'status'
         },
         ExpressionAttributeValues: {
             ':status': 'read',
-            ':unread': false,
-            ':modified': Date.now()
-        }
+            ':modified': new Date().toISOString()
+        },
+        ReturnValues: 'ALL_NEW'
     };
     
     const command = new UpdateCommand(params);
-    await docClient.send(command);
+    const result = await docClient.send(command);
     
     return createResponse(200, {
         success: true,
-        message: 'Email marked as read'
+        message: 'Email marked as read',
+        email: result.Attributes
     });
 }
 
@@ -170,27 +229,29 @@ async function markAsUnread(data) {
             userId: data.userId || 'admin',
             emailId: data.emailId
         },
-        UpdateExpression: 'SET #status = :status, unread = :unread, lastModified = :modified',
+        UpdateExpression: 'SET #status = :status, lastModified = :modified',
         ExpressionAttributeNames: {
             '#status': 'status'
         },
         ExpressionAttributeValues: {
             ':status': 'unread',
-            ':unread': true,
-            ':modified': Date.now()
-        }
+            ':modified': new Date().toISOString()
+        },
+        ReturnValues: 'ALL_NEW'
     };
     
     const command = new UpdateCommand(params);
-    await docClient.send(command);
+    const result = await docClient.send(command);
     
     return createResponse(200, {
         success: true,
-        message: 'Email marked as unread'
+        message: 'Email marked as unread',
+        email: result.Attributes
     });
 }
 
 async function toggleStar(data) {
+    // First get current star status
     const getParams = {
         TableName: 'blakely-cinematics-emails',
         Key: {
@@ -200,10 +261,11 @@ async function toggleStar(data) {
     };
     
     const getCommand = new GetCommand(getParams);
-    const result = await docClient.send(getCommand);
-    const currentStarred = result.Item?.starred || false;
+    const current = await docClient.send(getCommand);
+    const currentStarred = current.Item?.starred || false;
     
-    const updateParams = {
+    // Toggle the star
+    const params = {
         TableName: 'blakely-cinematics-emails',
         Key: {
             userId: data.userId || 'admin',
@@ -212,80 +274,31 @@ async function toggleStar(data) {
         UpdateExpression: 'SET starred = :starred, lastModified = :modified',
         ExpressionAttributeValues: {
             ':starred': !currentStarred,
-            ':modified': Date.now()
-        }
-    };
-    
-    const updateCommand = new UpdateCommand(updateParams);
-    await docClient.send(updateCommand);
-    
-    return createResponse(200, {
-        success: true,
-        starred: !currentStarred,
-        message: !currentStarred ? 'Email starred' : 'Email unstarred'
-    });
-}
-
-async function archiveEmail(data) {
-    const params = {
-        TableName: 'blakely-cinematics-emails',
-        Key: {
-            userId: data.userId || 'admin',
-            emailId: data.emailId
+            ':modified': new Date().toISOString()
         },
-        UpdateExpression: 'SET folder = :folder, archived = :archived, lastModified = :modified',
-        ExpressionAttributeValues: {
-            ':folder': 'archive',
-            ':archived': true,
-            ':modified': Date.now()
-        }
+        ReturnValues: 'ALL_NEW'
     };
     
     const command = new UpdateCommand(params);
-    await docClient.send(command);
+    const result = await docClient.send(command);
     
     return createResponse(200, {
         success: true,
-        message: 'Email archived successfully'
-    });
-}
-
-async function snoozeEmail(data) {
-    const snoozeUntil = data.snoozeUntil || (Date.now() + (24 * 60 * 60 * 1000));
-    
-    const params = {
-        TableName: 'blakely-cinematics-emails',
-        Key: {
-            userId: data.userId || 'admin',
-            emailId: data.emailId
-        },
-        UpdateExpression: 'SET folder = :folder, snoozeUntil = :snoozeUntil, lastModified = :modified',
-        ExpressionAttributeValues: {
-            ':folder': 'snoozed',
-            ':snoozeUntil': snoozeUntil,
-            ':modified': Date.now()
-        }
-    };
-    
-    const command = new UpdateCommand(params);
-    await docClient.send(command);
-    
-    return createResponse(200, {
-        success: true,
-        snoozeUntil: snoozeUntil,
-        message: 'Email snoozed successfully'
+        message: `Email ${!currentStarred ? 'starred' : 'unstarred'}`,
+        email: result.Attributes
     });
 }
 
 function createResponse(statusCode, body) {
     return {
-        statusCode: statusCode,
+        statusCode,
         headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
             'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS'
         },
         body: JSON.stringify(body)
     };
 }
+EOF
