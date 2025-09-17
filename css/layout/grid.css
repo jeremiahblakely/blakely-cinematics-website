@@ -1,0 +1,122 @@
+/* Layout grid placeholder */
+
+/* TODO: migrate mail-container grid styles (lines 47-55) */
+/* ============================================
+   LAYOUT GRID SYSTEM
+   Created: December 17, 2024
+   Purpose: Main application grid layout
+   ============================================ */
+
+/* ===== MAIN CONTAINER ===== */
+
+.mail-container {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) var(--email-list-width) 1fr var(--widget-width);
+    grid-template-rows: var(--header-height) 1fr;
+    height: 100vh;
+    position: relative;
+    z-index: var(--z-base);
+    overflow-x: hidden;
+}
+
+/* ===== RESPONSIVE GRID ADJUSTMENTS ===== */
+
+/* Large screens (default is 4-column) */
+@media (min-width: 1920px) {
+    .mail-container {
+        --email-list-width: 600px;
+        --widget-width: 380px;
+    }
+}
+
+/* Medium screens - hide widgets */
+@media (max-width: 1440px) {
+    .mail-container {
+        grid-template-columns: var(--sidebar-width) var(--email-list-width) 1fr;
+    }
+    
+    .mail-widgets {
+        display: none;
+    }
+}
+
+/* Small screens - stack layout */
+@media (max-width: 1024px) {
+    .mail-container {
+        grid-template-columns: var(--sidebar-width) 1fr;
+    }
+    
+    .mail-list {
+        display: none;
+    }
+    
+    .mail-list.mobile-active {
+        display: block;
+        position: absolute;
+        top: var(--header-height);
+        left: var(--sidebar-width);
+        right: 0;
+        bottom: 0;
+        z-index: var(--z-overlay);
+    }
+}
+
+/* Mobile - full screen sections */
+@media (max-width: 768px) {
+    .mail-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: var(--header-height) 1fr;
+    }
+    
+    .mail-sidebar {
+        position: fixed;
+        top: var(--header-height);
+        left: -100%;
+        width: 280px;
+        height: calc(100vh - var(--header-height));
+        z-index: var(--z-modal);
+        transition: left var(--transition-base);
+    }
+    
+    .mail-sidebar.mobile-open {
+        left: 0;
+    }
+    
+    .mail-list,
+    .mail-content {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ===== LAYOUT UTILITIES ===== */
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.content-area {
+    grid-column: 2 / -1;
+}
+
+.main-area {
+    grid-column: 2 / 4;
+}
+
+/* ===== OVERLAY FOR MOBILE MENU ===== */
+
+.mobile-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: calc(var(--z-modal) - 1);
+}
+
+@media (max-width: 768px) {
+    .mobile-overlay.active {
+        display: block;
+    }
+}

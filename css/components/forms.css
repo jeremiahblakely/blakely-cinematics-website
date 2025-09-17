@@ -1,0 +1,287 @@
+/* Form control styles placeholder */
+
+/* TODO: migrate input, select, and textarea styles */
+/* ============================================
+   FORMS COMPONENT
+   Created: December 17, 2024
+   Purpose: Form elements and input styles
+   ============================================ */
+
+/* ===== BASE INPUT STYLES ===== */
+
+input,
+textarea,
+select {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background: rgba(0, 20, 30, 0.6);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    transition: all var(--transition-base);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    background: rgba(0, 30, 40, 0.8);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-muted);
+}
+
+/* ===== TEXT INPUTS ===== */
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="url"] {
+    width: 100%;
+    height: var(--compose-input-height, 38px);
+}
+
+/* Force lowercase for email inputs */
+input[type="email"] {
+    text-transform: lowercase;
+}
+
+/* ===== TEXTAREA ===== */
+
+textarea {
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.auto-expand {
+    min-height: 120px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+/* ===== SELECT DROPDOWNS ===== */
+
+select {
+    width: 100%;
+    height: var(--compose-input-height, 38px);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2300FFFF' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+select option {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 8px;
+}
+
+/* ===== CHECKBOXES ===== */
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    appearance: none;
+    background: rgba(0, 20, 30, 0.6);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    position: relative;
+    margin-right: 8px;
+}
+
+input[type="checkbox"]:checked {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--bg-primary);
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* ===== RADIO BUTTONS ===== */
+
+input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    appearance: none;
+    background: rgba(0, 20, 30, 0.6);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    margin-right: 8px;
+}
+
+input[type="radio"]:checked {
+    border-color: var(--accent-primary);
+}
+
+input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: var(--accent-primary);
+    border-radius: 50%;
+}
+
+/* ===== FIELD GROUPS ===== */
+
+.field-group {
+    margin-bottom: 20px;
+}
+
+.field-label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.field-hint {
+    margin-top: 4px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.field-error {
+    margin-top: 4px;
+    font-size: 0.85rem;
+    color: var(--error);
+}
+
+/* ===== FORM LAYOUT ===== */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.form-row > * {
+    flex: 1;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ===== VALIDATION STATES ===== */
+
+.field-error input,
+.field-error textarea,
+.field-error select {
+    border-color: var(--error);
+}
+
+.field-success input,
+.field-success textarea,
+.field-success select {
+    border-color: var(--success);
+}
+
+.field-warning input,
+.field-warning textarea,
+.field-warning select {
+    border-color: var(--warning);
+}
+
+/* ===== DISABLED STATE ===== */
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* ===== SEARCH INPUT ===== */
+
+.search-input {
+    padding-left: 40px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='%2394A3B8' d='M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 12px center;
+}
+
+/* ===== TOGGLE SWITCH ===== */
+
+.toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 20, 30, 0.6);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 24px;
+    transition: var(--transition-fast);
+}
+
+.toggle-slider::before {
+    position: absolute;
+    content: '';
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--text-secondary);
+    border-radius: 50%;
+    transition: var(--transition-fast);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(24px);
+    background: var(--bg-primary);
+}

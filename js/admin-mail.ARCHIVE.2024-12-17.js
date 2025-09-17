@@ -1058,6 +1058,302 @@ function updateFolderCounts() {
     });
 }
 
+// ============================================
+// MAIL FOLDER NAVIGATION
+// Created: December 17, 2024 11:45 AM
+// Purpose: Handle folder clicks and email filtering
+// ============================================
+
+/**
+ * Initialize mail folder navigation
+ */
+function initMailFolders() {
+    const folders = document.querySelectorAll('.mail-folder-item');
+    
+    folders.forEach(folder => {
+        folder.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all folders
+            folders.forEach(f => f.classList.remove('active'));
+            
+            // Add active class to clicked folder
+            this.classList.add('active');
+            
+            // Get folder type
+            const folderType = this.dataset.folder;
+            
+            // Filter emails
+            filterEmailsByFolder(folderType);
+            
+            // Update header if needed
+            updateMailHeader(folderType);
+        });
+    });
+    
+    console.log('[Admin Mail] Folder navigation initialized');
+}
+
+/**
+ * Filter emails by folder type
+ * @param {string} folderType - The folder to filter by
+ */
+function filterEmailsByFolder(folderType) {
+    const emailList = document.getElementById('emailList');
+    if (!emailList) return;
+    
+    // Show loading state
+    emailList.style.opacity = '0.5';
+    
+    setTimeout(() => {
+        const emails = emailList.querySelectorAll('.mail-item');
+        let visibleCount = 0;
+        
+        emails.forEach(email => {
+            const emailFolder = email.dataset.folder || 'inbox';
+            const isStarred = email.dataset.starred === 'true';
+            
+            let shouldShow = false;
+            
+            switch(folderType) {
+                case 'inbox':
+                    shouldShow = emailFolder === 'inbox';
+                    break;
+                case 'sent':
+                    shouldShow = emailFolder === 'sent';
+                    break;
+                case 'drafts':
+                    shouldShow = emailFolder === 'drafts';
+                    break;
+                case 'starred':
+                    shouldShow = isStarred;
+                    break;
+                case 'trash':
+                    shouldShow = emailFolder === 'trash';
+                    break;
+                case 'bookings':
+                    shouldShow = email.dataset.category === 'bookings' || 
+                                email.textContent.toLowerCase().includes('booking');
+                    break;
+                case 'clients':
+                    shouldShow = email.dataset.category === 'clients' || 
+                                email.textContent.toLowerCase().includes('client');
+                    break;
+                case 'finance':
+                    shouldShow = email.dataset.category === 'finance' || 
+                                email.textContent.toLowerCase().includes('payment') ||
+                                email.textContent.toLowerCase().includes('invoice');
+                    break;
+                case 'galleries':
+                    shouldShow = email.dataset.category === 'galleries' || 
+                                email.textContent.toLowerCase().includes('gallery') ||
+                                email.textContent.toLowerCase().includes('photo');
+                    break;
+                default:
+                    shouldShow = true; // Show all for unknown folders
+            }
+            
+            if (shouldShow) {
+                email.style.display = 'block';
+                visibleCount++;
+            } else {
+                email.style.display = 'none';
+            }
+        });
+        
+        // Show empty state if no emails
+        if (visibleCount === 0) {
+            if (!document.getElementById('emptyState')) {
+                const emptyState = document.createElement('div');
+                emptyState.id = 'emptyState';
+                emptyState.className = 'empty-state';
+                emptyState.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <div style="font-size: 48px; opacity: 0.3; margin-bottom: 16px;">📭</div>
+                        <div>No emails in ${folderType}</div>
+                    </div>
+                `;
+                emailList.appendChild(emptyState);
+            }
+        } else {
+            // Remove empty state if it exists
+            const emptyState = document.getElementById('emptyState');
+            if (emptyState) emptyState.remove();
+        }
+        
+        // Restore opacity
+        emailList.style.opacity = '1';
+        
+    }, 100);
+}
+
+/**
+ * Update mail header based on selected folder
+ * @param {string} folderType - The selected folder
+ */
+function updateMailHeader(folderType) {
+    // Optional: Update search placeholder
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.placeholder = `Search in ${folderType}...`;
+    }
+}
+
+/**
+ * Load sample emails for testing
+ */
+function loadSampleEmails() {
+    const emailList = document.getElementById('emailList');
+    if (!emailList) return;
+    
+    // Sample email data
+    const sampleEmails = [
+        {
+            folder: 'inbox',
+            from: 'Sarah Johnson',
+            to: 'jd@blakelycinematics.com',
+            subject: 'Wedding Photography Inquiry',
+            preview: 'Hi, I am interested in your wedding photography services for June 2025...',
+            time: '10:30 AM',
+            starred: false,
+            category: 'bookings'
+        },
+        {
+            folder: 'inbox',
+            from: 'Mike Chen',
+            to: 'jd@blakelycinematics.com',
+            subject: 'Gallery Access Request',
+            preview: 'Could you please provide access to our event gallery from last weekend?',
+            time: '9:15 AM',
+            starred: true,
+            category: 'galleries'
+        },
+        {
+            folder: 'sent',
+            from: 'You',
+            to: 'client@example.com',
+            subject: 'Invoice #2024-001',
+            preview: 'Please find attached the invoice for the recent photoshoot...',
+            time: 'Yesterday',
+            starred: false,
+            category: 'finance'
+        },
+        {
+            folder: 'inbox',
+            from: 'Payment System',
+            to: 'jd@blakelycinematics.com',
+            subject: 'Payment Received - $2,500',
+            preview: 'Payment has been successfully processed for Invoice #2024-001',
+            time: 'Yesterday',
+            starred: true,
+            category: 'finance'
+        },
+        {
+            folder: 'drafts',
+            from: 'You',
+            to: 'team@blakelycinematics.com',
+            subject: 'Team Meeting Notes',
+            preview: 'Draft: Discussion points for upcoming team meeting...',
+            time: '2 days ago',
+            starred: false,
+            category: 'general'
+        }
+    ];
+    
+    // Clear existing emails
+    emailList.innerHTML = '';
+    
+    // Add sample emails
+    sampleEmails.forEach((email, index) => {
+        const emailItem = document.createElement('div');
+        emailItem.className = 'mail-item mail-card';
+        emailItem.dataset.folder = email.folder;
+        emailItem.dataset.starred = email.starred;
+        emailItem.dataset.category = email.category;
+        emailItem.dataset.id = `email-${index}`;
+        
+        emailItem.innerHTML = `
+            <div class="mail-item-header">
+                <div>
+                    <div class="mail-item-sender">${email.from}</div>
+                    <div class="mail-item-to" style="font-size: 0.85rem; opacity: 0.7;">To: ${email.to}</div>
+                </div>
+                <span class="mail-item-time">${email.time}</span>
+            </div>
+            <div class="mail-item-subject">
+                ${email.starred ? '<span style="color: gold;">⭐</span> ' : ''}
+                ${email.subject}
+            </div>
+            <div class="mail-item-preview">${email.preview}</div>
+        `;
+        
+        // Add click handler to show email
+        emailItem.addEventListener('click', function() {
+            showEmailContent(email);
+            // Mark as selected
+            document.querySelectorAll('.mail-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            this.classList.add('selected');
+        });
+        
+        emailList.appendChild(emailItem);
+    });
+    
+    // Update folder counts
+    updateFolderCounts();
+}
+
+/**
+ * Show email content in the main view
+ * @param {Object} email - Email data object
+ */
+function showEmailContent(email) {
+    document.getElementById('emailSubject').textContent = email.subject;
+    document.getElementById('senderName').textContent = email.from;
+    document.getElementById('senderEmail').textContent = email.to;
+    document.getElementById('emailDate').textContent = email.time;
+    document.getElementById('senderAvatar').textContent = email.from.charAt(0).toUpperCase();
+    
+    document.getElementById('emailBody').innerHTML = `
+        <div style="padding: 20px; line-height: 1.6;">
+            ${email.preview}
+            <br><br>
+            [Full email content would appear here]
+        </div>
+    `;
+    
+    // Show meta and actions
+    document.getElementById('emailMeta').style.display = 'flex';
+    document.getElementById('emailActions').style.display = 'flex';
+}
+
+// ============================================
+// INITIALIZATION ON PAGE LOAD
+// ============================================
+
+// Initialize mail folders when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeMailSystem);
+} else {
+    initializeMailSystem();
+}
+
+/**
+ * Initialize the complete mail system
+ */
+function initializeMailSystem() {
+    setTimeout(() => {
+        try {
+            initMailFolders();
+            loadSampleEmails(); // Load sample data for testing
+            console.log('[Admin Mail] Mail system initialized');
+        } catch (e) {
+            console.error('[Admin Mail] Initialization error:', e);
+        }
+    }, 100);
+}
+
 /**
  * Sort emails by date (newest first)
  */
@@ -1127,3 +1423,64 @@ window.adminMail = {
     sortEmailsByDate: sortEmailsByDate,
     updateFolderCounts: updateFolderCounts
 };
+
+// ============================================
+// EMAIL FOLDER PATCH FOR API INTEGRATION
+// Created: December 17, 2024 12:50 PM
+// Purpose: Add folder attributes to API-loaded emails
+// ============================================
+
+/**
+ * Patch email elements to have folder attributes
+ */
+function patchEmailFolders() {
+    const emails = document.querySelectorAll('.mail-item');
+    let patched = 0;
+    
+    emails.forEach((email) => {
+        // Skip if already has folder
+        if (email.dataset.folder) return;
+        
+        // Determine folder based on content
+        const senderEl = email.querySelector('.mail-item-sender');
+        const sender = senderEl?.textContent || '';
+        
+        // Assign folder
+        if (sender === 'You' || sender.includes('@')) {
+            email.dataset.folder = 'sent';
+        } else {
+            email.dataset.folder = 'inbox';
+        }
+        
+        // Check for star
+        const hasStarIcon = email.querySelector('[class*="star"], .starred');
+        email.dataset.starred = hasStarIcon ? 'true' : 'false';
+        
+        patched++;
+    });
+    
+    if (patched > 0) {
+        console.log(`[Admin Mail] Patched ${patched} emails with folder attributes`);
+        updateFolderCounts(); // Update counts after patching
+    }
+}
+
+// Auto-patch when emails load
+const emailObserver = new MutationObserver(() => {
+    const needsPatch = document.querySelector('.mail-item:not([data-folder])');
+    if (needsPatch) {
+        setTimeout(patchEmailFolders, 100);
+    }
+});
+
+// Start observing when DOM is ready
+if (document.getElementById('emailList')) {
+    emailObserver.observe(document.getElementById('emailList'), {
+        childList: true,
+        subtree: true
+    });
+    // Initial patch
+    patchEmailFolders();
+}
+
+console.log('[Admin Mail] Folder patch system initialized');
