@@ -1,37 +1,43 @@
-/* ============================================
-   ADMIN MAIL SCRIPT LOADER
-   Created: December 17, 2024
-   Purpose: Sequentially load modular mail scripts
-   ============================================ */
+/**
+ * Admin Mail Module Loader
+ * Created: December 17, 2024 1:05 PM
+ * Purpose: Load all mail modules in correct dependency order
+ */
 
-(function () {
-    const scripts = [
-        '../js/admin/mail/mail-formatting.js',
-        '../js/admin/mail/mail-pills.js',
-        '../js/admin/mail/mail-reply-editor.js',
-        '../js/admin/mail/mail-compose.js',
-        '../js/admin/mail/mail-actions.js',
-        '../js/admin/mail/mail-folders.js',
-        '../js/admin/mail/mail-list.js',
-        '../js/admin/mail/mail-navigation.js',
-        '../js/admin/mail/mail-patch.js',
-        '../js/admin/mail/mail-bootstrap.js'
-    ];
+// Define the base path for modules
+const MAIL_MODULE_PATH = 'js/admin/mail/';
 
-    function loadNext(index) {
-        if (index >= scripts.length) {
-            return;
-        }
+// Define modules in dependency order
+const mailModules = [
+    'mail-formatting.js',     // Text formatting utilities
+    'mail-pills.js',          // Email pill functionality
+    'mail-folders.js',        // Folder count management
+    'mail-list.js',          // Email list management  
+    'mail-navigation.js',     // Folder navigation (depends on folders & list)
+    'mail-reply-editor.js',   // Rich text editor
+    'mail-compose.js',        // Compose functions (depends on pills)
+    'mail-actions.js',        // Email actions
+    'mail-patch.js',          // API integration patch
+    'mail-bootstrap.js'       // Module registration (must be last)
+];
 
-        const script = document.createElement('script');
-        script.src = scripts[index];
-        script.defer = false;
-        script.onload = () => loadNext(index + 1);
-        script.onerror = (err) => {
-            console.error('[Admin Mail] Failed to load', scripts[index], err);
-        };
-        document.head.appendChild(script);
-    }
+// Load modules sequentially
+console.log('[Mail Loader] Starting module load sequence...');
 
-    loadNext(0);
-})();
+mailModules.forEach((module, index) => {
+    const script = document.createElement('script');
+    script.src = MAIL_MODULE_PATH + module;
+    script.async = false; // Ensure sequential loading
+    
+    script.onload = () => {
+        console.log(`[Mail Loader] Loaded ${index + 1}/${mailModules.length}: ${module}`);
+    };
+    
+    script.onerror = (error) => {
+        console.error(`[Mail Loader] Failed to load ${module}:`, error);
+    };
+    
+    document.head.appendChild(script);
+});
+
+console.log('[Mail Loader] Module load sequence initiated');

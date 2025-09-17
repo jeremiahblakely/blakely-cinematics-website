@@ -21,3 +21,4 @@ lambda-deploy/.env
 *.backup
 *.bak
 
+js/admin-mail.backup*.js
