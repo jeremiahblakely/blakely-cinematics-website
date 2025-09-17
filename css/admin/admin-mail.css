@@ -164,57 +164,48 @@ body {
         0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Update compose header bar - use absolute positioning for true center */
-.compose-header-bar {
+/* ============================================
+   COMPOSE CONTAINER - CSS VARIABLES
+   Updated: December 17, 2024
+   ============================================ */
+.compose-container {
+    --compose-label-width: 80px;
+    --compose-input-height: 38px;
+    --compose-gap: 10px;
+}
+
+/* ============================================
+   COMPOSE HEADER - SINGLE SOURCE OF TRUTH
+   ============================================ */
+
+.compose-container .compose-header-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 0 15px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 20px;
     position: relative;
+    padding: 0 0 15px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* From wrapper - left side */
-.compose-from-wrapper {
+.compose-container .compose-from-wrapper {
     display: flex;
     align-items: center;
-    gap: 0px;
-    z-index: 1;
+    gap: var(--compose-gap);
 }
 
-/* Match From label to field-row labels */
-.compose-from-label {
-    width: 80px;  /* Same as .field-row label */
+.compose-container .compose-from-label {
+    flex: 0 0 var(--compose-label-width);
+    line-height: var(--compose-input-height);
+    text-align: left;
     color: var(--text-secondary);
     font-size: 0.9rem;
-    text-align: left;
 }
 
-/* Title - absolutely centered */
-.compose-title {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    margin: 0;
-    text-align: center;
-    color: var(--accent-primary);
-    font-size: 1.4rem;
-}
-
-/* Close button - right side */
-.compose-header-bar .btn-close {
-    margin-left: auto;
-    z-index: 1;
-}
-
-.compose-header-bar .btn-close:hover {
-    color: var(--accent-primary);
-}
-/* From select - match field input positioning */
-.compose-header-bar .compose-from-select {
-    width: 300px;  /* Fixed width, not full */
-    padding: 8px 12px;  /* Match field inputs */
+.compose-container .compose-header-bar .compose-from-select {
+    flex: 0 0 300px;
+    height: var(--compose-input-height);
+    padding: 8px 12px;
     background: rgba(0, 20, 30, 0.6);
     border: 1px solid rgba(0, 255, 255, 0.2);
     border-radius: 6px;
@@ -222,15 +213,17 @@ body {
     font-size: 0.95rem;
 }
 
-/* Legacy From select styling (for field rows) */
-.compose-from-select {
-    background: rgba(0, 255, 255, 0.06);
-    border: 1px solid var(--border-default);
-    color: var(--text-primary);
-    font-size: 0.85rem;
-    border-radius: 6px;
-    padding: 4px 6px;
-    min-width: 260px;
+.compose-container .field-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.compose-container .field-row label {
+    flex: 0 0 var(--compose-label-width);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-align: left;
 }
 
 /* Gmail-style chips for email inputs */
@@ -263,13 +256,7 @@ body {
     color: var(--text-primary);
 }
 
-@media (max-width: 680px) {
-  .compose-header-bar {
-    grid-template-columns: auto 1fr auto;
-    row-gap: 6px;
-  }
-  .compose-title { grid-column: 1 / -1; }
-}
+/* (Removed obsolete grid-only media rule for header) */
 
 /* Sidebar */
 .mail-sidebar {
@@ -1823,14 +1810,7 @@ button.btn-mark-unread:hover,
     margin: 10px;
 }
 
-.compose-header-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 20px;
-}
+/* (Removed duplicate .compose-header-bar block; consolidated above) */
 
 .compose-header-bar h2 {
     color: var(--accent-primary, #00FFFF);
@@ -1867,22 +1847,7 @@ button.btn-mark-unread:hover,
 }
 
 /* Make all field controls align the same way */
-.field-row .compose-from-select { 
-    flex: 1; 
-    min-height: 38px; 
-    padding: 8px 12px; 
-    background: rgba(0, 20, 30, 0.6); 
-    border: 1px solid rgba(0, 255, 255, 0.2); 
-    border-radius: 6px; 
-    color: var(--accent-primary); 
-    font-size: 0.95rem; 
-}
-.field-row .compose-from-select:focus {
-    outline: none; 
-    border-color: var(--accent-primary); 
-    background: rgba(0, 30, 40, 0.8); 
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); 
-}
+/* (Removed field-row compose-from-select overrides; header select is authoritative) */
 
 .compose-field-input {
     flex: 1;

@@ -9,7 +9,7 @@
     <!-- Date Created: December 9, 2024 8:30 AM -->
     <!-- Last Updated: December 17, 2024 7:45 PM -->
     
-    <link rel="stylesheet" href="../css/admin/admin-mail.css">
+    <link rel="stylesheet" href="../css/admin/admin-mail.css?v=20241217">
     <!-- App runtime config (API base URL, API key, allowed From list) -->
     <script src="admin-app-config.js"></script>
     <style>
@@ -289,6 +289,69 @@
     <!-- Load MVC Application -->
     <script type="module" src="../js/admin-app.js"></script>
     
+    <!-- Compose Modal -->
+    <div class="compose-modal" id="composeModal">
+        <div class="compose-modal-content">
+            <div class="compose-container">
+                <!-- Compose Header -->
+                <div class="compose-header-bar">
+                    <div class="compose-from-wrapper">
+                        <label class="compose-from-label">From:</label>
+                        <select class="compose-from-select">
+                            <option value="jd@jeremiahblakely.com">jd@jeremiahblakely.com</option>
+                        </select>
+                    </div>
+                    <h2 class="compose-title">New Message</h2>
+                    <button class="btn-close" onclick="closeCompose()">×</button>
+                </div>
+
+                <!-- Compose Fields -->
+                <div class="compose-fields">
+                    <div class="field-row">
+                        <label>To:</label>
+                        <div class="chip-input-container">
+                            <div class="chips-wrapper">
+                                <input type="text" id="composeTo" class="chip-input" placeholder="Enter email addresses...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <label>Subject:</label>
+                        <input type="text" id="composeSubject" class="compose-field-input" placeholder="Subject">
+                    </div>
+                </div>
+
+                <!-- Compose Body -->
+                <div class="compose-body">
+                    <div class="compose-formatting-bar">
+                        <button onclick="formatText('bold')">B</button>
+                        <button onclick="formatText('italic')">I</button>
+                        <button onclick="formatText('underline')">U</button>
+                        <div class="divider"></div>
+                        <button onclick="formatText('insertOrderedList')">1.</button>
+                        <button onclick="formatText('insertUnorderedList')">•</button>
+                    </div>
+                    <div class="compose-editor-wrapper">
+                        <div id="composeBody" class="compose-editor" contenteditable="true" 
+                             data-placeholder="Compose your message..."></div>
+                    </div>
+                </div>
+
+                <!-- Compose Actions -->
+                <div class="compose-actions">
+                    <div class="compose-meta">
+                        <button class="action-btn icon-btn" onclick="attachFile()">📎</button>
+                        <span class="draft-saved">✓ Draft saved</span>
+                    </div>
+                    <div class="compose-action-buttons">
+                        <button class="action-btn" onclick="saveDraft()">Save Draft</button>
+                        <button class="btn-primary" onclick="sendEmail()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Portal root for floating elements -->
     <div id="portal-root"></div>
 <!-- Account Switcher Script -->

@@ -218,14 +218,8 @@ document.addEventListener('keydown', (e) => {
             const data = this.composeView.getData();
             console.log('Sending email:', data);
             // Normalize recipients to arrays
-            const to = (data.to || '')
-                .split(',')
-                .map(s => s.trim())
-                .filter(Boolean);
-            const cc = (data.cc || '')
-                .split(',')
-                .map(s => s.trim())
-                .filter(Boolean);
+            const to = Array.isArray(data.to) ? data.to : (typeof data.to === 'string' ? data.to.split(',').map(s => s.trim()).filter(Boolean) : []);
+            const cc = Array.isArray(data.cc) ? data.cc : (data.cc ? data.cc.split(',').map(s => s.trim()).filter(Boolean) : []);
             const payload = {
                 to,
                 cc,

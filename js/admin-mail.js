@@ -1,7 +1,8 @@
 /**
  * Admin Mail JavaScript Functions
  * Created: September 10, 2025 12:25 PM
- * Purpose: Handle email interface interactions and text formatting
+ * Updated: December 17, 2024 9:15 PM
+ * Purpose: Handle email interface interactions, text formatting, and email pills
  */
 
 // ============================================
@@ -65,21 +66,21 @@ function formatText(command) {
     
     switch(command) {
         case 'bold':
-            formattedText = `**\${selectedText}**`;
+            formattedText = `**${selectedText}**`;
             break;
         case 'italic':
-            formattedText = `*\${selectedText}*`;
+            formattedText = `*${selectedText}*`;
             break;
         case 'underline':
-            formattedText = `__\${selectedText}__`;
+            formattedText = `__${selectedText}__`;
             break;
         case 'strikethrough':
         case 'strike':
-            formattedText = `~~\${selectedText}~~`;
+            formattedText = `~~${selectedText}~~`;
             break;
         case 'quote':
             // Add quote formatting (line by line)
-            formattedText = selectedText.split('\n').map(line => `> \${line}`).join('\n');
+            formattedText = selectedText.split('\n').map(line => `> ${line}`).join('\n');
             break;
         default:
             formattedText = selectedText;
@@ -120,7 +121,247 @@ function updateWordCount() {
 }
 
 // ============================================
-// EXISTING FUNCTIONS (PLACEHOLDERS)
+// EMAIL PILL FUNCTIONALITY
+// Created: December 17, 2024
+// Purpose: Gmail-style email pills with lowercase enforcement
+// ============================================
+
+/**
+ * Initialize email pill functionality for compose fields
+ */
+function initEmailPills() {
+    // Prevent running in iframes or sandboxed contexts
+    if (window.location.href.includes('about:') || window !== window.parent) {
+        console.log('[Pills] Skipping init in iframe/sandbox');
+        return;
+    }
+    
+    // Use more specific selectors and check existence
+    const selectors = [
+        '#composeTo',
+        '#composeCc', 
+        '#composeBcc',
+        'input[type="email"][placeholder*="recipient"]',
+        '.cc-input',
+        '.bcc-input'
+    ];
+    
+    selectors.forEach(selector => {
+        try {
+            const field = document.querySelector(selector);
+            if (field && field.dataset.pillsInitialized !== 'true') {
+                setupPillField(field);
+            }
+        } catch (error) {
+            // Silently skip if selector fails
+        }
+    });
+}
+
+/**
+ * Setup pill functionality for an email input field
+ * @param {HTMLInputElement} input - The input field to enhance
+ */
+function setupPillField(input) {
+    // Prevent duplicate initialization
+    if (!input || input.dataset.pillsInitialized === 'true') {
+        return;
+    }
+    
+    // Check if already wrapped in chip container
+    let container = input.closest('.chip-input-container');
+    if (container && container.querySelector('.email-chips')) {
+        // Already set up, just mark as initialized
+        input.dataset.pillsInitialized = 'true';
+        return;
+    }
+    
+    // Mark as initialized BEFORE setting up to prevent race conditions
+    input.dataset.pillsInitialized = 'true';
+    
+    // Create chip container structure if needed
+    if (!container) {
+        try {
+            container = document.createElement('div');
+            container.className = 'chip-input-container';
+            
+            const chipsDiv = document.createElement('div');
+            chipsDiv.className = 'email-chips';
+            
+            // Replace input with container structure
+            if (input.parentNode) {
+                input.parentNode.replaceChild(container, input);
+                container.appendChild(chipsDiv);
+                container.appendChild(input);
+            }
+        } catch (error) {
+            console.warn('[Pills] Setup error, skipping:', error);
+            input.dataset.pillsInitialized = 'false';
+            return;
+        }
+    }
+    
+    const chipsDiv = container.querySelector('.email-chips');
+    if (!chipsDiv) {
+        console.warn('[Pills] No chips container found');
+        return;
+    }
+    
+    input.classList.add('chip-input');
+    
+    // Force lowercase on input
+    input.addEventListener('input', function(e) {
+        e.target.value = e.target.value.toLowerCase();
+    });
+    
+    // Create pill on Enter or comma
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const email = input.value.trim();
+            if (email) {
+                createEmailPill(email, chipsDiv, input);
+            }
+        }
+        
+        // Delete last pill on backspace if input is empty
+        if (e.key === 'Backspace' && !input.value) {
+            const lastChip = chipsDiv.lastElementChild;
+            if (lastChip) {
+                lastChip.remove();
+            }
+        }
+    });
+    
+    // Create pill on blur if there's content
+    input.addEventListener('blur', function() {
+        const email = input.value.trim();
+        if (email) {
+            createEmailPill(email, chipsDiv, input);
+        }
+    });
+    
+    // Handle paste - split by common delimiters
+    input.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        const emails = pastedText.split(/[,;\s]+/);
+        
+        emails.forEach(email => {
+            const trimmedEmail = email.trim();
+            if (trimmedEmail) {
+                createEmailPill(trimmedEmail, chipsDiv, input);
+            }
+        });
+    });
+}
+
+/**
+ * Create an email pill element
+ * @param {string} email - The email address
+ * @param {HTMLElement} container - Container for the chips
+ * @param {HTMLInputElement} input - The input field
+ */
+function createEmailPill(email, container, input) {
+    // Normalize email
+    email = email.toLowerCase().trim();
+    if (!email) return;
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValid = emailRegex.test(email);
+    
+    // Check for duplicates
+    const existingEmails = Array.from(container.querySelectorAll('.email-chip .email-text'))
+        .map(el => el.textContent);
+    const isDuplicate = existingEmails.includes(email);
+    
+    // Don't create duplicate pills
+    if (isDuplicate) {
+        input.value = '';
+        return;
+    }
+    
+    // Create chip element
+    const chip = document.createElement('div');
+    chip.className = 'email-chip';
+    
+    // Add validation class
+    if (!isValid) {
+        chip.classList.add('invalid');
+    } else {
+        chip.classList.add('valid');
+    }
+    
+    // Create chip content
+    const emailText = document.createElement('span');
+    emailText.className = 'email-text';
+    emailText.textContent = email;
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-chip';
+    removeBtn.type = 'button';
+    removeBtn.innerHTML = '×';
+    removeBtn.title = 'Remove';
+    
+    // Remove chip on click
+    removeBtn.onclick = function() {
+        chip.remove();
+        input.focus();
+    };
+    
+    // Edit chip on text click
+    emailText.onclick = function() {
+        input.value = email;
+        chip.remove();
+        input.focus();
+    };
+    
+    // Assemble chip
+    chip.appendChild(emailText);
+    chip.appendChild(removeBtn);
+    
+    // Add to container with animation
+    container.appendChild(chip);
+    
+    // Clear input
+    input.value = '';
+    
+    // Animate in
+    requestAnimationFrame(() => {
+        chip.style.opacity = '0';
+        chip.style.transform = 'scale(0.8)';
+        requestAnimationFrame(() => {
+            chip.style.transition = 'all 0.2s ease';
+            chip.style.opacity = '1';
+            chip.style.transform = 'scale(1)';
+        });
+    });
+}
+
+/**
+ * Get all email addresses from a pill field
+ * @param {string|HTMLElement} fieldOrContainer - Field ID or container element
+ * @returns {Array<string>} Array of email addresses
+ */
+function getEmailsFromPillField(fieldOrContainer) {
+    let container;
+    
+    if (typeof fieldOrContainer === 'string') {
+        const field = document.getElementById(fieldOrContainer);
+        container = field ? field.closest('.chip-input-container') : null;
+    } else {
+        container = fieldOrContainer.closest('.chip-input-container') || fieldOrContainer;
+    }
+    
+    if (!container) return [];
+    
+    const chips = container.querySelectorAll('.email-chip .email-text');
+    return Array.from(chips).map(chip => chip.textContent);
+}
+
+// ============================================
+// REPLY BOX FUNCTIONS
 // ============================================
 
 /**
@@ -130,6 +371,7 @@ function showReply() {
     const replyBox = document.getElementById('replyBox');
     if (replyBox) {
         replyBox.style.display = 'block';
+        replyBox.classList.add('expanded');
         
         // Initialize the rich text editor
         initReplyEditor();
@@ -138,12 +380,12 @@ function showReply() {
         const editor = document.getElementById('replyEditor');
         if (editor) {
             editor.focus();
-        }
-        
-        // Fallback to old textarea if editor not found
-        const textarea = document.getElementById('replyText');
-        if (!editor && textarea) {
-            textarea.focus();
+        } else {
+            // Fallback to textarea
+            const textarea = document.getElementById('replyText');
+            if (textarea) {
+                textarea.focus();
+            }
         }
     }
 }
@@ -155,86 +397,60 @@ function closeReply() {
     const replyBox = document.getElementById('replyBox');
     if (replyBox) {
         replyBox.style.display = 'none';
+        replyBox.classList.remove('expanded');
+        
         // Clear the textarea
         const textarea = document.getElementById('replyText');
         if (textarea) {
             textarea.value = '';
             updateWordCount();
         }
+        
+        // Clear contenteditable if exists
+        const editor = document.getElementById('replyEditor');
+        if (editor) {
+            editor.innerHTML = '';
+        }
     }
 }
 
 // ============================================
-// EVENT LISTENERS
+// CC/BCC TOGGLE FUNCTIONS
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Add event listener for word count updates
-    const textarea = document.getElementById('replyText');
-    if (textarea) {
-        textarea.addEventListener('input', updateWordCount);
-        textarea.addEventListener('keyup', updateWordCount);
-        
-        // Initialize word count
-        updateWordCount();
-    }
-    
-    // Add keyboard shortcuts for formatting
-    document.addEventListener('keydown', function(e) {
-        // Check if we're in the reply textarea
-        if (document.activeElement?.id !== 'replyText') return;
-        
-        // Check for Cmd/Ctrl key combinations
-        if (e.metaKey || e.ctrlKey) {
-            switch(e.key.toLowerCase()) {
-                case 'b':
-                    e.preventDefault();
-                    formatText('bold');
-                    break;
-                case 'i':
-                    e.preventDefault();
-                    formatText('italic');
-                    break;
-                case 'u':
-                    e.preventDefault();
-                    formatText('underline');
-                    break;
-            }
-        }
-    });
-});
-
-// ============================================
-// PLACEHOLDER FUNCTIONS (TO BE IMPLEMENTED)
-// ============================================
-
-// These functions are called by buttons but will be implemented in next steps
+/**
+ * Toggle CC/BCC fields visibility
+ */
 function toggleCCBCC() {
     const ccBccFields = document.getElementById('ccBccFields');
-    const toggleBtn = event && event.target ? event.target.closest('.cc-bcc-toggle-btn') : null;
     if (!ccBccFields) return;
+    
     const isHidden = ccBccFields.style.display === 'none' || ccBccFields.style.display === '';
+    ccBccFields.style.display = isHidden ? 'block' : 'none';
+    
     if (isHidden) {
-        ccBccFields.style.display = 'block';
-        if (toggleBtn) {
-            toggleBtn.classList.add('active');
-            const t = toggleBtn.querySelector('.toggle-text');
-            if (t) t.textContent = 'CC/BCC';
-        }
-        document.getElementById('ccInput')?.focus();
-    } else {
-        ccBccFields.style.display = 'none';
-        if (toggleBtn) {
-            toggleBtn.classList.remove('active');
-            const t = toggleBtn.querySelector('.toggle-text');
-            if (t) t.textContent = 'CC/BCC';
-        }
+        const ccInput = ccBccFields.querySelector('.cc-input');
+        if (ccInput) ccInput.focus();
     }
 }
 
-// Backwards compatibility shims
-function toggleCC() { toggleCCBCC(); }
-function toggleBCC() { toggleCCBCC(); }
+// Alias functions for compatibility
+function toggleCC() { 
+    toggleCCBCC(); 
+}
+
+function toggleBCC() { 
+    toggleCCBCC(); 
+}
+
+// ============================================
+// TEXT ALIGNMENT & FORMATTING
+// ============================================
+
+/**
+ * Align text in the textarea
+ * @param {string} alignment - left, center, or right
+ */
 function alignText(alignment) {
     const textarea = document.getElementById('replyText');
     if (!textarea) return;
@@ -261,10 +477,12 @@ function alignText(alignment) {
             alignedText = selectedLines;
             break;
         case 'center':
-            alignedText = selectedLines.split('\n').map(line => '    ' + line.trim() + '    ').join('\n');
+            alignedText = selectedLines.split('\n')
+                .map(line => '    ' + line.trim() + '    ').join('\n');
             break;
         case 'right':
-            alignedText = selectedLines.split('\n').map(line => '        ' + line.trim()).join('\n');
+            alignedText = selectedLines.split('\n')
+                .map(line => '        ' + line.trim()).join('\n');
             break;
         default:
             alignedText = selectedLines;
@@ -277,6 +495,10 @@ function alignText(alignment) {
     updateWordCount();
 }
 
+/**
+ * Insert a list (bullet or numbered)
+ * @param {string} type - 'bullet' or 'number'
+ */
 function insertList(type) {
     const textarea = document.getElementById('replyText');
     if (!textarea) return;
@@ -329,55 +551,9 @@ function insertList(type) {
     updateWordCount();
 }
 
-function toggleCC() {
-    const ccInput = document.getElementById('ccInput');
-    const ccBccFields = document.getElementById('ccBccFields');
-    const ccButton = event.target.closest('.cc-bcc-btn');
-    
-    if (ccInput) {
-        if (ccInput.style.display === 'none' || ccInput.style.display === '') {
-            // Show CC field
-            ccInput.style.display = 'block';
-            ccBccFields.style.display = 'block';
-            if (ccButton) ccButton.classList.add('active');
-            ccInput.focus();
-        } else {
-            // Hide CC field
-            ccInput.style.display = 'none';
-            // Hide container if BCC is also hidden
-            const bccInput = document.getElementById('bccInput');
-            if (bccInput && (bccInput.style.display === 'none' || bccInput.style.display === '')) {
-                ccBccFields.style.display = 'none';
-            }
-            if (ccButton) ccButton.classList.remove('active');
-        }
-    }
-}
-
-function toggleBCC() {
-    const bccInput = document.getElementById('bccInput');
-    const ccBccFields = document.getElementById('ccBccFields');
-    const bccButton = event.target.closest('.cc-bcc-btn');
-    
-    if (bccInput) {
-        if (bccInput.style.display === 'none' || bccInput.style.display === '') {
-            // Show BCC field
-            bccInput.style.display = 'block';
-            ccBccFields.style.display = 'block';
-            if (bccButton) bccButton.classList.add('active');
-            bccInput.focus();
-        } else {
-            // Hide BCC field
-            bccInput.style.display = 'none';
-            // Hide container if CC is also hidden
-            const ccInput = document.getElementById('ccInput');
-            if (ccInput && (ccInput.style.display === 'none' || ccInput.style.display === '')) {
-                ccBccFields.style.display = 'none';
-            }
-            if (bccButton) bccButton.classList.remove('active');
-        }
-    }
-}
+// ============================================
+// EMAIL ACTION FUNCTIONS (PLACEHOLDERS)
+// ============================================
 
 function toggleAI() {
     console.log('Toggle AI panel - To be implemented');
@@ -395,8 +571,73 @@ function saveDraft() {
     console.log('Save draft - To be implemented');
 }
 
+/**
+ * Send email (from compose or reply)
+ */
+async function sendEmail() {
+    try {
+        // Collect emails from pill fields
+        const toContainer = document.querySelector('#composeTo')?.closest('.chip-input-container');
+        const toEmails = toContainer ? window.emailPills.getEmails(toContainer) : [];
+        
+        // Get other fields
+        const fromSelect = document.querySelector('.compose-from-select');
+        const subject = document.querySelector('#composeSubject, input[placeholder*="Subject"]');
+        const body = document.querySelector('#composeBody, #emailEditor, .compose-editor');
+        
+        if (!toEmails.length) {
+            alert('Please add at least one recipient');
+            return;
+        }
+        
+        const emailData = {
+            to: toEmails,
+            from: fromSelect?.value || 'jd@jeremiahblakely.com',
+            subject: subject?.value || subject?.textContent || '',
+            body: body?.innerHTML || body?.textContent || '',
+            cc: [],
+            bcc: []
+        };
+        
+        console.log('Sending email:', emailData);
+        
+        // Use API config for endpoint
+        const response = await fetch(window.API_CONFIG.MAIL.SEND, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(emailData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Email sent successfully:', result);
+        alert('Email sent successfully!');
+        
+        // Add email to the list and update UI
+        addEmailToList(emailData);
+        sortEmailsByDate();
+        
+        // Clear compose form
+        if (toContainer) {
+            toContainer.querySelectorAll('.email-chip').forEach(chip => chip.remove());
+        }
+        if (subject) subject.value = '';
+        if (body) body.innerHTML = '';
+        
+    } catch (error) {
+        console.error('Failed to send email:', error);
+        alert('Failed to send email. Check console for details.');
+    }
+}
+
+// Update the placeholder functions
 function sendReply() {
-    console.log('Send reply - To be implemented');
+    sendEmail();
 }
 
 function showReplyAll() {
@@ -428,14 +669,55 @@ function deleteEmail() {
 }
 
 function openCompose() {
-    console.log('Open compose - To be implemented');
+    // Show compose modal
+    const composeModal = document.querySelector('#composeModal');
+    if (composeModal) {
+        composeModal.style.display = 'flex';
+        // Initialize pills after compose opens
+        setTimeout(initEmailPills, 100);
+        // Focus on the To field
+        setTimeout(() => {
+            const toField = document.querySelector('#composeTo');
+            if (toField) toField.focus();
+        }, 150);
+    }
+}
+
+function closeCompose() {
+    const composeModal = document.querySelector('#composeModal');
+    if (composeModal) {
+        composeModal.style.display = 'none';
+        // Clear form
+        const toContainer = document.querySelector('#composeTo')?.closest('.chip-input-container');
+        if (toContainer) {
+            toContainer.querySelectorAll('.email-chip').forEach(chip => chip.remove());
+        }
+        const toField = document.querySelector('#composeTo');
+        const subjectField = document.querySelector('#composeSubject');
+        const bodyField = document.querySelector('#composeBody');
+        
+        if (toField) toField.value = '';
+        if (subjectField) subjectField.value = '';
+        if (bodyField) bodyField.innerHTML = '';
+    }
 }
 
 function openSettings() {
     console.log('Open settings - To be implemented');
 }
 
-// AI Functions placeholders
+function markAsRead() {
+    console.log('Mark as read - To be implemented');
+}
+
+function markAsUnread() {
+    console.log('Mark as unread - To be implemented');
+}
+
+// ============================================
+// AI FUNCTIONS (PLACEHOLDERS)
+// ============================================
+
 function aiRewrite() {
     console.log('AI Rewrite - To be implemented');
 }
@@ -465,26 +747,29 @@ function initReplyEditor() {
     if (!ed || ed.dataset._init) return;
     ed.dataset._init = '1';
 
-    // placeholder behavior
+    // Placeholder behavior
     const setPlaceholder = () => {
-        if (ed.textContent.trim() === '') ed.classList.add('is-empty');
-        else ed.classList.remove('is-empty');
+        if (ed.textContent.trim() === '') {
+            ed.classList.add('is-empty');
+        } else {
+            ed.classList.remove('is-empty');
+        }
     };
     setPlaceholder();
     
     ed.addEventListener('input', () => {
         setPlaceholder();
-        updateWordCount(ed);
+        updateEditorWordCount(ed);
     });
 
-    // paste: basic safe paste (plain text). Can upgrade to sanitizer later.
+    // Paste: basic safe paste (plain text)
     ed.addEventListener('paste', (e) => {
         e.preventDefault();
         const text = (e.clipboardData || window.clipboardData).getData('text');
         document.execCommand('insertText', false, text);
     });
 
-    // keyboard shortcuts
+    // Keyboard shortcuts
     ed.addEventListener('keydown', (e) => {
         if (e.metaKey || e.ctrlKey) {
             switch (e.key.toLowerCase()) {
@@ -505,7 +790,7 @@ function initReplyEditor() {
                     const href = prompt('Enter URL (https://…):');
                     if (href && /^https?:|^mailto:/i.test(href)) {
                         document.execCommand('createLink', false, href);
-                        // add rel/target safely (post-fix)
+                        // Add rel/target safely
                         const sel = window.getSelection();
                         if (sel && sel.anchorNode) {
                             const a = sel.anchorNode.parentElement?.closest('a');
@@ -520,7 +805,7 @@ function initReplyEditor() {
         }
     });
 
-    // toolbar clicks
+    // Toolbar clicks
     const toolbar = document.getElementById('replyToolbar');
     if (toolbar) {
         toolbar.addEventListener('click', (e) => {
@@ -533,7 +818,7 @@ function initReplyEditor() {
                 const href = prompt('Enter URL (https://…):');
                 if (!href || !/^https?:|^mailto:/i.test(href)) return;
                 document.execCommand('createLink', false, href);
-                // add rel/target safely (post-fix)
+                // Add rel/target safely
                 const sel = window.getSelection();
                 if (sel && sel.anchorNode) {
                     const a = sel.anchorNode.parentElement?.closest('a');
@@ -562,12 +847,15 @@ function initReplyEditor() {
 
 /**
  * Update word count for contenteditable editor
+ * @param {HTMLElement} ed - The contenteditable element
  */
-function updateWordCount(ed) {
+function updateEditorWordCount(ed) {
     const text = ed.innerText.trim();
     const words = text ? text.split(/\s+/).length : 0;
     const wc = document.getElementById('wordCount');
-    if (wc) wc.textContent = `${words} ${words === 1 ? 'word' : 'words'}`;
+    if (wc) {
+        wc.textContent = `${words} ${words === 1 ? 'word' : 'words'}`;
+    }
 }
 
 /**
@@ -594,6 +882,7 @@ function updateToolbarStates() {
 
 /**
  * Get HTML content from reply editor
+ * @returns {string} HTML content
  */
 function getReplyContent() {
     const ed = document.getElementById('replyEditor');
@@ -603,12 +892,13 @@ function getReplyContent() {
 
 /**
  * Set content in reply editor
+ * @param {string} htmlContent - HTML content to set
  */
 function setReplyContent(htmlContent) {
     const ed = document.getElementById('replyEditor');
     if (!ed) return;
     ed.innerHTML = htmlContent;
-    updateWordCount(ed);
+    updateEditorWordCount(ed);
 }
 
 // ============================================
@@ -641,8 +931,199 @@ function updateFolderCountStyling() {
     });
 }
 
-// Run on page load
-document.addEventListener('DOMContentLoaded', updateFolderCountStyling);
+// ============================================
+// MODULE REGISTRATION
+// ============================================
 
-// Run whenever folder counts might change (call this function when updating counts via AJAX)
-// updateFolderCountStyling();
+// Register email pills module
+if (window.BlakelyApp) {
+    BlakelyApp.register('emailPills', function() {
+        // Only init if compose elements exist
+        if (!document.querySelector('.compose-container, input[placeholder*="recipient@example.com"]')) {
+            throw new Error('Compose elements not found');
+        }
+        initEmailPills();
+        
+        // Reinitialize pills when compose button is clicked
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.compose-btn, [onclick*="openCompose"]')) {
+                setTimeout(initEmailPills, 200);
+            }
+        });
+    });
+    
+    BlakelyApp.register('folderCounts', function() {
+        updateFolderCountStyling();
+    });
+    
+    // (Removed composeHeader reflow hack; CSS rules are consolidated and deterministic)
+    
+    BlakelyApp.register('textFormatting', function() {
+        // Initialize word count for textarea
+        const textarea = document.getElementById('replyText');
+        if (textarea) {
+            textarea.addEventListener('input', updateWordCount);
+            textarea.addEventListener('keyup', updateWordCount);
+            updateWordCount();
+        }
+        
+        // Add keyboard shortcuts for formatting
+        document.addEventListener('keydown', function(e) {
+            // Check if we're in the reply textarea
+            if (document.activeElement?.id !== 'replyText') return;
+            
+            // Check for Cmd/Ctrl key combinations
+            if (e.metaKey || e.ctrlKey) {
+                switch(e.key.toLowerCase()) {
+                    case 'b':
+                        e.preventDefault();
+                        formatText('bold');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        formatText('italic');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        formatText('underline');
+                        break;
+                }
+            }
+        });
+    });
+} else {
+    // Fallback if app-init.js didn't load
+    console.warn('[Admin Mail] App init not found, using fallback');
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+            try { initEmailPills(); } catch(e) { console.error(e); }
+            try { updateFolderCountStyling(); } catch(e) { console.error(e); }
+        }, 500);
+    });
+}
+
+// ============================================
+// GLOBAL EXPORTS
+// ============================================
+
+// Make email pill functions available globally
+window.emailPills = {
+    init: initEmailPills,
+    getEmails: getEmailsFromPillField,
+    setup: setupPillField
+};
+
+// ============================================
+// EMAIL LIST MANAGEMENT
+// ============================================
+
+/**
+ * Update folder counts in the sidebar
+ */
+function updateFolderCounts() {
+    // Count emails by folder
+    const emailList = document.getElementById('emailList');
+    if (!emailList) return;
+    
+    const emails = emailList.querySelectorAll('.mail-item');
+    const counts = {
+        inbox: 0,
+        sent: 0,
+        drafts: 0,
+        starred: 0
+    };
+    
+    emails.forEach(email => {
+        const folder = email.dataset.folder || 'inbox';
+        if (counts[folder] !== undefined) {
+            counts[folder]++;
+        }
+    });
+    
+    // Update folder count displays
+    Object.keys(counts).forEach(folder => {
+        const folderItem = document.querySelector(`.mail-folder-item[data-folder="${folder}"] .mail-folder-count`);
+        if (folderItem) {
+            folderItem.textContent = counts[folder] || '';
+            // Update styling
+            const parentFolder = folderItem.closest('.mail-folder-item');
+            if (counts[folder] > 0) {
+                parentFolder?.classList.add('has-unread');
+                folderItem.classList.add('unread');
+            } else {
+                parentFolder?.classList.remove('has-unread');
+                folderItem.classList.remove('unread');
+            }
+        }
+    });
+}
+
+/**
+ * Sort emails by date (newest first)
+ */
+function sortEmailsByDate() {
+    const emailList = document.getElementById('emailList');
+    if (!emailList) return;
+    
+    const emails = Array.from(emailList.querySelectorAll('.mail-item'));
+    
+    emails.sort((a, b) => {
+        // Get timestamps (you may need to adjust based on your data structure)
+        const timeA = a.querySelector('.mail-item-time')?.textContent || '';
+        const timeB = b.querySelector('.mail-item-time')?.textContent || '';
+        
+        // If both say "Just now", maintain current order
+        if (timeA === 'Just now' && timeB === 'Just now') {
+            return 0;
+        }
+        if (timeA === 'Just now') return -1;
+        if (timeB === 'Just now') return 1;
+        
+        // Otherwise compare timestamps
+        return timeB.localeCompare(timeA);
+    });
+    
+    // Clear and re-append in sorted order
+    emailList.innerHTML = '';
+    emails.forEach(email => emailList.appendChild(email));
+}
+
+/**
+ * Add email to the list (for new sent emails)
+ */
+function addEmailToList(emailData) {
+    const emailList = document.getElementById('emailList');
+    if (!emailList) return;
+    
+    const emailItem = document.createElement('div');
+    emailItem.className = 'mail-item mail-card';
+    emailItem.dataset.folder = 'sent';
+    
+    emailItem.innerHTML = `
+        <div class="mail-item-header">
+            <div>
+                <div class="mail-item-sender">You</div>
+                <div class="mail-item-to">To: ${Array.isArray(emailData.to) ? emailData.to.join(', ') : emailData.to}</div>
+            </div>
+            <span class="mail-item-time">Just now</span>
+        </div>
+        <div class="mail-item-subject">${emailData.subject || '(No Subject)'}</div>
+        <div class="mail-item-preview">${emailData.body?.substring(0, 100) || ''}</div>
+    `;
+    
+    // Add to top of list
+    emailList.insertBefore(emailItem, emailList.firstChild);
+    
+    // Update counts
+    updateFolderCounts();
+}
+
+// Export for debugging
+window.adminMail = {
+    updateFolderCounts: updateFolderCountStyling,
+    getReplyContent: getReplyContent,
+    setReplyContent: setReplyContent,
+    addEmailToList: addEmailToList,
+    sortEmailsByDate: sortEmailsByDate,
+    updateFolderCounts: updateFolderCounts
+};
