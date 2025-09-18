@@ -335,11 +335,30 @@ document.addEventListener('keydown', (e) => {
             }
         };
         
-        window.saveDraftEmail = () => {
-            if (this.composeView) {
-                const data = this.composeView.getData();
-                console.log('Saving draft:', data);
-                this.view.showNotification('Draft saved', 'success');
+        window.saveDraftEmail = async () => {
+            if (!this.composeView) return;
+
+            const draftData = this.composeView.getData();
+            try {
+                const result = await this.model.saveDraft(draftData);
+                if (result?.success) {
+                    this.view.showNotification('Draft saved', 'success');
+                    try {
+                        if (typeof this.composeView.close === 'function') {
+                            this.composeView.close();
+                        }
+                    } catch (closeError) {
+                        console.warn('[Mail] Failed to close compose after saving draft:', closeError);
+                    }
+                    await this.handleDraftSaveSuccess(result, draftData);
+                } else {
+                    const errorMsg = result?.error || 'Failed to save draft';
+                    this.view.showNotification(errorMsg, 'error');
+                }
+            } catch (error) {
+                console.error('[Mail] Compose draft save failed:', error);
+                const message = error?.message ? `Failed to save draft: ${error.message}` : 'Failed to save draft';
+                this.view.showNotification(message, 'error');
             }
         };
         
@@ -926,11 +945,77 @@ document.addEventListener('keydown', (e) => {
         }
     }
     
-    saveDraft() {
-        const replyData = this.view.getReplyData();
-        if (replyData && replyData.body) {
-            // TODO: Implement draft saving
-            this.view.showNotification('Draft saved', 'success');
+    async handleDraftSaveSuccess(result, fallbackData = null) {
+        this.updateFolderCounts();
+
+        const currentFolder = this.model?.currentFolder || 'inbox';
+        const currentAccount = this.view?.elements?.accountSelector?.value || 'all';
+
+        let savedDraft = result?.draft || null;
+        if (!savedDraft && result?.emailId && typeof this.model?.getEmailByUid === 'function') {
+            savedDraft = this.model.getEmailByUid(result.emailId) || null;
+        }
+        if (!savedDraft && fallbackData) {
+            savedDraft = {
+                ...fallbackData,
+                emailId: result?.emailId || fallbackData.emailId || null,
+                folder: fallbackData.folder || 'drafts',
+                account: fallbackData.account || fallbackData.from || currentAccount || 'admin'
+            };
+        }
+
+        let shouldRefreshList = false;
+        try {
+            const visibleEmails = this.model.getEmails(currentFolder, currentAccount);
+            if (savedDraft) {
+                const draftId = savedDraft.id;
+                const draftEmailId = savedDraft.emailId;
+                shouldRefreshList = visibleEmails.some(email => {
+                    if (draftEmailId && email.emailId === draftEmailId) return true;
+                    if (draftId && email.id === draftId) return true;
+                    return false;
+                });
+            } else if (currentFolder === 'drafts' || currentFolder === 'all') {
+                shouldRefreshList = true;
+            }
+        } catch (visibilityError) {
+            console.warn('[Mail] Unable to determine if draft is visible in current folder:', visibilityError);
+        }
+
+        if (shouldRefreshList) {
+            this.loadEmails(currentFolder, currentAccount);
+        }
+
+        if (savedDraft) {
+            try {
+                const userId = mailAPI?.userId || 'admin';
+                await mailCache.upsertEmails(userId, savedDraft.folder || currentFolder || 'drafts', [savedDraft]);
+            } catch (cacheError) {
+                console.warn('[Mail] Failed to sync draft with cache:', cacheError);
+            }
+        }
+    }
+
+    async saveDraft() {
+        try {
+            const replyData = this.view.getReplyData();
+            if (!replyData || (!replyData.body && !replyData.textBody)) {
+                this.view.showNotification('Nothing to save', 'warning');
+                return;
+            }
+
+            const result = await this.model.saveDraft(replyData);
+            if (result?.success) {
+                this.view.showNotification('Draft saved', 'success');
+                await this.handleDraftSaveSuccess(result, replyData);
+            } else {
+                const errorMsg = result?.error || 'Failed to save draft';
+                this.view.showNotification(errorMsg, 'error');
+            }
+        } catch (error) {
+            console.error('[Mail] Reply draft save failed:', error);
+            const message = error?.message ? `Failed to save draft: ${error.message}` : 'Failed to save draft';
+            this.view.showNotification(message, 'error');
         }
     }
     
