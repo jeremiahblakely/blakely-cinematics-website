@@ -565,6 +565,31 @@ document.addEventListener('keydown', (e) => {
                 this.model.emails = emails.map(e => this.model.transformAPIEmail(e, this.model.currentFolder));
                 this.model.nextToken = resp.nextToken || null;
                 this.loadFolders();
+
+                const currentAccount = (mailAPI && mailAPI.userId) ? mailAPI.userId : (account && account !== 'all' ? account : 'admin');
+                const currentFolder = this.model.currentFolder || 'inbox';
+
+                try {
+                    await mailCache.upsertEmails(currentAccount, currentFolder, this.model.emails);
+                } catch (cacheError) {
+                    console.warn('[Mail] Failed to cache emails after account switch:', cacheError);
+                }
+
+                try {
+                    const hasMetadata = Boolean(resp && (resp.etag || resp.lastModified || resp.nextToken));
+                    if (hasMetadata) {
+                        await mailCache.putFolderState(currentAccount, currentFolder, {
+                            etag: resp.etag || null,
+                            lastModified: resp.lastModified || null,
+                            nextToken: this.model.nextToken || null,
+                            updatedAt: Date.now()
+                        });
+                    } else {
+                        await mailCache.putFolderState(currentAccount, currentFolder, null);
+                    }
+                } catch (stateError) {
+                    console.warn('[Mail] Failed to persist folder metadata after account switch:', stateError);
+                }
             }
         } catch (error) {
             console.error('[Mail] Account filter fetch failed:', error);
