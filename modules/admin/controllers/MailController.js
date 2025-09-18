@@ -832,22 +832,102 @@ document.addEventListener('keydown', (e) => {
 
     // Trash a single email (move to 'trash' with small slide/fade animation)
     trashEmail(emailId) {
-        const itemEl = document.querySelector(`[data-email-id="${emailId}"]`);
+        const selectorId = emailId;
+        const itemEl = document.querySelector(`[data-email-id="${selectorId}"]`);
         if (itemEl) {
             itemEl.classList.add('leaving');
         }
-        // Use model.moveToFolder if available; otherwise emulate
-        if (typeof this.model.moveToFolder === 'function') {
-            const undoFn = this.model.moveToFolder(emailId, 'trash');
-            if (undoFn) this.undoStack.push(undoFn);
-        } else {
-            const email = this.model.getEmailById(emailId);
-            if (email) {
-                const prev = email.folder;
-                email.folder = 'trash';
-                this.undoStack.push(() => { email.folder = prev; });
+
+        const numericCandidate = Number(emailId);
+        let lookupId = Number.isFinite(numericCandidate) ? numericCandidate : null;
+        let resolvedEmail = Number.isFinite(lookupId) ? this.model.getEmailById(lookupId) : null;
+
+        if (!Number.isFinite(lookupId)) {
+            try {
+                if (typeof this.model.getEmailByUid === 'function') {
+                    resolvedEmail = this.model.getEmailByUid(emailId);
+                    if (!resolvedEmail && itemEl?.dataset?.emailUid) {
+                        resolvedEmail = this.model.getEmailByUid(itemEl.dataset.emailUid);
+                    }
+                }
+            } catch {}
+
+            if (resolvedEmail && Number.isFinite(Number(resolvedEmail.id))) {
+                lookupId = Number(resolvedEmail.id);
+            } else if (
+                this.model.selectedEmail &&
+                (
+                    String(this.model.selectedEmail.emailId) === String(emailId) ||
+                    String(this.model.selectedEmail.id) === String(emailId)
+                ) &&
+                Number.isFinite(Number(this.model.selectedEmail.id))
+            ) {
+                lookupId = Number(this.model.selectedEmail.id);
+                resolvedEmail = this.model.selectedEmail;
             }
         }
+
+        if (!Number.isFinite(lookupId)) {
+            if (itemEl) {
+                itemEl.classList.remove('leaving');
+            }
+            console.warn('[Mail] trashEmail: Unable to resolve numeric id for', emailId);
+            return;
+        }
+
+        if (!resolvedEmail) {
+            resolvedEmail = this.model.getEmailById(lookupId) || null;
+        }
+
+        let undoFn = null;
+        if (typeof this.model.moveToFolder === 'function') {
+            undoFn = this.model.moveToFolder(lookupId, 'trash');
+        } else if (resolvedEmail) {
+            const prevFolder = resolvedEmail.folder;
+            resolvedEmail.folder = 'trash';
+            undoFn = () => { resolvedEmail.folder = prevFolder; };
+        }
+
+        if (!undoFn) {
+            if (itemEl) {
+                itemEl.classList.remove('leaving');
+            }
+            console.warn('[Mail] trashEmail: moveToFolder returned no undo function', { lookupId, emailId });
+            return;
+        }
+
+        this.undoStack.push(undoFn);
+
+        try {
+            const userId = mailAPI?.userId || 'admin';
+            const latestEmail = this.model.getEmailById(lookupId) || resolvedEmail || null;
+            let cacheEntry = latestEmail ? { ...latestEmail } : null;
+
+            if (!cacheEntry) {
+                cacheEntry = {
+                    id: lookupId,
+                    emailId: typeof emailId === 'string' ? emailId : null,
+                    folder: 'trash',
+                    account: userId,
+                    subject: '(Unknown email)',
+                    preview: '',
+                    unread: false,
+                    starred: false,
+                    archived: false,
+                    timestamp: Date.now()
+                };
+            } else {
+                cacheEntry.folder = 'trash';
+                cacheEntry.account = cacheEntry.account || userId;
+            }
+
+            if (typeof mailCache?.upsertEmails === 'function') {
+                void mailCache.upsertEmails(userId, 'trash', [cacheEntry]);
+            }
+        } catch (cacheError) {
+            console.warn('[Mail] Failed to sync cache after trashing email:', cacheError);
+        }
+
         setTimeout(() => {
             this.loadEmails();
             this.loadFolders();
