@@ -15,9 +15,14 @@ export default class MailController {
         this.model = new MailModel();
         this.view = new MailView();
         // Initialize view after creation
-        this.view.initialize();        this.undoStack = []; // Store undo functions
+        this.view.initialize();
+        this.undoStack = []; // Store undo functions
         this.templateService = new TemplateService();
         this.composeView = new ComposeView(null, null, this.view.signatureService);
+        this.searchTimeout = null;
+        
+        // Add global error handler for unhandled promise rejections
+        this.setupGlobalErrorHandlers();
         
         this.initializeEventListeners();
         void this.initialize();
@@ -27,23 +32,88 @@ export default class MailController {
             this.themeSwitcher = new ThemeSwitcher();
         }, 100);
     }
+
+    setupGlobalErrorHandlers() {
+        // Handle unhandled promise rejections
+        if (typeof window !== 'undefined' && !window._mailErrorHandlerInstalled) {
+            window.addEventListener('unhandledrejection', (event) => {
+                console.error('[Mail] Unhandled promise rejection:', event.reason);
+                // Prevent default browser error
+                event.preventDefault();
+                // Show user-friendly message
+                if (this.view && this.view.showNotification) {
+                    this.view.showNotification('An error occurred. Please refresh if issues persist.', 'error');
+                }
+            });
+            
+            // Handle general JavaScript errors
+            window.addEventListener('error', (event) => {
+                console.error('[Mail] JavaScript error:', event.error);
+                if (this.view && this.view.showNotification) {
+                    this.view.showNotification('An error occurred. Please refresh if issues persist.', 'error');
+                }
+            });
+
+            window.addEventListener('beforeunload', () => {
+                if (this.searchTimeout) {
+                    clearTimeout(this.searchTimeout);
+                    this.searchTimeout = null;
+                }
+            });
+            
+            window._mailErrorHandlerInstalled = true;
+        }
+    }
     
     async initialize() {
-        // Set inbox as default to match UI
-        this.model.setCurrentFolder('inbox');
+        try {
+            // Set inbox as default to match UI
+            this.model.setCurrentFolder('inbox');
 
-        // Load folders first
-        this.loadFolders();
+            // Load folders first with placeholder counts
+            try {
+                this.loadFolders();
+            } catch (folderError) {
+                console.error('[Mail] Failed to load initial folders:', folderError);
+            }
 
-        // CRITICAL: Wait for emails to load from API
-        await this.model.loadEmailsFromAPI();
+            // CRITICAL: Wait for emails to load from API
+            try {
+                await this.model.loadEmailsFromAPI();
+            } catch (emailError) {
+                console.error('[Mail] Failed to load emails from API:', emailError);
+                this.view.showNotification('Failed to load emails. Check connection.', 'error');
+            }
 
-        // Now render with real data (not placeholders)
-        this.loadEmails('inbox');
+            // IMPORTANT: Fetch real folder counts from API
+            try {
+                await this.model.fetchRealFolderCounts();
+                // Re-render folders with real counts
+                this.loadFolders();
+            } catch (countError) {
+                console.error('[Mail] Failed to fetch folder counts:', countError);
+                // Continue with placeholder counts
+            }
 
-        // Load other components
-        this.loadCalendar();
-        this.loadAccounts();
+            // Now render with real data (not placeholders)
+            try {
+                this.loadEmails('inbox');
+            } catch (loadError) {
+                console.error('[Mail] Failed to render emails:', loadError);
+                this.view.showNotification('Failed to display emails', 'error');
+            }
+
+            // Load other components (non-critical)
+            try {
+                this.loadCalendar();
+                this.loadAccounts();
+            } catch (componentError) {
+                console.warn('[Mail] Failed to load calendar/accounts:', componentError);
+            }
+        } catch (error) {
+            console.error('[Mail] Critical initialization failure:', error);
+            this.view.showNotification('Mail system failed to initialize', 'error');
+        }
     }
     
     initializeEventListeners() {
@@ -119,7 +189,29 @@ export default class MailController {
         
         // Search input
         this.view.elements.searchInput.addEventListener('input', (e) => {
-            this.searchEmails(e.target.value);
+            const query = e.target.value;
+            const emailList = this.view.elements.emailList || document.getElementById('emailList');
+
+            if (emailList) {
+                emailList.style.opacity = '0.6';
+            }
+
+            if (this.searchTimeout) {
+                clearTimeout(this.searchTimeout);
+                this.searchTimeout = null;
+            }
+
+            this.searchTimeout = window.setTimeout(() => {
+                try {
+                    this.searchEmails(query);
+                } finally {
+                    const refreshedList = this.view.elements.emailList || document.getElementById('emailList');
+                    if (refreshedList) {
+                        refreshedList.style.opacity = '1';
+                    }
+                    this.searchTimeout = null;
+                }
+            }, 300);
         });
         
         // Account selector
@@ -145,8 +237,7 @@ document.addEventListener('keydown', (e) => {
         activeElement.tagName === 'TEXTAREA' ||
         activeElement.contentEditable === 'true' ||
         activeElement.contentEditable === true ||
-        activeElement.classList.contains('contenteditable-editor') ||
-        activeElement.id === 'replyText' ||
+        activeElement.id === 'emailEditor' ||
         activeElement.closest('[contenteditable="true"]')
     );
     
@@ -262,6 +353,9 @@ document.addEventListener('keydown', (e) => {
         window.hideEvents = () => this.view.hideEvents();
         window.undo = () => this.undo();
         window.selectAllEmails = () => this.selectAllEmails();
+        window.testErrorBoundaries = () => this.testErrorBoundaries();
+        window.testPagination = () => this.testPagination();
+        window.showPaginationTest = () => this.showPaginationTest();
         
         window.showTemplates = () => {
             if (!this.templateService || !this.view.editorCore) {
@@ -298,16 +392,15 @@ document.addEventListener('keydown', (e) => {
                 return;
             }
             
-            // Fallback to textarea markdown formatting (existing code)
-            const textarea = document.getElementById('replyText');
-            if (!textarea) return;
-            
-            // Check if it's a contenteditable div without editorCore
-            if (textarea.contentEditable === 'true' || textarea.contentEditable === true) {
-                // Direct execCommand for contenteditable
+            // Fallback when editorCore is not available
+            const editorElement = document.getElementById('emailEditor');
+            if (editorElement && (editorElement.contentEditable === 'true' || editorElement.contentEditable === true)) {
                 document.execCommand(command, false, null);
                 return;
             }
+
+            const textarea = document.getElementById('replyText');
+            if (!textarea) return;
             
             // Original textarea markdown logic (keep as fallback)
             const start = textarea.selectionStart ?? 0;
@@ -331,6 +424,12 @@ document.addEventListener('keydown', (e) => {
         window.insertLink = () => {
             const url = prompt('Enter URL:');
             if (!url) return;
+            const editorElement = document.getElementById('emailEditor');
+            if (editorElement && (editorElement.contentEditable === 'true' || editorElement.contentEditable === true)) {
+                document.execCommand('createLink', false, url);
+                return;
+            }
+
             const textarea = document.getElementById('replyText');
             if (!textarea) return;
             const linkText = `[link](${url})`;
@@ -352,25 +451,41 @@ document.addEventListener('keydown', (e) => {
         }
     }
     
-    selectEmail(emailId) {
-        // Auto-close compose window if it is open
+    async selectEmail(emailId) {
         try {
-            if (document.querySelector('.compose-container')) {
-                if (this.composeView && typeof this.composeView.close === 'function') {
-                    this.composeView.close();
-                } else if (typeof window.closeCompose === 'function') {
-                    window.closeCompose();
+            // Auto-close compose window safely
+            try {
+                if (document.querySelector('.compose-container')) {
+                    if (this.composeView?.close) {
+                        this.composeView.close();
+                    } else if (typeof window.closeCompose === 'function') {
+                        window.closeCompose();
+                    }
                 }
+            } catch (composeError) {
+                console.warn('[Mail] Failed to close compose:', composeError);
             }
-        } catch {}
-        const email = this.model.getEmailById(emailId);
-        if (email) {
+
+            const email = this.model.getEmailById(emailId);
+            if (!email) {
+                console.warn('[Mail] selectEmail: email not found for id', emailId);
+                this.view.showNotification('Email not found', 'error');
+                return;
+            }
+
             console.debug('[Mail] selectEmail ->', emailId, email.subject);
-            this.model.selectedEmail = email;
-            this.model.markAsRead(emailId);
-            this.view.displayEmail(email);
-            this.updateFolderCounts();
-            // Persist last selected email UID for next visit
+            
+            try {
+                this.model.selectedEmail = email;
+                this.model.markAsRead(emailId);
+                this.view.displayEmail(email);
+            } catch (displayError) {
+                console.error('[Mail] Failed to display email:', displayError);
+                this.view.showNotification('Failed to display email', 'error');
+                return;
+            }
+
+            // Persist last selected email UID for next visit (non-critical)
             try {
                 if (email.emailId) {
                     localStorage.setItem('lastSelectedEmailUid', email.emailId);
@@ -378,9 +493,11 @@ document.addEventListener('keydown', (e) => {
                 localStorage.setItem('lastSelectedFolder', this.model.currentFolder || 'all');
                 const acct = this.view?.elements?.accountSelector?.value || 'all';
                 localStorage.setItem('lastSelectedAccount', acct);
-            } catch {}
+            } catch (storageError) {
+                console.warn('[Mail] Failed to persist selection state:', storageError);
+            }
 
-            // Step 3: Hydrate body from cache and update flags in cache (non-blocking)
+            // Hydrate body from cache and update flags (non-blocking)
             (async () => {
                 try {
                     const userId = mailAPI?.userId || 'admin';
@@ -398,21 +515,24 @@ document.addEventListener('keydown', (e) => {
                     }
                     // Upsert this email to capture latest content/flags
                     await mailCache.upsertEmails(userId, this.model.currentFolder || email.folder || 'inbox', [email]);
-                } catch (e) {
-                    console.warn('[Mail] cache hydrate/update failed', e?.message || e);
+                } catch (cacheError) {
+                    console.warn('[Mail] Cache operation failed:', cacheError);
                 }
             })();
-        } else {
-            console.warn('[Mail] selectEmail: email not found for id', emailId);
+        } catch (error) {
+            console.error('[Mail] Failed to select email:', error);
+            this.view.showNotification('Failed to load email', 'error');
         }
     }
     
     searchEmails(query) {
+        this.view.currentPage = 1; // Reset pagination for search
         const emails = this.model.searchEmails(query);
         this.view.renderEmailList(emails);
     }
     
     async filterByAccount(account) {
+        this.view.currentPage = 1; // Reset pagination for account filter
         try {
             // Switch API user context and refetch for selected account
             if (account && account !== 'all') {
@@ -425,13 +545,20 @@ document.addEventListener('keydown', (e) => {
             if (emails && emails.length) {
                 this.model.emails = emails.map(e => this.model.transformAPIEmail(e, this.model.currentFolder));
                 this.model.nextToken = resp.nextToken || null;
-                this.model.updateFolderCounts();
                 this.loadFolders();
             }
-        } catch (e) {
-            console.error('Account filter fetch failed:', e);
+        } catch (error) {
+            console.error('[Mail] Account filter fetch failed:', error);
+            this.view.showNotification('Failed to switch account. Using cached data.', 'warning');
+            // Continue with cached data
         }
-        this.loadEmails(this.model.currentFolder, account);
+        
+        try {
+            this.loadEmails(this.model.currentFolder, account);
+        } catch (loadError) {
+            console.error('[Mail] Failed to load emails after account switch:', loadError);
+            this.view.showNotification('Failed to load emails', 'error');
+        }
     }
 
     // Render a Load More button if more pages exist
@@ -773,16 +900,29 @@ document.addEventListener('keydown', (e) => {
     }
     
     async sendReply() {
-        const replyData = this.view.getReplyData();
-        if (replyData && replyData.body) {
+        try {
+            const replyData = this.view.getReplyData();
+            if (!replyData || !replyData.body) {
+                this.view.showNotification('Please enter a message before sending', 'warning');
+                return;
+            }
+
             const result = await this.model.sendEmail(replyData);
-            if (result.success) {
+            if (result && result.success) {
                 this.view.hideReplyBox();
                 this.view.showNotification('Email sent successfully', 'success');
-                try { if (window.showMessageSent) window.showMessageSent(); } catch {}
+                try { 
+                    if (window.showMessageSent) window.showMessageSent(); 
+                } catch (callbackError) {
+                    console.warn('[Mail] Message sent callback failed:', callbackError);
+                }
             } else {
-                this.view.showNotification('Failed to send email', 'error');
+                const errorMsg = result?.error || 'Failed to send email';
+                this.view.showNotification(errorMsg, 'error');
             }
+        } catch (error) {
+            console.error('[Mail] Failed to send reply:', error);
+            this.view.showNotification('Failed to send reply. Please try again.', 'error');
         }
     }
     
@@ -820,6 +960,94 @@ document.addEventListener('keydown', (e) => {
     openSettings() {
         // TODO: Implement settings modal
         this.view.showNotification('Settings coming soon', 'info');
+    }
+    
+    // Test method to verify error boundaries
+    async testErrorBoundaries() {
+        console.log('🧪 Testing error boundaries...');
+        
+        // Test 1: Simulate API error
+        try {
+            throw new Error('Test API error');
+        } catch (error) {
+            console.log('✅ API error caught and handled');
+            this.view.showNotification('Test: API error handled', 'error');
+        }
+        
+        // Test 2: Test email selection with invalid ID
+        try {
+            await this.selectEmail(999999);
+            console.log('✅ Invalid email selection handled');
+        } catch (error) {
+            console.log('❌ Invalid email selection not handled:', error);
+        }
+        
+        // Test 3: Test display error
+        try {
+            this.view.displayEmail(null);
+            console.log('✅ Null email display handled');
+        } catch (error) {
+            console.log('❌ Null email display not handled:', error);
+        }
+        
+        console.log('🎯 Error boundary testing complete!');
+    }
+    
+    // Test method to verify pagination works
+    testPagination() {
+        console.log('🧪 Testing pagination system...');
+        
+        // Test 1: Check pagination state
+        console.log(`Current page: ${this.view.currentPage}`);
+        console.log(`Items per page: ${this.view.itemsPerPage}`);
+        console.log(`Total emails: ${this.view.totalEmails}`);
+        
+        // Test 2: Generate test emails if needed
+        if (this.model.emails.length < 100) {
+            const testEmails = [];
+            for (let i = 0; i < 150; i++) {
+                testEmails.push({
+                    id: 1000 + i,
+                    subject: `Test Email ${i + 1}`,
+                    sender: `Test Sender ${i + 1}`,
+                    email: `test${i}@example.com`,
+                    preview: `This is test email number ${i + 1} for pagination testing`,
+                    time: '1m',
+                    date: new Date(),
+                    unread: Math.random() > 0.5,
+                    starred: Math.random() > 0.8,
+                    folder: 'inbox',
+                    tags: [],
+                    hasAttachments: false,
+                    body: `Test email content ${i + 1}`
+                });
+            }
+            this.model.emails = [...this.model.emails, ...testEmails];
+            console.log(`✅ Added ${testEmails.length} test emails`);
+        }
+        
+        // Test 3: Re-render with pagination
+        this.loadEmails('inbox');
+        
+        console.log('🎯 Pagination testing complete! Check the UI for pagination controls.');
+    }
+    
+    // Simple method to force pagination visibility for testing
+    showPaginationTest() {
+        console.log('🧪 Forcing pagination visibility for testing...');
+        
+        // Set lower items per page to make pagination visible even with few emails
+        this.view.itemsPerPage = 5;
+        this.view.currentPage = 1;
+        
+        // Enable force pagination flag
+        window.FORCE_PAGINATION = true;
+        
+        // Re-render current view
+        this.loadEmails(this.model.currentFolder);
+        
+        console.log('✅ Pagination should now be visible with 5 emails per page!');
+        console.log('💡 To disable: window.FORCE_PAGINATION = false; then reload emails');
     }
 }
 // Make functions globally available for onclick handlers

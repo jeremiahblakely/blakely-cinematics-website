@@ -14,7 +14,7 @@ export default class MailModel {
         this.selectedEmails = new Set();
         this.starredEmails = new Set();
         this.snoozedEmails = new Map();
-        this._idSeq = 1; // simple in-memory id generator for stable selection
+        this._idSeq = Date.now();
         this.accounts = [
             { value: 'all', label: 'All Accounts' },
             { value: 'admin', label: 'admin' },
@@ -124,11 +124,40 @@ export default class MailModel {
             }
             
         } catch (error) {
-            console.error('Failed to load emails from API:', error);
-            // Fall back to some mock data for demo purposes
-            this.loadMockEmails();
+            console.error('[MailModel] Failed to load emails from API:', error);
+            
+            // Try to load from cache as fallback
+            try {
+                const cached = await this.loadFromCache();
+                if (cached && cached.length) {
+                    console.log('[MailModel] Using cached emails as fallback');
+                    this.emails = cached;
+                    this.updateFolderCounts();
+                    return;
+                }
+            } catch (cacheError) {
+                console.error('[MailModel] Cache fallback also failed:', cacheError);
+            }
+            
+            // Final fallback to empty array
+            console.log('[MailModel] Using empty array fallback');
+            this.emails = [];
+            this.nextToken = null;
         } finally {
             this.isLoading = false;
+        }
+    }
+
+    // Cache fallback method
+    async loadFromCache() {
+        try {
+            const userId = mailAPI?.userId || 'admin';
+            // Implementation would depend on your cache structure
+            // For now, return empty array but structure is ready
+            return [];
+        } catch (error) {
+            console.error('[MailModel] Failed to load from cache:', error);
+            return [];
         }
     }
 
@@ -171,6 +200,10 @@ export default class MailModel {
         };
         // Generate a numeric ID for UI (sequential to avoid collisions)
         const numericId = this._idSeq++;
+        // Reset with new timestamp base every 10000 IDs to prevent overflow
+        if (this._idSeq % 10000 === 0) {
+            this._idSeq = Date.now();
+        }
         // Normalize folder: treat 'unread' items as part of the Inbox
         const effectiveFolder = apiEmail.folder === 'unread'
             ? 'inbox'
@@ -577,47 +610,138 @@ export default class MailModel {
     }
     
     updateFolderCounts() {
+        const notArchivedOrTrash = (email) => !email.archived && email.folder !== 'trash';
+        const hasTag = (email, tag) => Array.isArray(email.tags) && email.tags.includes(tag);
+
+        // All mail (exclude trash and archived and snoozed)
         const allF = this.folders.find(f => f.id === 'all');
         if (allF) {
-            allF.count = this.emails.filter(e => 
-                !e.archived &&
-                e.folder !== 'trash' &&
-                !this.snoozedEmails.has(e.id)
-            ).length;
-        }
-        const inbox = this.folders.find(f => f.id === 'inbox');
-        if (inbox) {
-            inbox.count = this.emails.filter(e => 
-                e.folder === 'inbox' && 
-                e.unread && 
-                !e.archived &&
+            allF.count = this.emails.filter(e =>
+                notArchivedOrTrash(e) &&
                 !this.snoozedEmails.has(e.id)
             ).length;
         }
 
+        // Inbox (all messages in inbox, even read ones)
+        const inbox = this.folders.find(f => f.id === 'inbox');
+        if (inbox) {
+            inbox.count = this.emails.filter(e =>
+                e.folder === 'inbox' &&
+                notArchivedOrTrash(e) &&
+                !this.snoozedEmails.has(e.id)
+            ).length;
+        }
+
+        // Unread (all unread except trash)
         const unreadF = this.folders.find(f => f.id === 'unread');
         if (unreadF) {
-            unreadF.count = this.emails.filter(e => e.unread && e.folder !== 'trash' && !e.archived).length;
+            unreadF.count = this.emails.filter(e =>
+                e.unread &&
+                !e.archived &&
+                e.folder !== 'trash'
+            ).length;
         }
-        
+
+        // Starred
         const starred = this.folders.find(f => f.id === 'starred');
         if (starred) {
             starred.count = this.starredEmails.size;
         }
-        
+
+        // Sent
+        const sent = this.folders.find(f => f.id === 'sent');
+        if (sent) {
+            sent.count = this.emails.filter(e =>
+                e.folder === 'sent' &&
+                !e.archived
+            ).length;
+        }
+
+        // Drafts
+        const drafts = this.folders.find(f => f.id === 'drafts');
+        if (drafts) {
+            drafts.count = this.emails.filter(e =>
+                e.folder === 'drafts' &&
+                !e.archived
+            ).length;
+        }
+
+        // Bookings (folder or tag)
+        const bookings = this.folders.find(f => f.id === 'bookings');
+        if (bookings) {
+            bookings.count = this.emails.filter(e =>
+                (e.folder === 'bookings' || hasTag(e, 'booking')) &&
+                notArchivedOrTrash(e)
+            ).length;
+        }
+
+        // Clients (folder or tag)
+        const clients = this.folders.find(f => f.id === 'clients');
+        if (clients) {
+            clients.count = this.emails.filter(e =>
+                (e.folder === 'clients' || hasTag(e, 'client')) &&
+                notArchivedOrTrash(e)
+            ).length;
+        }
+
+        // Finance (folder or tag)
+        const finance = this.folders.find(f => f.id === 'finance');
+        if (finance) {
+            finance.count = this.emails.filter(e =>
+                (e.folder === 'finance' || hasTag(e, 'finance')) &&
+                notArchivedOrTrash(e)
+            ).length;
+        }
+
+        // Galleries (folder or tag)
+        const galleries = this.folders.find(f => f.id === 'galleries');
+        if (galleries) {
+            galleries.count = this.emails.filter(e =>
+                (e.folder === 'galleries' || hasTag(e, 'gallery')) &&
+                notArchivedOrTrash(e)
+            ).length;
+        }
+
+        // Archived
         const archived = this.folders.find(f => f.id === 'archived');
         if (archived) {
             archived.count = this.emails.filter(e => e.archived).length;
         }
-        
+
+        // Trash
         const trash = this.folders.find(f => f.id === 'trash');
         if (trash) {
             trash.count = this.emails.filter(e => e.folder === 'trash').length;
         }
-        
-        const drafts = this.folders.find(f => f.id === 'drafts');
-        if (drafts) {
-            drafts.count = this.emails.filter(e => e.folder === 'drafts').length;
+    }
+
+    // Fetch real folder counts from API
+    async fetchRealFolderCounts() {
+        console.log('[MailModel] Fetching real folder counts from API...');
+
+        try {
+            // Get counts for all folders from API
+            const counts = await mailAPI.fetchFolderCounts();
+
+            // Special handling for starred (always local)
+            counts.starred = this.starredEmails.size;
+
+            // Apply the real counts to our folder objects
+            Object.entries(counts).forEach(([folderId, count]) => {
+                const folder = this.folders.find(f => f.id === folderId);
+                if (folder) {
+                    folder.count = count;
+                    console.log(`[MailModel] Set ${folderId} count to ${count}`);
+                }
+            });
+
+            return counts;
+
+        } catch (error) {
+            console.error('[MailModel] Failed to fetch folder counts:', error);
+            // Fall back to local counting
+            this.updateFolderCounts();
+            return null;
         }
     }
     

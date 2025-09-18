@@ -80,7 +80,12 @@ export default class ContentEditableCore {
         // Create the contenteditable div
         this.editor = document.createElement('div');
         this.editor.id = 'emailEditor';
-        this.editor.className = this.originalTextarea.className + ' email-editor';
+        const baseClass = (this.originalTextarea.className || '').trim();
+        const classList = [baseClass, 'email-editor', 'contenteditable-editor']
+            .filter(Boolean)
+            .join(' ')
+            .trim();
+        this.editor.className = classList;
         this.editor.contentEditable = true;
         this.editor.setAttribute('role', 'textbox');
         this.editor.setAttribute('aria-label', 'Email composer');
@@ -522,9 +527,9 @@ export default class ContentEditableCore {
     }
     
     /**
-     * Set content
+     * Set HTML content (primary helper)
      */
-    setContent(html) {
+    setHtml(html) {
         if (this.editor) {
             this.editor.innerHTML = html;
             this.syncTextarea();
@@ -533,9 +538,16 @@ export default class ContentEditableCore {
         }
     }
 
-    // Backward-compat alias used by TemplateService
+    // Backward-compat alias mixed-case callers expect
     setHTML(html) {
-        this.setContent(html);
+        return this.setHtml(html);
+    }
+
+    /**
+     * Legacy helper retained for compatibility
+     */
+    setContent(html) {
+        this.setHtml(html);
     }
     
     /**

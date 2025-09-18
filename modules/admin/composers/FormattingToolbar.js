@@ -93,7 +93,7 @@ export default class FormattingToolbar {
             if (replyBox) {
                 // Reply context
                 this.toolbar.classList.add('reply-toolbar');
-                const editor = document.getElementById('emailEditor') || document.getElementById('replyText');
+                const editor = document.getElementById('emailEditor');
                 if (editor) {
                     // Insert toolbar before the editor
                     editor.parentNode.insertBefore(this.toolbar, editor);

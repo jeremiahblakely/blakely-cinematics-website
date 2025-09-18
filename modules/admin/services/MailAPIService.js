@@ -278,18 +278,29 @@ export default class MailAPIService {
     
     // Fetch all folders with counts
     async fetchFolderCounts() {
-        const folders = ['inbox', 'sent', 'drafts', 'trash'];
+        const folders = ['inbox', 'sent', 'drafts', 'trash', 'starred', 'archived',
+            'bookings', 'clients', 'finance', 'galleries', 'all', 'unread'];
+        
+        // Fetch all counts in parallel instead of sequentially
+        const countPromises = folders.map(folder => 
+            this.fetchEmails(folder, 1)
+                .then(result => ({ folder, count: result.count || 0 }))
+                .catch(error => {
+                    console.warn(`Failed to get count for ${folder}:`, error.message);
+                    return { folder, count: 0 };
+                })
+        );
+        
+        // Wait for all promises to resolve
+        const results = await Promise.all(countPromises);
+        
+        // Convert array to object
         const counts = {};
+        results.forEach(({ folder, count }) => {
+            counts[folder] = count;
+        });
         
-        for (const folder of folders) {
-            try {
-                const result = await this.fetchEmails(folder, 1);
-                counts[folder] = result.count || 0;
-            } catch (error) {
-                counts[folder] = 0;
-            }
-        }
-        
+        console.log('[MailAPI] Fetched folder counts:', counts);
         return counts;
     }
 }

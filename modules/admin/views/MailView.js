@@ -1,6 +1,6 @@
-// MailView.js - Complete View layer for Admin Mail
+// MailView.js - Complete View layer for Admin Mail with Memory Leak Fixes
 // Path: /modules/admin/views/MailView.js
-// Updated: December 17, 2024
+// Updated: September 17, 2025
 
 import ContentEditableCore from '../composers/ContentEditableCore.js';
 import FormattingToolbar from '../composers/FormattingToolbar.js';
@@ -9,6 +9,21 @@ import SignatureService from '../services/SignatureService.js';
 export default class MailView {
     constructor() {
         this.elements = {};
+        this.signatureService = new SignatureService();
+        this.listeners = [];
+        this.timeouts = [];
+        this.editorCore = null;
+        this.formattingToolbar = null;
+        this.wordCountTimeout = null;
+        
+        // Store bound methods for cleanup
+        this.boundCheckClickOutside = null;
+        this.boundHandleBeforeUnload = null;
+        
+        // Pagination state
+        this.currentPage = 1;
+        this.itemsPerPage = 50;
+        this.totalEmails = 0;
     }
     
     // Parse strings like: "Name" <email@domain.com> into { name, address }
@@ -30,16 +45,31 @@ export default class MailView {
     initialize() {
         this.elements = this.cacheElements();
         this.initializeNotificationSystem();
+        
+        // Add cleanup on page unload
+        this.boundHandleBeforeUnload = () => this.destroy();
+        window.addEventListener('beforeunload', this.boundHandleBeforeUnload);
+        this.addTrackedListener(window, 'beforeunload', this.boundHandleBeforeUnload);
+    }
+    
+    // Helper to track listeners for cleanup
+    addTrackedListener(element, event, handler, useCapture = false) {
+        element.addEventListener(event, handler, useCapture);
+        this.listeners.push({ element, event, handler, useCapture });
+    }
+    
+    // Helper to track timeouts for cleanup
+    addTrackedTimeout(callback, delay) {
+        const timeoutId = setTimeout(callback, delay);
+        this.timeouts.push(timeoutId);
+        return timeoutId;
     }
     
     cacheElements() {
         return {
-            // Email list
             emailList: document.getElementById('emailList'),
             searchInput: document.getElementById('searchInput'),
             accountSelector: document.getElementById('accountSelector'),
-            
-            // Email content
             emailSubject: document.getElementById('emailSubject'),
             emailBody: document.getElementById('emailBody'),
             senderAvatar: document.getElementById('senderAvatar'),
@@ -48,16 +78,10 @@ export default class MailView {
             emailDate: document.getElementById('emailDate'),
             emailMeta: document.getElementById('emailMeta'),
             emailActions: document.getElementById('emailActions'),
-            
-            // Reply box
             replyBox: document.getElementById('replyBox'),
             replyTo: document.getElementById('replyTo'),
-            replyText: document.getElementById('replyText'),
-            
-            // Folders
+            replyEditor: document.getElementById('emailEditor'),
             folderItems: document.querySelectorAll('.mail-folder-item'),
-            
-            // Calendar
             calendar: document.getElementById('calendar'),
             eventsWidget: document.getElementById('eventsWidget'),
             eventsList: document.getElementById('eventsList'),
@@ -65,13 +89,8 @@ export default class MailView {
         };
     }
     
-    bindEvents() {
-        // Delegate events will be bound by controller
-    }
-    
     // Initialize notification system
     initializeNotificationSystem() {
-        // Create notification container if it doesn't exist
         if (!document.getElementById('notificationContainer')) {
             const container = document.createElement('div');
             container.id = 'notificationContainer';
@@ -88,14 +107,9 @@ export default class MailView {
         }
     }
     
-    // Email List Rendering
+    // Email List Rendering with Pagination
     renderEmailList(emails) {
-        // Ensure elements are cached
-        if (!this.elements || !this.elements.emailList) {
-            this.elements = this.cacheElements();
-        }
-                // Ensure elements are cached if not already done
-        if (!this.elements || !this.elements.emailList) {
+        if (!this.elements.emailList) {
             this.elements = this.cacheElements();
         }
         
@@ -105,18 +119,159 @@ export default class MailView {
             return;
         }
         
-        emailList.innerHTML = '';        
+        this.totalEmails = emails ? emails.length : 0;
+        
         if (!emails || emails.length === 0) {
             emailList.innerHTML = '<div class="no-emails">No emails in this folder</div>';
             return;
         }
         
-        emails.forEach(email => {
+        // Calculate pagination
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+        const emailsToRender = emails.slice(startIndex, endIndex);
+        const totalPages = Math.ceil(emails.length / this.itemsPerPage);
+        
+        // Clear and render emails
+        emailList.innerHTML = '';
+        
+        // Add pagination controls at top if more than one page (or if testing)
+        const shouldShowPagination = totalPages > 1 || (window.FORCE_PAGINATION && emails.length > 0);
+        if (shouldShowPagination) {
+            const topPagination = this.createPaginationControls(Math.max(totalPages, 1));
+            emailList.appendChild(topPagination);
+        }
+        
+        // Render emails
+        emailsToRender.forEach(email => {
             const emailItem = this.createEmailItem(email);
             emailList.appendChild(emailItem);
         });
         
-        console.log(`Rendered ${emails.length} emails`);
+        // Add pagination controls at bottom if more than one page (or if testing)
+        if (shouldShowPagination) {
+            const bottomPagination = this.createPaginationControls(Math.max(totalPages, 1));
+            emailList.appendChild(bottomPagination);
+        }
+        
+        // Scroll to top of list
+        emailList.scrollTop = 0;
+        
+        console.log(`Page ${this.currentPage}/${totalPages}: Showing ${emailsToRender.length} of ${emails.length} emails`);
+    }
+
+    // Create pagination controls
+    createPaginationControls(totalPages) {
+        const container = document.createElement('div');
+        container.className = 'pagination-controls';
+        container.style.cssText = `
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin: 10px 0;
+        `;
+        
+        // Previous button
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '← Previous';
+        prevBtn.disabled = this.currentPage === 1;
+        prevBtn.style.cssText = `
+            padding: 8px 16px;
+            background: ${this.currentPage === 1 ? 'rgba(255,255,255,0.1)' : 'var(--accent-primary)'};
+            color: ${this.currentPage === 1 ? 'rgba(255,255,255,0.3)' : 'var(--bg-primary)'};
+            border: none;
+            border-radius: 6px;
+            cursor: ${this.currentPage === 1 ? 'not-allowed' : 'pointer'};
+            font-weight: 500;
+            transition: all 0.2s;
+        `;
+        prevBtn.onclick = () => this.changePage(this.currentPage - 1);
+        
+        // Page number buttons (show 5 at most)
+        const pageButtons = document.createElement('div');
+        pageButtons.style.cssText = 'display: flex; gap: 5px;';
+        
+        let startPage = Math.max(1, this.currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.textContent = i;
+            pageBtn.style.cssText = `
+                width: 36px;
+                height: 36px;
+                background: ${i === this.currentPage ? 'var(--accent-primary)' : 'rgba(255,255,255,0.1)'};
+                color: ${i === this.currentPage ? 'var(--bg-primary)' : 'var(--text-primary)'};
+                border: 1px solid ${i === this.currentPage ? 'var(--accent-primary)' : 'rgba(255,255,255,0.2)'};
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: ${i === this.currentPage ? '600' : '400'};
+                transition: all 0.2s;
+            `;
+            pageBtn.onclick = () => this.changePage(i);
+            pageButtons.appendChild(pageBtn);
+        }
+        
+        // Next button
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = 'Next →';
+        nextBtn.disabled = this.currentPage === totalPages;
+        nextBtn.style.cssText = `
+            padding: 8px 16px;
+            background: ${this.currentPage === totalPages ? 'rgba(255,255,255,0.1)' : 'var(--accent-primary)'};
+            color: ${this.currentPage === totalPages ? 'rgba(255,255,255,0.3)' : 'var(--bg-primary)'};
+            border: none;
+            border-radius: 6px;
+            cursor: ${this.currentPage === totalPages ? 'not-allowed' : 'pointer'};
+            font-weight: 500;
+            transition: all 0.2s;
+        `;
+        nextBtn.onclick = () => this.changePage(this.currentPage + 1);
+        
+        // Page info
+        const pageInfo = document.createElement('span');
+        pageInfo.style.cssText = 'color: var(--text-primary); font-size: 0.95rem; min-width: 120px; text-align: center;';
+        pageInfo.textContent = `Page ${this.currentPage} of ${totalPages}`;
+        
+        // Items per page selector
+        const perPageSelect = document.createElement('select');
+        perPageSelect.style.cssText = `
+            padding: 6px 10px;
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            margin-left: 20px;
+        `;
+        [25, 50, 100].forEach(num => {
+            const option = document.createElement('option');
+            option.value = num;
+            option.textContent = `${num} per page`;
+            option.selected = num === this.itemsPerPage;
+            perPageSelect.appendChild(option);
+        });
+        perPageSelect.onchange = (e) => {
+            this.itemsPerPage = parseInt(e.target.value);
+            this.currentPage = 1;
+            this.refreshCurrentView();
+        };
+        
+        // Assemble controls
+        container.appendChild(prevBtn);
+        container.appendChild(pageButtons);
+        container.appendChild(nextBtn);
+        container.appendChild(pageInfo);
+        container.appendChild(perPageSelect);
+        
+        return container;
     }
     
     createEmailItem(email) {
@@ -156,30 +311,35 @@ export default class MailView {
     
     // Email Content Display
     displayEmail(email) {
-        if (!email) {
-            this.clearEmailContent();
-            return;
-        }
-        
-        // Update content
-        console.debug('[Mail] displayEmail render', {
-            id: email.id,
-            emailId: email.emailId,
-            subject: email.subject,
-            hasHtml: !!email.htmlBody || !!email.body,
-            hasText: !!email.textBody
-        });
-        this.elements.emailSubject.textContent = email.subject || '(No Subject)';
-        // Prefer provided HTML body; fallback to textBody; final fallback message
-        let html = email.body || email.htmlBody || '';
-        // Sanitize to avoid script execution warnings in sandboxed iframe
         try {
-            // Remove <script> tags and inline event handlers to reduce console noise and improve safety
+            if (!email) {
+                this.clearEmailContent();
+                return;
+            }
+            
+            console.debug('[Mail] displayEmail render', {
+                id: email.id,
+                emailId: email.emailId,
+                subject: email.subject,
+                hasHtml: !!email.htmlBody || !!email.body,
+                hasText: !!email.textBody
+            });
+            
+            if (!this.elements.emailSubject) {
+                console.error('[MailView] emailSubject element not found');
+                return;
+            }
+            
+            this.elements.emailSubject.textContent = email.subject || '(No Subject)';
+        
+        let html = email.body || email.htmlBody || '';
+        try {
             html = (html || '').replace(/<script\b[\s\S]*?<\/script>/gi, '');
             html = html.replace(/ on[a-z]+\s*=\s*"[^"]*"/gi, '');
             html = html.replace(/ on[a-z]+\s*=\s*'[^']*'/gi, '');
             html = html.replace(/javascript:\s*/gi, '');
         } catch {}
+        
         if (!html && email.textBody) {
             const esc = (s) => (s || '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
             html = `<pre style="white-space:pre-wrap;">${esc(email.textBody)}</pre>`;
@@ -187,9 +347,10 @@ export default class MailView {
         if (!html) {
             html = '<p style="color: var(--text-secondary);">(No content)</p>';
         }
-        // Isolate email content inside a sandboxed iframe to prevent style leakage
+        
         const container = this.elements.emailBody;
         while (container.firstChild) container.removeChild(container.firstChild);
+        
         const iframe = document.createElement('iframe');
         iframe.className = 'email-iframe';
         iframe.setAttribute('sandbox', 'allow-same-origin');
@@ -204,13 +365,23 @@ export default class MailView {
         iframe.srcdoc = docHtml;
         iframe.onload = () => {
             try {
-                const b = iframe.contentDocument && iframe.contentDocument.body;
-                if (b) iframe.style.height = Math.max(b.scrollHeight, b.offsetHeight, b.clientHeight) + 'px';
-            } catch {}
+                const doc = iframe.contentDocument || iframe.contentWindow?.document;
+                if (doc && doc.body) {
+                    const height = Math.max(
+                        doc.body.scrollHeight,
+                        doc.body.offsetHeight,
+                        doc.documentElement.clientHeight,
+                        doc.documentElement.scrollHeight,
+                        doc.documentElement.offsetHeight
+                    ) + 20;
+                    iframe.style.height = height + 'px';
+                }
+            } catch (e) {
+                iframe.style.height = '400px';
+            }
         };
         container.appendChild(iframe);
         
-        // Update sender info (display clean name + address)
         const parsedFrom = this.parseAddressDisplay(email.sender || email.email);
         const initials = (parsedFrom.name || '??').split(' ').map(n => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase();
         this.elements.senderAvatar.textContent = initials || '⟂';
@@ -218,21 +389,22 @@ export default class MailView {
         this.elements.senderEmail.textContent = parsedFrom.address || email.email || '';
         this.elements.emailDate.textContent = email.time;
         
-        // Update reply box
         this.elements.replyTo.textContent = parsedFrom.name || email.sender || '';
         
-        // Update star button
         const starButton = document.querySelector('.mail-content-actions button[onclick="toggleStar()"] span');
         if (starButton) {
             starButton.textContent = email.starred ? '⭐' : '☆';
         }
         
-        // Show meta and actions
-        this.elements.emailMeta.style.display = 'flex';
-        this.elements.emailActions.style.display = 'flex';
-        
-        // Update active state in list
-        this.updateActiveEmailItem(email.id);
+            this.elements.emailMeta.style.display = 'flex';
+            this.elements.emailActions.style.display = 'flex';
+            
+            this.updateActiveEmailItem(email.id);
+        } catch (error) {
+            console.error('[MailView] Failed to display email:', error);
+            this.clearEmailContent();
+            this.showNotification('Failed to display email content', 'error');
+        }
     }
     
     clearEmailContent() {
@@ -241,14 +413,31 @@ export default class MailView {
         this.elements.emailMeta.style.display = 'none';
         this.elements.emailActions.style.display = 'none';
     }
+
+    // Pagination methods
+    changePage(newPage) {
+        const totalPages = Math.ceil(this.totalEmails / this.itemsPerPage);
+        if (newPage < 1 || newPage > totalPages) return;
+        
+        this.currentPage = newPage;
+        this.refreshCurrentView();
+    }
+
+    refreshCurrentView() {
+        // Get current emails from controller
+        if (window.mailController) {
+            const folder = window.mailController.model.currentFolder;
+            const account = this.elements.accountSelector?.value;
+            const emails = window.mailController.model.getEmails(folder, account);
+            this.renderEmailList(emails);
+        }
+    }
     
     updateActiveEmailItem(emailId) {
-        // Remove previous active state
         document.querySelectorAll('.mail-item').forEach(item => {
             item.classList.remove('active');
         });
         
-        // Add active state to selected email
         const selectedItem = document.querySelector(`[data-email-id="${emailId}"]`);
         if (selectedItem) {
             selectedItem.classList.add('active');
@@ -256,7 +445,6 @@ export default class MailView {
         }
     }
     
-    // Update email visual states
     updateEmailStar(emailId, isStarred) {
         const emailItem = document.querySelector(`[data-email-id="${emailId}"]`);
         if (emailItem) {
@@ -273,7 +461,6 @@ export default class MailView {
             }
         }
         
-        // Update star button in content area if this is the selected email
         const starButton = document.querySelector('.mail-content-actions button[onclick="toggleStar()"] span');
         if (starButton) {
             starButton.textContent = isStarred ? '⭐' : '☆';
@@ -314,14 +501,12 @@ export default class MailView {
     }
     
     updateBulkActionButtons(selectedCount) {
-        // Show/hide checkboxes when selection mode is active
         const checkboxes = document.querySelectorAll('.mail-item-checkbox');
         checkboxes.forEach(cb => {
             cb.style.display = selectedCount > 0 ? 'block' : 'none';
         });
     }
     
-    // Folder Rendering
     renderFolders(folders, activeFolder) {
         const sidebar = document.querySelector('.mail-folders');
         if (!sidebar) return;
@@ -329,15 +514,7 @@ export default class MailView {
         sidebar.innerHTML = '';
         
         folders.forEach((folder, index) => {
-            // Add separator before bookings folder
-            if (folder.id === 'bookings') {
-                const separator = document.createElement('div');
-                separator.className = 'folder-separator';
-                sidebar.appendChild(separator);
-            }
-            
-            // Add separator before trash
-            if (folder.id === 'trash' || folder.id === 'archived') {
+            if (folder.id === 'bookings' || folder.id === 'trash' || folder.id === 'archived') {
                 const separator = document.createElement('div');
                 separator.className = 'folder-separator';
                 sidebar.appendChild(separator);
@@ -368,6 +545,7 @@ export default class MailView {
     }
     
     updateActiveFolder(folderId) {
+        this.currentPage = 1; // Reset to first page when changing folders
         document.querySelectorAll('.mail-folder-item').forEach(item => {
             item.classList.remove('active');
             if (item.dataset.folder === folderId) {
@@ -377,14 +555,11 @@ export default class MailView {
     }
     
     showReplyBox(replyData) {
-        // Idempotent init: never destroy editor/toolbar here. Initialize once and reuse.
         if (this.elements.replyBox) {
-            // Update reply metadata
             if (this.elements.replyTo && replyData && replyData.to) {
                 this.elements.replyTo.textContent = replyData.to.join(', ');
             }
             
-            // Initialize ContentEditableCore for reply box (same as ComposeView)
             if (!this.editorCore || !this.editorCore.initialized) {
                 try {
                     this.editorCore = new ContentEditableCore();
@@ -393,27 +568,22 @@ export default class MailView {
                     if (initialized) {
                         console.log('[MailView] ContentEditableCore initialized successfully');
                         
-                        // Initialize FormattingToolbar with the editor core
                         this.formattingToolbar = new FormattingToolbar(this.editorCore);
                         this.formattingToolbar.init();
                         
-                        // Ensure toolbar has correct CSS class and ID for styling
                         const tbEl = document.querySelector('.formatting-toolbar');
                         if (tbEl) {
                             tbEl.id = 'replyToolbar';
                             
-                            // Move toolbar into the reply box if not already there
                             const editorWrapper = this.elements.replyBox.querySelector('.editor-wrapper');
                             if (editorWrapper && tbEl.parentElement !== this.elements.replyBox) {
                                 this.elements.replyBox.insertBefore(tbEl, editorWrapper);
                             }
                         }
                         
-                        // Auto-append signature after initialization if available
                         if (this.signatureService) {
-                            setTimeout(() => {
+                            this.addTrackedTimeout(() => {
                                 this.signatureService.appendToEditor(this.editorCore);
-                                // Place cursor at the beginning
                                 const editor = this.editorCore.editor;
                                 if (editor) {
                                     editor.focus();
@@ -433,34 +603,26 @@ export default class MailView {
                     }
                 } catch (error) {
                     console.error('[MailView] Error initializing ContentEditableCore:', error);
-                    // Fallback to regular textarea behavior
                 }
             }
             
-            // Initialize adaptive behavior for the reply box (bind once)
             if (!this.replyAdaptiveBound) {
                 this.initializeAdaptiveReply();
                 this.replyAdaptiveBound = true;
             }
             
-            // Show the reply box
             this.elements.replyBox.style.display = 'block';
             this.elements.replyBox.scrollIntoView({ behavior: 'smooth' });
             
-            // Focus the editor
             if (this.editorCore && this.editorCore.initialized) {
                 this.editorCore.focus();
             } else {
-                // Fallback to textarea focus
-                const replyText = document.getElementById('replyText');
-                if (replyText) replyText.focus();
+                const editor = document.getElementById('emailEditor');
+                if (editor) editor.focus();
             }
         }
     }
 
-    // Toolbar functionality is now handled by FormattingToolbar class
-
-    // ADD this new method right after initializeToolbarButtons:
     initializeAdaptiveReply() {
         const replyBox = this.elements.replyBox;
         const wordCount = document.getElementById('wordCount');
@@ -468,109 +630,116 @@ export default class MailView {
         
         if (!replyBox) return;
         
-        // Use event delegation for focus to handle dynamic element replacement
-        replyBox.addEventListener('focus', (e) => {
+        const focusHandler = (e) => {
             const targetId = e.target.id;
-            if (targetId === 'replyText' || targetId === 'emailEditor' || e.target.classList.contains('contenteditable-editor')) {
+            if (targetId === 'emailEditor') {
                 console.log('Reply editor focused - adding expanded class');
                 replyBox.classList.add('expanded');
             }
-        }, true);
-        
-        // Smart click-outside behavior - only minimize if truly empty
-        const checkClickOutside = (e) => {
+        };
+        this.addTrackedListener(replyBox, 'focus', focusHandler, true);
+
+        this.boundCheckClickOutside = (e) => {
             if (!replyBox.contains(e.target) && 
                 !e.target.closest('.action-btn') && 
                 replyBox.classList.contains('expanded')) {
                 
-                // Get the actual editor element (ContentEditableCore creates 'emailEditor')
-                const currentEditor = document.getElementById('emailEditor') || document.getElementById('replyText') || replyBox.querySelector('.contenteditable-editor');
+                const currentEditor = document.getElementById('emailEditor');
                 if (!currentEditor) return;
-                
-                // Check if editor has any meaningful content
+
                 let hasContent = false;
                 if (currentEditor.contentEditable === 'true' || currentEditor.contentEditable === true) {
-                    // For contenteditable, check innerHTML after stripping tags
                     const textContent = (currentEditor.textContent || currentEditor.innerText || '').trim();
                     hasContent = textContent.length > 0;
                 } else {
-                    // Fallback for textarea
                     hasContent = (currentEditor.value || '').trim().length > 0;
                 }
                 
-                // Only minimize if truly empty
                 if (!hasContent) {
                     console.log('Clicked outside with empty editor - minimizing');
                     replyBox.classList.remove('expanded');
                 }
-                // If has content, do nothing - stay expanded
             }
         };
-
-        // Use capturing phase to ensure we check after any other handlers
-        if (!this._replyClickOutsideBound) {
-            document.addEventListener('click', checkClickOutside, true);
-            this._replyClickOutsideBound = true;
-        }
         
-        // Update word count using event delegation
-        replyBox.addEventListener('input', (e) => {
-            const target = e.target;
-            if (target.id === 'replyText' || target.id === 'emailEditor' || target.classList.contains('contenteditable-editor')) {
-                // Get text content based on element type
+        this.addTrackedListener(document, 'click', this.boundCheckClickOutside, true);
+        
+        const scheduleWordCountUpdate = (options = {}) => {
+            const { suppressDraftFlag = false } = options;
+            if (this.wordCountTimeout) {
+                clearTimeout(this.wordCountTimeout);
+                const idx = this.timeouts.indexOf(this.wordCountTimeout);
+                if (idx > -1) this.timeouts.splice(idx, 1);
+            }
+
+            const timeoutId = this.addTrackedTimeout(() => {
+                const editorEl = document.getElementById('emailEditor');
                 let text = '';
-                const isContentEditable = target.contentEditable === 'true' || target.contentEditable === true;
-                if (isContentEditable) {
-                    text = target.textContent || target.innerText || '';
-                } else {
-                    text = target.value || '';
+                if (editorEl) {
+                    if (editorEl.contentEditable === 'true' || editorEl.contentEditable === true) {
+                        text = editorEl.textContent || editorEl.innerText || '';
+                    } else {
+                        text = editorEl.value || '';
+                    }
                 }
-                
-                // FIX: Add null check for trim
+
                 const words = text.trim ? text.trim().split(/\s+/).filter(word => word.length > 0).length : 0;
                 if (wordCount) {
                     wordCount.textContent = `${words} words`;
                 }
-                
-                // Show draft saved indicator (simulated)
-                this.showDraftSaved();
+
+                if (!suppressDraftFlag) {
+                    this.showDraftSaved();
+                }
+
+                const timeoutIndex = this.timeouts.indexOf(timeoutId);
+                if (timeoutIndex > -1) this.timeouts.splice(timeoutIndex, 1);
+                if (this.wordCountTimeout === timeoutId) {
+                    this.wordCountTimeout = null;
+                }
+            }, 500);
+
+            this.wordCountTimeout = timeoutId;
+        };
+
+        const inputHandler = (e) => {
+            if (e.target.id === 'emailEditor') {
+                scheduleWordCountUpdate();
             }
-        });
+        };
+        this.addTrackedListener(replyBox, 'input', inputHandler);
+        scheduleWordCountUpdate({ suppressDraftFlag: true });
         
-        // Add keyboard shortcuts using event delegation
-        replyBox.addEventListener('keydown', (e) => {
+        const keydownHandler = (e) => {
             const target = e.target;
-            if (target.id === 'replyText' || target.id === 'emailEditor' || target.classList.contains('contenteditable-editor')) {
-                // Cmd/Ctrl + Enter to send
+            if (target.id === 'emailEditor') {
                 if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
                     e.preventDefault();
                     window.sendReply();
                 }
-                
-                // Escape to minimize (not close)
+
                 if (e.key === 'Escape') {
                     console.log('Escape pressed - removing expanded class');
                     replyBox.classList.remove('expanded');
                 }
             }
-        });
+        };
+        this.addTrackedListener(replyBox, 'keydown', keydownHandler);
     }
 
-    // ADD this helper method after initializeAdaptiveReply:
     showDraftSaved() {
         const indicator = document.getElementById('draftIndicator');
         if (!indicator) return;
         
-        // Clear existing timeout
         if (this.draftTimeout) {
             clearTimeout(this.draftTimeout);
+            const idx = this.timeouts.indexOf(this.draftTimeout);
+            if (idx > -1) this.timeouts.splice(idx, 1);
         }
         
-        // Show indicator
         indicator.classList.add('show');
         
-        // Hide after 2 seconds
-        this.draftTimeout = setTimeout(() => {
+        this.draftTimeout = this.addTrackedTimeout(() => {
             indicator.classList.remove('show');
         }, 2000);
     }
@@ -579,17 +748,9 @@ export default class MailView {
         if (this.elements.replyBox) {
             this.elements.replyBox.style.display = 'none';
             
-            // Clear editor content but keep the editor initialized
             if (this.editorCore && this.editorCore.initialized) {
-                this.editorCore.clearContent();
+                this.editorCore.clear();
             } else {
-                // Fallback cleanup for textarea
-                const replyText = document.getElementById('replyText');
-                if (replyText) {
-                    replyText.value = '';
-                }
-                
-                // Remove any orphaned emailEditor
                 const emailEditor = document.getElementById('emailEditor');
                 if (emailEditor) {
                     emailEditor.innerHTML = '';
@@ -599,13 +760,16 @@ export default class MailView {
     }
     
     getReplyText() {
-        return this.elements.replyText ? this.elements.replyText.value : '';
+        if (this.editorCore && this.editorCore.initialized) {
+            return this.editorCore.getText();
+        }
+        const emailEditor = document.getElementById('emailEditor');
+        return emailEditor ? (emailEditor.textContent || '') : '';
     }
     
     getReplyData() {
-        // Check if ContentEditableCore is active
         if (this.editorCore && this.editorCore.initialized) {
-            const body = this.editorCore.getHTML();  // Get rich HTML from ContentEditableCore
+            const body = this.editorCore.getHTML();
             const to = this.elements.replyTo ? this.elements.replyTo.textContent.split(',').map(e => e.trim()) : [];
             
             return {
@@ -618,11 +782,10 @@ export default class MailView {
             };
         }
         
-        // Fallback to textarea
-        const replyText = document.getElementById('replyText');
-        if (!replyText) return null;
+        const emailEditor = document.getElementById('emailEditor');
+        if (!emailEditor) return null;
         
-        const body = replyText.value || '';
+        const body = emailEditor.contentEditable === 'true' ? (emailEditor.innerHTML || '') : (emailEditor.value || '');
         const to = this.elements.replyTo ? this.elements.replyTo.textContent.split(',').map(e => e.trim()) : [];
         
         return {
@@ -635,7 +798,6 @@ export default class MailView {
         };
     }
     
-    // Notification System
     showNotification(message, type = 'info', showUndo = false) {
         const container = document.getElementById('notificationContainer');
         if (!container) return;
@@ -662,18 +824,15 @@ export default class MailView {
         
         container.appendChild(notification);
         
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
+        this.addTrackedTimeout(() => {
             if (notification.parentElement) {
                 notification.style.animation = 'slideOutRight 0.3s ease-out';
-                setTimeout(() => notification.remove(), 300);
+                this.addTrackedTimeout(() => notification.remove(), 300);
             }
         }, 5000);
     }
     
-    // Folder Picker Modal
     showFolderPicker(folders, callback) {
-        // Create modal
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.style.cssText = `
@@ -729,7 +888,6 @@ export default class MailView {
         modal.appendChild(modalContent);
         document.body.appendChild(modal);
         
-        // Add event listeners
         modalContent.querySelectorAll('.folder-option').forEach(btn => {
             btn.addEventListener('click', () => {
                 const folderId = btn.dataset.folder;
@@ -749,7 +907,6 @@ export default class MailView {
         });
     }
     
-    // Snooze Picker Modal
     showSnoozePicker(options, callback) {
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
@@ -806,7 +963,6 @@ export default class MailView {
         modal.appendChild(modalContent);
         document.body.appendChild(modal);
         
-        // Add event listeners
         modalContent.querySelectorAll('.snooze-option').forEach(btn => {
             btn.addEventListener('click', () => {
                 const hours = parseInt(btn.dataset.hours);
@@ -826,13 +982,10 @@ export default class MailView {
         });
     }
     
-    // Compose Modal
     showComposeModal() {
-        // TODO: Implement full compose modal
         this.showNotification('Compose modal coming soon!', 'info');
     }
     
-    // Calendar Rendering
     renderCalendar(events) {
         if (!this.elements.calendar) return;
         
@@ -840,7 +993,6 @@ export default class MailView {
         
         const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
         
-        // Add day headers
         days.forEach(day => {
             const dayHeader = document.createElement('div');
             dayHeader.className = 'calendar-day';
@@ -850,16 +1002,13 @@ export default class MailView {
             this.elements.calendar.appendChild(dayHeader);
         });
         
-        // Add days
         for (let i = 1; i <= 31; i++) {
             const dayEl = document.createElement('div');
             dayEl.className = 'calendar-day';
             dayEl.dataset.day = i;
             
-            // Highlight today (17th for current date)
             if (i === 17) dayEl.classList.add('today');
             
-            // Mark days with events
             if (events[i.toString()]) {
                 dayEl.classList.add('has-event');
             }
@@ -903,7 +1052,6 @@ export default class MailView {
         }
     }
     
-    // Account Selector
     renderAccounts(accounts) {
         if (!this.elements.accountSelector) return;
         
@@ -916,11 +1064,54 @@ export default class MailView {
         });
     }
     
-    // Utility Methods
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    // Cleanup method
+    destroy() {
+        // Clear all timeouts
+        this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
+        this.timeouts = [];
+        
+        // Remove all tracked event listeners
+        this.listeners.forEach(({ element, event, handler, useCapture }) => {
+            try {
+                element.removeEventListener(event, handler, useCapture);
+            } catch (e) {
+                console.warn('Failed to remove listener:', e);
+            }
+        });
+        this.listeners = [];
+        
+        // Destroy editors
+        if (this.editorCore) {
+            try {
+                this.editorCore.destroy();
+            } catch (e) {
+                console.warn('Failed to destroy editorCore:', e);
+            }
+            this.editorCore = null;
+        }
+        
+        if (this.formattingToolbar) {
+            try {
+                this.formattingToolbar.destroy();
+            } catch (e) {
+                console.warn('Failed to destroy formattingToolbar:', e);
+            }
+            this.formattingToolbar = null;
+        }
+        
+        // Clear references
+        this.elements = {};
+        this.boundCheckClickOutside = null;
+        this.boundHandleBeforeUnload = null;
+        this.wordCountTimeout = null;
+        
+        console.log('[MailView] Destroyed and cleaned up');
     }
 }
 
