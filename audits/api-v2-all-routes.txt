@@ -1,9 +1,0 @@
-POST /create-gallery
-POST /upload-images
-GET /calendar.ics
-POST /pay
-POST /authenticate
-POST /booking
-POST /pay/checkout-session
-POST /images
-GET /bookings

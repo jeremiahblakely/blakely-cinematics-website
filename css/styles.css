@@ -174,7 +174,7 @@ a {
     animation: loadProgress 2s ease forwards;
 }
 
-/* (Removed global compose header overrides; styles live in css/admin/admin-mail.css) */
+/* Legacy admin compose styles removed with admin portal cleanup */
 
 /* ============================================ */
 /* 6. NAVIGATION                               */
@@ -1827,7 +1827,6 @@ select option:hover {
   -webkit-background-clip: text;
           background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-fill-color: transparent;
   letter-spacing: 0.14em;
   font-weight: var(--brand-weight);
   /* Subtle sheen on hover for a classy effect */
@@ -3561,7 +3560,6 @@ nav {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-fill-color: transparent;
     text-shadow: none;
 }
 
