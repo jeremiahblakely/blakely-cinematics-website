@@ -2133,6 +2133,24 @@
             const phone = document.getElementById('client-phone')?.value || '';
             const sessionLocation = document.getElementById('session-location')?.value || '';
 
+            // Snapshot booking details so the confirmation page can show context
+            try {
+              const bookingSnapshot = {
+                clientName,
+                email: customerEmail,
+                phone,
+                package: selectedPackage || 'deposit',
+                date:
+                  selectedDate instanceof Date
+                    ? selectedDate.toISOString().split('T')[0]
+                    : selectedDate || null,
+                time: selectedTime || null,
+              };
+              sessionStorage.setItem('bookingData', JSON.stringify(bookingSnapshot));
+            } catch (snapshotErr) {
+              console.warn('Unable to cache booking snapshot', snapshotErr);
+            }
+
             const res = await fetch(
               'https://qtgzo3psyb.execute-api.us-east-1.amazonaws.com/prod/pay/checkout-session',
               {
@@ -2152,8 +2170,9 @@
                     location: sessionLocation
                   },
 
-                  // Tells Lambda which origin to redirect back to
-                  successOrigin: window.location.origin
+                  // Direct Stripe back to the pending confirmation page
+                  successUrl: `${window.location.origin}/public/booking/booking-pending.html`,
+                  cancelUrl: `${window.location.origin}${window.location.pathname}`
                 })
               }
             );

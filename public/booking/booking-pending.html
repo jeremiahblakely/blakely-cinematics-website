@@ -258,7 +258,7 @@
         
         <div class="buttons">
             <a href="/" class="btn btn-primary">Return Home</a>
-            <a href="preparation.html" class="btn btn-secondary">Session Prep Guide</a>
+            <a href="../pages/preparation.html" class="btn btn-secondary">Session Prep Guide</a>
         </div>
     </div>
     
@@ -272,12 +272,47 @@
         } else {
             document.getElementById('confirmation-id').textContent = 'N/A';
         }
-        
-        // Clear any sensitive booking data from session storage
+
+        const detailsContainer = document.getElementById('booking-details');
+        const cachedBooking = sessionStorage.getItem('bookingData');
+        if (detailsContainer && cachedBooking) {
+            const appendDetail = (label, value) => {
+                if (!value) return;
+                const row = document.createElement('div');
+                row.className = 'detail-row';
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'detail-label';
+                labelSpan.textContent = label;
+
+                const valueSpan = document.createElement('span');
+                valueSpan.className = 'detail-value';
+                valueSpan.textContent = value;
+
+                row.appendChild(labelSpan);
+                row.appendChild(valueSpan);
+                detailsContainer.appendChild(row);
+            };
+
+            try {
+                const booking = JSON.parse(cachedBooking);
+
+                appendDetail('Client Name:', booking.clientName);
+                appendDetail('Email:', booking.email);
+                appendDetail('Phone:', booking.phone);
+                appendDetail('Package:', booking.package);
+                const slot = [booking.date, booking.time].filter(Boolean).join(' • ');
+                appendDetail('Preferred Slot:', slot || 'TBD');
+            } catch (err) {
+                console.warn('Could not hydrate booking snapshot', err);
+            }
+        }
+
+        // Clear any sensitive booking data from storage shortly after load
         setTimeout(() => {
             sessionStorage.removeItem('bookingData');
             localStorage.removeItem('blakely_booking_progress');
-        }, 1000);
+        }, 2000);
     </script>
 </body>
 </html>

@@ -82,6 +82,20 @@ function genBookingId() {
   return `BK-${y}${m}${day}-${nowMs()}`;
 }
 
+function resolveSuccessUrl(preferredUrl) {
+  const base = (preferredUrl && String(preferredUrl).trim()) || CONFIG.SUCCESS_URL;
+  if (!base) {
+    throw new Error('SUCCESS_URL is not configured');
+  }
+
+  if (base.includes('{CHECKOUT_SESSION_ID}')) {
+    return base;
+  }
+
+  const separator = base.includes('?') ? '&' : '?';
+  return `${base}${separator}session_id={CHECKOUT_SESSION_ID}`;
+}
+
 /* =========================
  * C. Validation
  * ========================= */
@@ -120,6 +134,16 @@ function validateInput(input) {
     metadata[k] = typeof v === 'string' ? v : JSON.stringify(v);
   }
   out.metadata = metadata;
+
+  const successUrl = input?.successUrl && String(input.successUrl).trim();
+  if (successUrl) {
+    out.successUrl = successUrl;
+  }
+
+  const cancelUrl = input?.cancelUrl && String(input.cancelUrl).trim();
+  if (cancelUrl) {
+    out.cancelUrl = cancelUrl;
+  }
 
   return { errors, out };
 }
@@ -173,12 +197,25 @@ async function upsertPendingBooking({
 /* =========================
  * E. Stripe Checkout session creation
  * ========================= */
-async function createCheckoutSession({ email, name, packageType, amountCents, bookingId, metadata }) {
+async function createCheckoutSession({
+  email,
+  name,
+  packageType,
+  amountCents,
+  bookingId,
+  metadata,
+  successUrl,
+  cancelUrl,
+}) {
+  const resolvedSuccessUrl = resolveSuccessUrl(successUrl);
+  const resolvedCancelUrl =
+    (cancelUrl && String(cancelUrl).trim()) || CONFIG.CANCEL_URL || resolvedSuccessUrl;
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     mode: 'payment',
-    success_url: CONFIG.SUCCESS_URL, // include ?session_id={CHECKOUT_SESSION_ID} in page code if needed
-    cancel_url: CONFIG.CANCEL_URL,
+    success_url: resolvedSuccessUrl,
+    cancel_url: resolvedCancelUrl,
     line_items: [
       {
         price_data: {
@@ -233,7 +270,7 @@ async function handler(event) {
     const { errors, out } = validateInput(body);
     if (errors.length) return badRequest('Invalid input', errors);
 
-    const { email, name, packageType, amountCents, bookingId, metadata } = out;
+    const { email, name, packageType, amountCents, bookingId, metadata, successUrl, cancelUrl } = out;
 
     // Create Stripe session
     const session = await createCheckoutSession({
@@ -243,6 +280,8 @@ async function handler(event) {
       amountCents,
       bookingId,
       metadata,
+      successUrl,
+      cancelUrl,
     });
 
     // Best-effort: upsert booking as PENDING_PAYMENT
